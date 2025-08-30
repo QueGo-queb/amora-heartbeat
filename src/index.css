@@ -8,35 +8,54 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Amora Brand Colors - inspired by the heart logo */
+    --background: 210 100% 97%;
+    --foreground: 210 50% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 50% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 50% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Deep navy inspired by logo background */
+    --primary: 210 50% 8%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Warm coral from heart */
+    --secondary: 0 65% 55%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Golden orange from heart */
+    --accent: 35 85% 60%;
+    --accent-foreground: 210 50% 8%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Heart colors for special elements */
+    --heart-orange: 35 85% 60%;
+    --heart-red: 0 65% 55%;
+    --heart-green: 145 65% 45%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 50% 8%), hsl(210 30% 15%));
+    --gradient-hero: linear-gradient(135deg, hsl(35 85% 60%), hsl(0 65% 55%), hsl(145 65% 45%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 100% 98%));
+
+    /* Enhanced shadows */
+    --shadow-warm: 0 10px 30px -10px hsl(0 65% 55% / 0.2);
+    --shadow-elegant: 0 20px 40px -10px hsl(210 50% 8% / 0.1);
+    --shadow-glow: 0 0 30px hsl(35 85% 60% / 0.3);
+
+    --muted: 210 40% 94%;
+    --muted-foreground: 210 20% 45%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 210 30% 88%;
+    --input: 210 30% 88%;
+    --ring: 35 85% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +119,118 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
+}
+
+@layer components {
+  /* Amora Heart Logo Animation */
+  .heart-logo {
+    @apply w-12 h-12 relative;
+  }
+
+  .heart-shape {
+    @apply w-full h-full rounded-full;
+    background: var(--gradient-hero);
+    position: relative;
+    transform: rotate(-45deg);
+    animation: heartbeat 2s ease-in-out infinite;
+  }
+
+  .heart-shape:before,
+  .heart-shape:after {
+    content: '';
+    @apply w-6 h-6 absolute rounded-full;
+    background: var(--gradient-hero);
+  }
+
+  .heart-shape:before {
+    top: -3px;
+    left: 0;
+  }
+
+  .heart-shape:after {
+    left: -3px;
+    top: 0;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: var(--gradient-hero);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Slogan Animation */
+  .slogan-container {
+    @apply min-h-[3rem] flex items-center justify-center;
+  }
+
+  .slogan-text {
+    @apply text-lg md:text-xl font-medium text-center px-4;
+    background: var(--gradient-hero);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeInOut 5s ease-in-out infinite;
+  }
+
+  /* Hero Button Variants */
+  .btn-hero {
+    @apply px-8 py-4 text-lg font-semibold rounded-xl;
+    background: var(--gradient-hero);
+    color: white;
+    box-shadow: var(--shadow-warm);
+    transition: all 0.3s ease;
+  }
+
+  .btn-hero:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 text-base font-medium rounded-lg border-2 border-secondary text-secondary;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-secondary text-secondary-foreground;
+  }
+
+  /* Cultural Diversity Cards */
+  .culture-card {
+    @apply p-6 rounded-xl;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-elegant);
+    transition: all 0.3s ease;
+  }
+
+  .culture-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-warm);
+  }
+
+  /* Language Selector */
+  .language-selector {
+    @apply px-4 py-2 rounded-lg bg-card border border-border;
+    transition: all 0.3s ease;
+  }
+
+  .language-selector:hover {
+    @apply border-accent;
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes fadeInOut {
+  0%, 20%, 80%, 100% { opacity: 1; transform: translateY(0); }
+  40%, 60% { opacity: 0; transform: translateY(-10px); }
 }
