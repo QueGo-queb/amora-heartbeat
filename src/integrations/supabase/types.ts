@@ -14,7 +14,236 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          date: string
+          description: string | null
+          id: string
+          location: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          date: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          date?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          end_date: string | null
+          id: string
+          plan: Database["public"]["Enums"]["plan_type"]
+          start_date: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Insert: {
+          end_date?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_type"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Update: {
+          end_date?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_type"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          age: number
+          bio: string | null
+          city: string | null
+          country: string
+          created_at: string | null
+          email: string
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          id: string
+          language: string | null
+          looking_for: Database["public"]["Enums"]["gender_type"]
+          password_hash: string
+          region: string | null
+          search_age_range: unknown | null
+        }
+        Insert: {
+          age: number
+          bio?: string | null
+          city?: string | null
+          country: string
+          created_at?: string | null
+          email: string
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          language?: string | null
+          looking_for: Database["public"]["Enums"]["gender_type"]
+          password_hash: string
+          region?: string | null
+          search_age_range?: unknown | null
+        }
+        Update: {
+          age?: number
+          bio?: string | null
+          city?: string | null
+          country?: string
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          language?: string | null
+          looking_for?: Database["public"]["Enums"]["gender_type"]
+          password_hash?: string
+          region?: string | null
+          search_age_range?: unknown | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +252,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      gender_type: "homme" | "femme"
+      plan_type: "free" | "premium"
+      subscription_status: "active" | "inactive" | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +381,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      gender_type: ["homme", "femme"],
+      plan_type: ["free", "premium"],
+      subscription_status: ["active", "inactive", "canceled"],
+    },
   },
 } as const
