@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string | null
@@ -158,6 +182,57 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          age: number | null
+          bio: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          language: string | null
+          looking_for: string | null
+          region: string | null
+          role: string | null
+          subscription_plan: string | null
+          user_id: string | null
+        }
+        Insert: {
+          age?: number | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          language?: string | null
+          looking_for?: string | null
+          region?: string | null
+          role?: string | null
+          subscription_plan?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          age?: number | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          language?: string | null
+          looking_for?: string | null
+          region?: string | null
+          role?: string | null
+          subscription_plan?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           end_date: string | null
@@ -209,6 +284,11 @@ export type Database = {
           password_hash: string
           region: string | null
           search_age_range: unknown | null
+          seeking_age_max: number | null
+          seeking_age_min: number | null
+          seeking_country: string | null
+          seeking_gender: string | null
+          seeking_languages: string[] | null
         }
         Insert: {
           age: number
@@ -225,6 +305,11 @@ export type Database = {
           password_hash: string
           region?: string | null
           search_age_range?: unknown | null
+          seeking_age_max?: number | null
+          seeking_age_min?: number | null
+          seeking_country?: string | null
+          seeking_gender?: string | null
+          seeking_languages?: string[] | null
         }
         Update: {
           age?: number
@@ -241,6 +326,11 @@ export type Database = {
           password_hash?: string
           region?: string | null
           search_age_range?: unknown | null
+          seeking_age_max?: number | null
+          seeking_age_min?: number | null
+          seeking_country?: string | null
+          seeking_gender?: string | null
+          seeking_languages?: string[] | null
         }
         Relationships: []
       }
