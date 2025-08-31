@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, User, Mail, MapPin, Calendar, Users, FileText } from "lucide-react";
+import { Heart, User, Mail, MapPin, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,9 +31,7 @@ const translations = {
     createAccount: "Créer mon compte",
     male: "Homme",
     female: "Femme",
-    bioPlaceholder: "Parlez-nous un peu de vous...",
-    connecting: "Connexion à Supabase requise",
-    connectMessage: "Pour créer votre compte, vous devez d'abord connecter votre projet à Supabase."
+    bioPlaceholder: "Parlez-nous un peu de vous..."
   },
   en: {
     title: "Create your Amora account",
@@ -53,9 +51,7 @@ const translations = {
     createAccount: "Create my account",
     male: "Male",
     female: "Female",
-    bioPlaceholder: "Tell us a bit about yourself...",
-    connecting: "Supabase connection required",
-    connectMessage: "To create your account, you need to connect your project to Supabase first."
+    bioPlaceholder: "Tell us a bit about yourself..."
   },
   ht: {
     title: "Kreye kont Amora ou",
@@ -75,9 +71,7 @@ const translations = {
     createAccount: "Kreye kont mwen",
     male: "Gason",
     female: "Fanm",
-    bioPlaceholder: "Di nou yon ti kras sou ou...",
-    connecting: "Konneksyon Supabase obligatwa",
-    connectMessage: "Pou kreye kont ou, ou bezwen konekte pwojè ou ak Supabase an premye."
+    bioPlaceholder: "Di nou yon ti kras sou ou..."
   },
   es: {
     title: "Crear tu cuenta Amora",
@@ -97,9 +91,7 @@ const translations = {
     createAccount: "Crear mi cuenta",
     male: "Hombre",
     female: "Mujer",
-    bioPlaceholder: "Cuéntanos un poco sobre ti...",
-    connecting: "Conexión a Supabase requerida",
-    connectMessage: "Para crear tu cuenta, necesitas conectar tu proyecto a Supabase primero."
+    bioPlaceholder: "Cuéntanos un poco sobre ti..."
   }
 };
 
@@ -156,14 +148,6 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       </CardHeader>
       
       <CardContent>
-        <div className="mb-6 p-4 bg-muted rounded-lg border border-accent">
-          <div className="flex items-center gap-2 text-accent mb-2">
-            <Users className="w-5 h-5" />
-            <span className="font-medium">{t.connecting}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">{t.connectMessage}</p>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -304,7 +288,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             />
           </div>
 
-          <Button type="submit" className="btn-hero w-full" disabled>
+          <Button type="submit" className="btn-hero w-full">
             {t.createAccount}
           </Button>
         </form>
