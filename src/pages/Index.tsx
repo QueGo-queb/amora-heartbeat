@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Heart, Users, MessageCircle, ArrowRight, Sparkles, Shield, Award } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -137,8 +138,8 @@ const Index = () => {
             <span className="text-2xl font-bold gradient-text">AMORA</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="hidden sm:inline-flex">
-              {t.login}
+            <Button variant="outline" className="hidden sm:inline-flex" asChild>
+              <Link to="/auth">{t.login}</Link>
             </Button>
             <LanguageSelector 
               selectedLanguage={selectedLanguage} 
