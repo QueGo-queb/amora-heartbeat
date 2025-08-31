@@ -1,23 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, Mail, Lock, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignupForm } from "@/components/ui/signup-form";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
   });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    checkUser();
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login functionality
-    console.log("Login attempt:", loginData);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Erreur de connexion",
+          description: "Email ou mot de passe incorrect.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté.",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la connexion.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -95,8 +139,8 @@ const Auth = () => {
                       />
                     </div>
                     
-                    <Button type="submit" className="btn-hero w-full">
-                      Se connecter
+                    <Button type="submit" className="btn-hero w-full" disabled={loading}>
+                      {loading ? "Connexion..." : "Se connecter"}
                     </Button>
                   </form>
                 </CardContent>
