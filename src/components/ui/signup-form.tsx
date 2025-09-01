@@ -6,9 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLoader } from "@/hooks/use-loader";
 import { useNavigate } from "react-router-dom";
+import { Loader, LoaderOverlay } from "@/components/ui/loader";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 interface SignupFormProps {
   language: string;
@@ -41,7 +45,17 @@ const translations = {
     female: "Femme",
     any: "Peu importe",
     bioPlaceholder: "Parlez-nous un peu de vous...",
-    preferences: "Préférences de recherche"
+    preferences: "Préférences de recherche",
+    // Messages d'erreur
+    errors: {
+      emailAlreadyExists: "Cette adresse email est déjà utilisée.",
+      weakPassword: "Le mot de passe doit contenir au moins 6 caractères.",
+      invalidEmail: "Veuillez saisir une adresse email valide.",
+      passwordMismatch: "Les mots de passe ne correspondent pas.",
+      networkError: "Erreur de connexion. Veuillez réessayer.",
+      generalError: "Une erreur est survenue lors de l'inscription.",
+      success: "Inscription réussie ! Vérifiez votre email pour confirmer votre compte."
+    }
   },
   en: {
     title: "Create your Amora account",
@@ -68,7 +82,17 @@ const translations = {
     female: "Female",
     any: "Any",
     bioPlaceholder: "Tell us a bit about yourself...",
-    preferences: "Search preferences"
+    preferences: "Search preferences",
+    // Error messages
+    errors: {
+      emailAlreadyExists: "This email address is already in use.",
+      weakPassword: "Password must contain at least 6 characters.",
+      invalidEmail: "Please enter a valid email address.",
+      passwordMismatch: "Passwords do not match.",
+      networkError: "Connection error. Please try again.",
+      generalError: "An error occurred during registration.",
+      success: "Registration successful! Check your email to confirm your account."
+    }
   },
   ht: {
     title: "Kreye kont Amora ou",
@@ -95,7 +119,17 @@ const translations = {
     female: "Fanm",
     any: "Nenpòt sa",
     bioPlaceholder: "Di nou yon ti kras sou ou...",
-    preferences: "Preferans rechèch"
+    preferences: "Preferans rechèch",
+    // Mesaj erè
+    errors: {
+      emailAlreadyExists: "Adrès imel sa a deja itilize.",
+      weakPassword: "Mo kle a dwe gen omwen 6 karaktè.",
+      invalidEmail: "Tanpri antre yon adrès imel ki valab.",
+      passwordMismatch: "Mo kle yo pa matche.",
+      networkError: "Erè koneksyon. Tanpri eseye ankò.",
+      generalError: "Yon erè te fèt pandan enskripsyon an.",
+      success: "Enskripsyon reyisi! Tcheke imel ou pou konfime kont ou."
+    }
   },
   es: {
     title: "Crear tu cuenta Amora",
@@ -122,7 +156,54 @@ const translations = {
     female: "Mujer",
     any: "Cualquiera",
     bioPlaceholder: "Cuéntanos un poco sobre ti...",
-    preferences: "Preferencias de búsqueda"
+    preferences: "Preferencias de búsqueda",
+    // Mensajes de error
+    errors: {
+      emailAlreadyExists: "Esta dirección de correo ya está en uso.",
+      weakPassword: "La contraseña debe contener al menos 6 caracteres.",
+      invalidEmail: "Por favor ingresa una dirección de correo válida.",
+      passwordMismatch: "Las contraseñas no coinciden.",
+      networkError: "Error de conexión. Por favor intenta de nuevo.",
+      generalError: "Ocurrió un error durante el registro.",
+      success: "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta."
+    }
+  },
+  ptBR: {
+    title: "Criar sua conta Amora",
+    subtitle: "Junte-se à comunidade multicultural do amor",
+    fullName: "Nome completo",
+    email: "Endereço de email",
+    password: "Senha",
+    confirmPassword: "Confirmar senha",
+    country: "País",
+    region: "Região",
+    city: "Cidade",
+    language: "Idioma principal",
+    bio: "Biografia breve",
+    gender: "Gênero",
+    seekingGender: "Gênero procurado",
+    age: "Idade",
+    ageRange: "Faixa etária preferida",
+    ageRangeMin: "Idade mínima procurada",
+    ageRangeMax: "Idade máxima procurada",
+    targetCountry: "País objetivo",
+    seekingLanguages: "Idiomas procurados",
+    createAccount: "Criar minha conta",
+    male: "Masculino",
+    female: "Feminino",
+    any: "Qualquer",
+    bioPlaceholder: "Conte-nos um pouco sobre você...",
+    preferences: "Preferências de busca",
+    // Mensagens de erro
+    errors: {
+      emailAlreadyExists: "Este endereço de email já está em uso.",
+      weakPassword: "A senha deve conter pelo menos 6 caracteres.",
+      invalidEmail: "Por favor, insira um endereço de email válido.",
+      passwordMismatch: "As senhas não coincidem.",
+      networkError: "Erro de conexão. Por favor, tente novamente.",
+      generalError: "Ocorreu um erro durante o registro.",
+      success: "Registro bem-sucedido! Verifique seu email para confirmar sua conta."
+    }
   }
 };
 
@@ -146,8 +227,59 @@ const languages = [
   { code: "fr", name: "Français" },
   { code: "en", name: "English" },
   { code: "ht", name: "Kreyòl" },
-  { code: "es", name: "Español" }
+  { code: "es", name: "Español" },
+  { code: "ptBR", name: "Português" }
 ];
+
+// Fonction pour analyser et traduire les erreurs Supabase
+const getErrorMessage = (error: any, language: string): string => {
+  const t = translations[language as keyof typeof translations] || translations.fr;
+  
+  if (!error) return t.errors.generalError;
+  
+  const errorMessage = error.message?.toLowerCase() || '';
+  const errorCode = error.status || error.code;
+  
+  // Erreurs d'email
+  if (errorMessage.includes('email') && errorMessage.includes('already')) {
+    return t.errors.emailAlreadyExists;
+  }
+  
+  if (errorMessage.includes('invalid email') || errorMessage.includes('email format')) {
+    return t.errors.invalidEmail;
+  }
+  
+  // Erreurs de mot de passe
+  if (errorMessage.includes('password') && errorMessage.includes('weak')) {
+    return t.errors.weakPassword;
+  }
+  
+  if (errorMessage.includes('password') && errorMessage.includes('length')) {
+    return t.errors.weakPassword;
+  }
+  
+  // Erreurs de réseau
+  if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+    return t.errors.networkError;
+  }
+  
+  if (errorCode === 500 || errorCode === 502 || errorCode === 503) {
+    return t.errors.networkError;
+  }
+  
+  // Erreurs spécifiques Supabase
+  if (errorCode === 422) {
+    if (errorMessage.includes('email')) {
+      return t.errors.invalidEmail;
+    }
+    if (errorMessage.includes('password')) {
+      return t.errors.weakPassword;
+    }
+  }
+  
+  // Erreur par défaut
+  return t.errors.generalError;
+};
 
 export function SignupForm({ language, onClose }: SignupFormProps) {
   const [formData, setFormData] = useState({
@@ -170,6 +302,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { showLoader, hideLoader } = useLoader();
   const navigate = useNavigate();
 
   const t = translations[language as keyof typeof translations] || translations.fr;
@@ -177,32 +310,36 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
+    // Validation du mot de passe
+    if (formData.password.length < 6) {
       toast({
         title: "Erreur",
-        description: "Les mots de passe ne correspondent pas.",
+        description: t.errors.weakPassword,
         variant: "destructive",
       });
       return;
     }
 
-    if (formData.password.length < 6) {
+    // Validation de la correspondance des mots de passe
+    if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Erreur",
-        description: "Le mot de passe doit contenir au moins 6 caractères.",
+        description: t.errors.passwordMismatch,
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    showLoader("Création de votre compte...", "heart");
     
     try {
-      const { error } = await supabase.auth.signUp({
+      // Étape 1: Créer le compte utilisateur
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             full_name: formData.fullName,
             country: formData.country,
@@ -221,27 +358,104 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         }
       });
 
-      if (error) {
+      if (signUpError) {
+        const errorMessage = getErrorMessage(signUpError, language);
         toast({
           title: "Erreur d'inscription",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-      } else {
+        return;
+      }
+
+      // Étape 2: Vérifier si l'email nécessite confirmation
+      if (signUpData.user && !signUpData.user.email_confirmed_at) {
+        // Email nécessite confirmation
         toast({
           title: "Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte.",
+          description: "Veuillez vérifier votre email et cliquer sur le lien de confirmation pour activer votre compte.",
         });
-        navigate('/');
+        
+        if (onClose) {
+          onClose();
+        } else {
+          navigate('/auth');
+        }
+        return;
       }
+
+      // Étape 3: Si l'email est déjà confirmé ou pas de confirmation requise, connecter automatiquement
+      if (signUpData.user && signUpData.user.email_confirmed_at) {
+        // L'utilisateur est déjà connecté après l'inscription
+        await handleAutoLogin(formData.email, formData.password);
+      } else {
+        // Tentative de connexion automatique
+        await handleAutoLogin(formData.email, formData.password);
+      }
+
     } catch (error) {
+      const errorMessage = getErrorMessage(error, language);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'inscription.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      hideLoader();
+    }
+  };
+
+  // Fonction pour la connexion automatique
+  const handleAutoLogin = async (email: string, password: string) => {
+    try {
+      showLoader("Connexion automatique...", "heart");
+      
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (signInError) {
+        // Si la connexion automatique échoue, afficher un message
+        toast({
+          title: "Inscription réussie",
+          description: "Votre compte a été créé. Veuillez vous connecter manuellement.",
+        });
+        
+        if (onClose) {
+          onClose();
+        } else {
+          navigate('/auth');
+        }
+        return;
+      }
+
+      // Connexion réussie - rediriger vers le dashboard
+      if (signInData.user) {
+        toast({
+          title: "Inscription réussie",
+          description: "Votre compte a été créé et vous êtes maintenant connecté !",
+        });
+
+        // Rediriger vers le dashboard
+        navigate('/dashboard');
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la connexion automatique:', error);
+      
+      // Fallback: afficher un message de succès et rediriger vers la page de connexion
+      toast({
+        title: "Inscription réussie",
+        description: "Votre compte a été créé. Veuillez vous connecter manuellement.",
+      });
+      
+      if (onClose) {
+        onClose();
+      } else {
+        navigate('/auth');
+      }
     }
   };
 
@@ -513,9 +727,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             />
           </div>
 
-          <Button type="submit" className="btn-hero w-full" disabled={loading}>
-            {loading ? "Création en cours..." : t.createAccount}
-          </Button>
+          <LoadingButton 
+            type="submit" 
+            className="btn-hero w-full" 
+            loading={loading}
+            loadingText="Création en cours..."
+            loadingVariant="heart"
+          >
+            {t.createAccount}
+          </LoadingButton>
         </form>
       </CardContent>
     </Card>

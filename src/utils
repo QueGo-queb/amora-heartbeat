@@ -1,0 +1,55 @@
+/**
+ * Utilitaires pour la pagination cursor-based
+ * Encode/décode les cursors pour la pagination
+ */
+
+export interface Cursor {
+  created_at: string;
+  id: string;
+}
+
+/**
+ * Encode un cursor en base64
+ */
+export function encodeCursor(cursor: Cursor): string {
+  return Buffer.from(JSON.stringify(cursor)).toString('base64');
+}
+
+/**
+ * Décode un cursor depuis base64
+ */
+export function decodeCursor(encodedCursor: string): Cursor | null {
+  try {
+    const decoded = Buffer.from(encodedCursor, 'base64').toString();
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error('Error decoding cursor:', error);
+    return null;
+  }
+}
+
+/**
+ * Construit la clause WHERE pour la pagination cursor-based
+ */
+export function buildCursorWhere(cursor: Cursor | null): string {
+  if (!cursor) {
+    return '';
+  }
+  
+  return `
+    AND (
+      posts.created_at < '${cursor.created_at}' 
+      OR (posts.created_at = '${cursor.created_at}' AND posts.id < '${cursor.id}')
+    )
+  `;
+}
+
+/**
+ * Génère le prochain cursor à partir du dernier post
+ */
+export function generateNextCursor(lastPost: { created_at: string; id: string }): string {
+  return encodeCursor({
+    created_at: lastPost.created_at,
+    id: lastPost.id
+  });
+}

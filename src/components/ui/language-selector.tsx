@@ -19,6 +19,7 @@ const languages: Language[] = [
   { code: "en", name: "English", flag: "🇺🇸" },
   { code: "ht", name: "Kreyòl", flag: "🇭🇹" },
   { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "ptBR", name: "Português", flag: "🇧🇷" },
 ];
 
 interface LanguageSelectorProps {

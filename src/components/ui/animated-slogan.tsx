@@ -5,6 +5,7 @@ interface Slogan {
   en: string;
   ht: string;
   es: string;
+  ptBR: string;
 }
 
 const slogans: Slogan[] = [
@@ -12,91 +13,106 @@ const slogans: Slogan[] = [
     fr: "L'amour n'a pas de frontières. Trouve ta moitié, où qu'elle soit.",
     en: "Love has no borders. Find your soulmate, wherever they are.",
     ht: "Lanmou pa gen fwontyè. Jwenn nanm ou yo, kote yo ye.",
-    es: "El amor no tiene fronteras. Encuentra tu alma gemela, donde sea que esté."
+    es: "El amor no tiene fronteras. Encuentra tu alma gemela, donde sea que esté.",
+    ptBR: "O amor não tem fronteiras. Encontre sua alma gêmea, onde quer que esteja."
   },
   {
     fr: "Des cœurs connectés, des cultures réunies.",
     en: "Connected hearts, united cultures.",
     ht: "Kè ki konekte, kilti ki rasanble.",
-    es: "Corazones conectados, culturas unidas."
+    es: "Corazones conectados, culturas unidas.",
+    ptBR: "Corações conectados, culturas unidas."
   },
   {
     fr: "Rencontrer. Partager. Aimer. Sans limites.",
     en: "Meet. Share. Love. Without limits.",
     ht: "Rankontre. Pataje. Renmen. San limit.",
-    es: "Conocer. Compartir. Amar. Sin límites."
+    es: "Conocer. Compartir. Amar. Sin límites.",
+    ptBR: "Conhecer. Compartilhar. Amar. Sem limites."
   },
   {
     fr: "Ton histoire commence ici.",
     en: "Your story begins here.",
     ht: "Istwa ou a kòmanse isit la.",
-    es: "Tu historia comienza aquí."
+    es: "Tu historia comienza aquí.",
+    ptBR: "Sua história começa aqui."
   },
   {
     fr: "L'amour afro-caribéen et latino, à portée de clic.",
     en: "Afro-Caribbean and Latino love, just a click away.",
     ht: "Lanmou afwo-karayiben ak latino a, yon klik sèlman.",
-    es: "Amor afrocaribeño y latino, a solo un clic."
+    es: "Amor afrocaribeño y latino, a solo un clic.",
+    ptBR: "Amor afro-caribenho e latino, a apenas um clique de distância."
   },
   {
     fr: "Crée ton lien. Vis ton amour.",
     en: "Create your bond. Live your love.",
     ht: "Kreye konneksyon ou. Viv lanmou ou.",
-    es: "Crea tu vínculo. Vive tu amor."
+    es: "Crea tu vínculo. Vive tu amor.",
+    ptBR: "Crie seu vínculo. Viva seu amor."
   },
   {
     fr: "L'amour sans frontières, pour des cœurs qui se ressemblent.",
     en: "Love without borders, for hearts that are alike.",
     ht: "Lanmou san fwontyè, pou kè ki sanble.",
-    es: "Amor sin fronteras, para corazones que se parecen."
+    es: "Amor sin fronteras, para corazones que se parecen.",
+    ptBR: "Amor sem fronteiras, para corações que se parecem."
   },
   {
     fr: "Un monde, trois cultures, une seule intention : aimer.",
     en: "One world, three cultures, one intention: to love.",
     ht: "Yon mond, twa kilti, yon sèl entansyon: pou renmen.",
-    es: "Un mundo, tres culturas, una intención: amar."
+    es: "Un mundo, tres culturas, una intención: amar.",
+    ptBR: "Um mundo, três culturas, uma única intenção: amar."
   },
   {
     fr: "Rencontrez votre moitié, là où l'amour parle toutes les langues.",
     en: "Meet your soulmate, where love speaks all languages.",
     ht: "Rankontre nanm ou an, kote lanmou pale tout lang.",
-    es: "Conoce a tu alma gemela, donde el amor habla todos los idiomas."
+    es: "Conoce a tu alma gemela, donde el amor habla todos los idiomas.",
+    ptBR: "Encontre sua alma gêmea, onde o amor fala todas as línguas."
   },
   {
     fr: "Amora — là où les cœurs de la diaspora se retrouvent.",
     en: "Amora — where diaspora hearts reconnect.",
     ht: "Amora — kote kè dyaspora yo jwenn yo.",
-    es: "Amora — donde los corazones de la diáspora se reencuentran."
+    es: "Amora — donde los corazones de la diáspora se reencuentran.",
+    ptBR: "Amora — onde os corações da diáspora se reencontram."
   },
   {
     fr: "Créez votre lien. Vivez votre amour.",
     en: "Create your connection. Live your love.",
     ht: "Kreye konneksyon ou. Viv lanmou ou.",
-    es: "Crea tu conexión. Vive tu amor."
+    es: "Crea tu conexión. Vive tu amor.",
+    ptBR: "Crie sua conexão. Viva seu amor."
   },
   {
     fr: "Des connexions vraies, des histoires sincères.",
     en: "Real connections, sincere stories.",
     ht: "Konneksyon vre, istwa onèt.",
-    es: "Conexiones reales, historias sinceras."
+    es: "Conexiones reales, historias sinceras.",
+    ptBR: "Conexões verdadeiras, histórias sinceras."
   },
   {
     fr: "Amora — parce que l'amour mérite son propre espace.",
     en: "Amora — because love deserves its own space.",
     ht: "Amora — paske lanmou merite pwòp espas li.",
-    es: "Amora — porque el amor merece su propio espacio."
+    es: "Amora — porque el amor merece su propio espacio.",
+    ptBR: "Amora — porque o amor merece seu próprio espaço."
   },
   {
     fr: "Ici, l'amour est une langue que tout le monde comprend.",
     en: "Here, love is a language everyone understands.",
     ht: "Isit la, lanmou se yon lang tout moun konprann.",
-    es: "Aquí, el amor es un idioma que todos entienden."
+    es: "Aquí, el amor es un idioma que todos entienden.",
+    ptBR: "Aqui, o amor é uma língua que todos entendem."
   },
   {
     fr: "Votre cœur connaît déjà la route. Amora vous y conduit.",
     en: "Your heart already knows the way. Amora leads you there.",
     ht: "Kè ou deja konnen wout la. Amora mennen ou la.",
-    es: "Tu corazón ya conoce el camino. Amora te lleva allí."
+    es: "Tu corazón ya conoce el camino. Amora te lleva allí.",
+    ptBR: "Seu coração já conhece o caminho. Amora te leva até lá."
   }
 ];
 

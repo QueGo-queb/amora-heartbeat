@@ -1,0 +1,36 @@
+/**
+ * Types pour le système de footer modifiable
+ */
+
+export interface FooterLinks {
+  home: string;
+  about: string;
+  contact: string;
+  faq: string;
+  terms: string;
+  privacy: string;
+}
+
+export interface FooterSocials {
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  linkedin: string;
+  tiktok: string;
+}
+
+export interface FooterContent {
+  id: string;
+  links: FooterLinks;
+  socials: FooterSocials;
+  newsletter_text: string;
+  copyright: string;
+  updated_at: string;
+}
+
+export interface UpdateFooterRequest {
+  links?: Partial<FooterLinks>;
+  socials?: Partial<FooterSocials>;
+  newsletter_text?: string;
+  copyright?: string;
+}

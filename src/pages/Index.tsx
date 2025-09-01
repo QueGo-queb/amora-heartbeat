@@ -121,6 +121,33 @@ const Index = () => {
         matching: "Algoritmo avanzado",
         matchingDesc: "Compatibilidad basada en tus valores culturales"
       }
+    },
+    ptBR: {
+      hero: "Encontre o amor sem fronteiras",
+      subtitle: "A plataforma de encontros multicultural dedicada a solteiros haitianos, latinos, caribenhos e africanos em todo o mundo",
+      cta: "Crie sua conta para encontrar sua alma gêmea",
+      login: "Entrar",
+      features: {
+        matching: "Matching inteligente",
+        matchingDesc: "Algoritmo baseado em suas preferências culturais e geográficas",
+        community: "Comunidade diversa",
+        communityDesc: "Conheça solteiros do Haiti, América Latina, Caribe e África",
+        messaging: "Mensagens seguras",
+        messagingDesc: "Comunique-se com segurança em seu idioma preferido"
+      },
+      stats: {
+        members: "Membros ativos",
+        countries: "Países representados",
+        matches: "Conexões bem-sucedidas"
+      },
+      premium: {
+        title: "Desbloqueie seu potencial amoroso",
+        subtitle: "Junte-se a milhares de solteiros que encontraram o amor através de nossos recursos premium",
+        security: "Segurança máxima",
+        securityDesc: "Perfis verificados e moderação 24h/7d",
+        matching: "Algoritmo avançado",
+        matchingDesc: "Compatibilidade baseada em seus valores culturais"
+      }
     }
   };
 
@@ -280,7 +307,7 @@ const Index = () => {
             <span className="text-2xl font-bold gradient-text">AMORA</span>
           </div>
           <p className="text-muted-foreground">
-            L'amour sans frontières • Love without borders • Lanmou san fwontyè • Amor sin fronteras
+            L'amour sans frontières • Love without borders • Lanmou san fwontyè • Amor sin fronteras • Amor sem fronteiras
           </p>
         </div>
       </footer>
