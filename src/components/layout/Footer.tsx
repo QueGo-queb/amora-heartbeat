@@ -7,10 +7,10 @@ const Footer = () => {
   const [currentYear] = useState(new Date().getFullYear());
 
   // Gestion de l'inscription à la newsletter
-  const handleNewsletterSubscribe = async (e) => {
+  const handleNewsletterSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-
+    
     setSubscribing(true);
     try {
       // Simulation d'une requête API
@@ -84,7 +84,6 @@ const Footer = () => {
         {/* Section principale */}
         <div className="container mx-auto px-6 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-            
             {/* À propos d'Amora */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-6">
@@ -97,24 +96,25 @@ const Footer = () => {
                   {footerData.company.name}
                 </span>
               </div>
-              
               <p className="text-gray-300 leading-relaxed mb-8 text-sm">
                 {footerData.company.description}
               </p>
-
               {/* Statistiques */}
               <div className="space-y-4">
-                {footerData.company.stats.map((stat, index) => (
-                  <div key={index} className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
-                      <stat.icon className="w-4 h-4 text-red-400" />
+                {footerData.company.stats.map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={index} className="flex items-center gap-3 text-sm">
+                      <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                        <Icon className="w-4 h-4 text-red-400" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-white">{stat.value}</span>
+                        <span className="text-gray-400 ml-1">{stat.label}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-semibold text-white">{stat.value}</span>
-                      <span className="text-gray-400 ml-1">{stat.label}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -124,8 +124,8 @@ const Footer = () => {
               <ul className="space-y-3">
                 {footerData.quickLinks.map((link, index) => (
                   <li key={index}>
-                    <a
-                      href={link.href}
+                    <a 
+                      href={link.href} 
                       className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
@@ -134,13 +134,12 @@ const Footer = () => {
                   </li>
                 ))}
               </ul>
-
               <h4 className="text-lg font-semibold mt-8 mb-4 text-white">Support</h4>
               <ul className="space-y-3">
                 {footerData.support.map((link, index) => (
                   <li key={index}>
-                    <a
-                      href={link.href}
+                    <a 
+                      href={link.href} 
                       className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
@@ -154,49 +153,53 @@ const Footer = () => {
             {/* Contact */}
             <div>
               <h3 className="text-xl font-semibold mb-6 text-white">Contact</h3>
-              
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3 text-sm">
                   <MapPin className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-300">{footerData.contact.address}</span>
                 </div>
-                
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <a href={`tel:${footerData.contact.phone}`} className="text-gray-300 hover:text-white transition-colors">
+                  <a 
+                    href={`tel:${footerData.contact.phone}`} 
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
                     {footerData.contact.phone}
                   </a>
                 </div>
-                
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <a href={`mailto:${footerData.contact.email}`} className="text-gray-300 hover:text-white transition-colors">
+                  <a 
+                    href={`mailto:${footerData.contact.email}`} 
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
                     {footerData.contact.email}
                   </a>
                 </div>
-                
                 <div className="flex items-center gap-3 text-sm">
                   <Clock className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <span className="text-gray-300">{footerData.contact.hours}</span>
                 </div>
               </div>
-
               {/* Réseaux sociaux */}
               <div>
                 <h4 className="text-lg font-semibold mb-4 text-white">Suivez-nous</h4>
                 <div className="flex space-x-4">
-                  {footerData.socials.map((social, index) => (
-                    <a
-                      key={index}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center transition-all duration-300 hover:transform hover:scale-110 hover:bg-slate-600 ${social.color}`}
-                      aria-label={social.name}
-                    >
-                      <social.icon className="w-5 h-5" />
-                    </a>
-                  ))}
+                  {footerData.socials.map((social, index) => {
+                    const Icon = social.icon;
+                    return (
+                      <a 
+                        key={index} 
+                        href={social.href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={`w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center transition-all duration-300 hover:transform hover:scale-110 hover:bg-slate-600 ${social.color}`}
+                        aria-label={social.name}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -207,21 +210,19 @@ const Footer = () => {
               <p className="text-gray-300 text-sm mb-6 leading-relaxed">
                 Recevez nos dernières actualités, conseils de rencontre et histoires de succès directement dans votre boîte mail.
               </p>
-              
               <div className="space-y-4">
                 <div className="relative">
-                  <input
-                    type="email"
-                    placeholder="Votre adresse email"
-                    value={email}
+                  <input 
+                    type="email" 
+                    placeholder="Votre adresse email" 
+                    value={email} 
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required 
                   />
                   <Mail className="absolute right-3 top-3.5 w-4 h-4 text-gray-400" />
                 </div>
-                
-                <button
+                <button 
                   onClick={handleNewsletterSubscribe}
                   disabled={subscribing}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:transform hover:scale-[1.02] active:scale-[0.98]"
@@ -238,16 +239,15 @@ const Footer = () => {
                     </>
                   )}
                 </button>
-              </div>
-
-              <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-medium text-white">100% sécurisé</span>
+                <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-green-400" />
+                    <span className="text-sm font-medium text-white">100% sécurisé</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Vos données sont protégées et nous ne partageons jamais votre email avec des tiers.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Vos données sont protégées et nous ne partageons jamais votre email avec des tiers.
-                </p>
               </div>
             </div>
           </div>
@@ -259,7 +259,6 @@ const Footer = () => {
         {/* Footer bottom */}
         <div className="container mx-auto px-6 py-8">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            
             {/* Copyright */}
             <div className="text-center lg:text-left">
               <p className="text-gray-400 text-sm">
@@ -269,20 +268,18 @@ const Footer = () => {
                 L'amour n'a pas de frontières - Connectons les cœurs du monde entier
               </p>
             </div>
-
             {/* Liens légaux */}
             <div className="flex flex-wrap justify-center gap-6">
               {footerData.legal.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.href}
+                <a 
+                  key={index} 
+                  href={link.href} 
                   className="text-gray-400 hover:text-white text-sm transition-colors duration-300"
                 >
                   {link.name}
                 </a>
               ))}
             </div>
-
             {/* Badge de qualité */}
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Heart className="w-4 h-4 text-red-400 fill-current animate-pulse" />

@@ -55,7 +55,7 @@ const MenuHamburger = () => {
   const menuItems: MenuItem[] = [
     {
       id: 'feed',
-      label: 'Fil d\'actualité',
+      label: '📱 Fil d\'actualité',
       icon: Home,
       href: '/feed'
     },

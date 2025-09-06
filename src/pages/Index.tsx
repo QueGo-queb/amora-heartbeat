@@ -165,7 +165,7 @@ const Index = () => {
             <span className="text-2xl font-bold gradient-text">AMORA</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="hidden sm:inline-flex" asChild>
+            <Button variant="outline" className="inline-flex" asChild>
               <Link to="/auth">{t.login}</Link>
             </Button>
             <LanguageSelector 

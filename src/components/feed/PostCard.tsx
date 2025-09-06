@@ -3,7 +3,7 @@
  * Inclut l'auteur, le contenu, les interactions et les actions
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,6 +18,10 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS, es, ptBR } from 'date-fns/locale';
 import type { FeedPost } from '@/types/feed';
+import { supabase } from '@/integrations/supabase/client';
+import { usePremium } from '@/hooks/usePremium';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface PostCardProps {
   post: FeedPost;
@@ -30,9 +34,39 @@ const locales = { fr, en: enUS, es, 'pt-BR': ptBR };
 export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false); // TODO: Récupérer depuis l'API
   const [showFullContent, setShowFullContent] = useState(false);
+  const [currentUserInterests, setCurrentUserInterests] = useState<string[]>([]);
   
   const isAuthor = currentUserId === post.user_id;
   const isPremium = post.profiles.plan === 'premium';
+
+  // Récupérer les intérêts de l'utilisateur actuel
+  useEffect(() => {
+    const getCurrentUserInterests = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('interests')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile?.interests) {
+            setCurrentUserInterests(profile.interests);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching current user interests:', err);
+      }
+    };
+
+    getCurrentUserInterests();
+  }, []);
+
+  // Calculer les intérêts communs
+  const commonInterests = post.profiles.interests?.filter(interest => 
+    currentUserInterests.includes(interest)
+  ) || [];
 
   // Formater la date relative
   const formatDate = (dateString: string) => {
@@ -60,29 +94,26 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.profiles.email}`} 
-                alt={post.profiles.full_name || 'Utilisateur'}
-              />
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={post.profiles.avatar_url} />
               <AvatarFallback>
-                {post.profiles.full_name?.charAt(0) || 'U'}
+                {post.profiles.full_name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm truncate">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-gray-900 truncate">
                   {post.profiles.full_name || 'Utilisateur'}
                 </h3>
                 {isPremium && (
-                  <Badge variant="premium" className="text-xs">
-                    Premium
+                  <Badge variant="default" className="bg-gradient-to-r from-yellow-400 to-orange-500">
+                    PREMIUM
                   </Badge>
                 )}
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="w-3 h-3" />
                 <span>{formatDate(post.created_at)}</span>
                 {post.profiles.location && (
@@ -96,27 +127,38 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
             </div>
           </div>
 
+          {/* Menu des options */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="icon">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(post.content)}>
-                Copier le texte
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(`/posts/${post.id}`, '_blank')}>
-                Ouvrir dans un nouvel onglet
-              </DropdownMenuItem>
-              {isAuthor && (
-                <DropdownMenuItem className="text-red-600">
-                  Supprimer
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem>Signaler</DropdownMenuItem>
+              {isAuthor && <DropdownMenuItem>Modifier</DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Intérêts communs */}
+        {commonInterests.length > 0 && (
+          <div className="mt-3 pt-3 border-t">
+            <div className="flex items-center gap-2 mb-2">
+              <Heart className="w-4 h-4 text-heart-red" />
+              <span className="text-sm font-medium text-gray-700">
+                Intérêts communs ({commonInterests.length})
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {commonInterests.map((interest) => (
+                <Badge key={interest} variant="secondary" className="text-xs">
+                  {interest}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="pt-0">

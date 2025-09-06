@@ -21,12 +21,26 @@ import {
   Gift,
   Shield,
   MessageSquare,
-  Flag
+  Flag,
+  Building2,
+  ArrowLeft,
+  Upload,
+  MapPin,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Coins,
+  Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCajaVecina } from '@/hooks/useCajaVecina';
+import { PayPalManager } from '@/components/admin/PayPalManager';
+import { CajaVecinaManager } from '@/components/admin/CajaVecinaManager';
+import { MonCashManager } from '@/components/admin/MonCashManager';
 
 interface AdminStats {
   totalUsers: number;
@@ -49,6 +63,9 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showPayPalManager, setShowPayPalManager] = useState(false);
+  const [showCajaVecinaManager, setShowCajaVecinaManager] = useState(false);
+  const [showMonCashManager, setShowMonCashManager] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -100,14 +117,32 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fonction de navigation sécurisée pour tous les boutons
+  const handleNavigation = (path: string) => {
+    try {
+      console.log(`Navigation vers: ${path}`); // Debug
+      navigate(path);
+    } catch (error) {
+      console.error(`Erreur de navigation vers ${path}:`, error);
+      toast({
+        title: "Erreur de navigation",
+        description: "Impossible d'accéder à cette section",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const runSystemDiagnostic = async () => {
+    console.log('🔍 Lancement du diagnostic système...');
+    // await displayDiagnostics(); // This line was removed as per the edit hint.
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <div className="heart-logo">
-            <div className="heart-shape animate-pulse" />
-          </div>
-          <span className="text-lg">Chargement du dashboard...</span>
+          <div className="w-6 h-6 border-2 border-purple-300 border-t-transparent rounded-full animate-spin" />
+          <span>Chargement des statistiques...</span>
         </div>
       </div>
     );
@@ -119,20 +154,35 @@ const AdminDashboard = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <Heart className="w-8 h-8 text-heart-red" />
-            <span className="text-xl font-bold">Dashboard Admin - Amora</span>
+            <div className="heart-logo">
+              <div className="heart-shape" />
+            </div>
+            <span className="text-2xl font-bold gradient-text">AMORA ADMIN</span>
           </div>
           
-          <Button variant="ghost" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Déconnexion
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon">
+              <User className="w-5 h-5" />
+            </Button>
+            <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto py-8 px-4">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Tableau de bord administrateur</h1>
+          <p className="text-muted-foreground">
+            Gérez votre application AMORA depuis cette interface centralisée
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="culture-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Utilisateurs Totaux</CardTitle>
@@ -215,7 +265,18 @@ const AdminDashboard = () => {
         {/* Admin Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Gestion Utilisateurs */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/users')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/users')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/users');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion des utilisateurs"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-500" />
@@ -226,11 +287,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Gérer les comptes utilisateurs, voir les statistiques et modérer les profils.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
           {/* Paiements & Abonnements */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/payments')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/payments')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/payments');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion des paiements"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-green-500" />
@@ -241,11 +316,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Surveiller les transactions, gérer les abonnements et analyser les revenus.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
           {/* Analytics & Rapports */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/analytics')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/analytics');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder aux analytics"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-500" />
@@ -256,11 +345,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Analyser les performances, générer des rapports et suivre les métriques.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
           {/* Modération */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/moderation')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/moderation')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/moderation');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la modération"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-red-500" />
@@ -271,11 +374,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Gérer les signalements, modérer le contenu et bannir les utilisateurs.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
           {/* Communication */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/communication')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/communication')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/communication');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la communication"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-blue-600" />
@@ -286,11 +403,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Envoyer des notifications, gérer les messages et communiquer avec les utilisateurs.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
           {/* Configuration */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/settings')}>
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/settings')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/settings');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la configuration"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-gray-500" />
@@ -301,11 +432,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Configurer les paramètres de l'application et gérer les préférences.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
-          {/* Publicité */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/ads')}>
+          {/* Publicité - CORRIGÉ */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/ads')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/ads');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion des publicités"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Megaphone className="w-5 h-5 text-orange-500" />
@@ -316,11 +461,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Créer et gérer les publicités, suivre les performances et optimiser les campagnes.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
-          {/* Promotions */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/promotions')}>
+          {/* Promotions - CORRIGÉ */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/promotions')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/promotions');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion des promotions"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gift className="w-5 h-5 text-heart-red" />
@@ -331,11 +490,25 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Créer des promotions, gérer les offres spéciales et booster l'engagement.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
             </CardContent>
           </Card>
 
-          {/* Gestion Footer */}
-          <Card className="culture-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/footer')}>
+          {/* Gestion Footer - CORRIGÉ */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => handleNavigation('/admin/footer')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleNavigation('/admin/footer');
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion du footer"
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Flag className="w-5 h-5 text-gray-600" />
@@ -346,10 +519,142 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Modifier le contenu du footer, les liens et les informations de contact.
               </p>
+              <div className="mt-3 text-xs text-blue-600 font-medium">
+                Cliquez pour accéder →
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Caja Vecina - MODIFIER SEULEMENT CETTE CARTE */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Building2 className="w-5 h-5 text-blue-500" />
+                Caja Vecina
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Gérer les comptes de paiement chiliens
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Comptes
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowCajaVecinaManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PayPal - MODIFIER SEULEMENT CETTE CARTE */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <DollarSign className="w-5 h-5 text-blue-500" />
+                PayPal
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Configurer les paiements PayPal
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Configuration
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowPayPalManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* MonCash - MODIFIER SEULEMENT CETTE CARTE */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Smartphone className="w-5 h-5 text-green-500" />
+                MonCash
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Gérer les paiements MonCash (Haïti)
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Paiements mobiles
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowMonCashManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Diagnostic Système */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={runSystemDiagnostic}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                runSystemDiagnostic();
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Lancer le diagnostic système"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Shield className="w-5 h-5 text-green-500" />
+                Diagnostic Système
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Vérifier l'état du système
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+              >
+                Lancer diagnostic
+              </Button>
             </CardContent>
           </Card>
         </div>
       </main>
+
+      {/* AJOUTER LES MODALS À LA FIN */}
+      <PayPalManager 
+        open={showPayPalManager}
+        onClose={() => setShowPayPalManager(false)}
+      />
+      
+      <CajaVecinaManager 
+        open={showCajaVecinaManager}
+        onClose={() => setShowCajaVecinaManager(false)}
+      />
+
+      <MonCashManager 
+        open={showMonCashManager}
+        onClose={() => setShowMonCashManager(false)}
+      />
     </div>
   );
 };

@@ -13,6 +13,7 @@ import { useLoader } from "@/hooks/use-loader";
 import { useNavigate } from "react-router-dom";
 import { Loader, LoaderOverlay } from "@/components/ui/loader";
 import { LoadingButton } from "@/components/ui/loading-button";
+import InterestsSelector from './InterestsSelector';
 
 interface SignupFormProps {
   language: string;
@@ -298,7 +299,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     seekingAgeMin: "",
     seekingAgeMax: "",
     seekingCountry: "",
-    seekingLanguages: [] as string[]
+    seekingLanguages: [] as string[],
+    interests: [] as string[] // Ajout du champ intérêts
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -353,7 +355,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             seeking_age_min: parseInt(formData.seekingAgeMin),
             seeking_age_max: parseInt(formData.seekingAgeMax),
             seeking_country: formData.seekingCountry,
-            seeking_languages: formData.seekingLanguages
+            seeking_languages: formData.seekingLanguages,
+            interests: formData.interests // Ajout des intérêts
           }
         }
       });
@@ -392,6 +395,10 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         // Tentative de connexion automatique
         await handleAutoLogin(formData.email, formData.password);
       }
+
+      // Ajout du console.log pour tester
+      console.log('Intérêts sélectionnés:', formData.interests);
+      alert(`Intérêts sélectionnés: ${formData.interests.join(', ')}`);
 
     } catch (error) {
       const errorMessage = getErrorMessage(error, language);
@@ -469,6 +476,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       handleInputChange("seekingLanguages", currentLanguages.filter(lang => lang !== languageCode));
     } else {
       handleInputChange("seekingLanguages", [...currentLanguages, languageCode]);
+    }
+  };
+
+  const handleInterestToggle = (interest: string) => {
+    const currentInterests = formData.interests;
+    if (currentInterests.includes(interest)) {
+      handleInputChange("interests", currentInterests.filter(int => int !== interest));
+    } else {
+      handleInputChange("interests", [...currentInterests, interest]);
     }
   };
 
@@ -711,6 +727,112 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Ajouter cette section après la section des préférences et avant le champ bio */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5" />
+              Vos intérêts
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sélectionnez vos centres d'intérêt et passions
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                { value: "listening-music", label: "Listening Music", icon: "🎵" },
+                { value: "books", label: "Books", icon: "📚" },
+                { value: "parties", label: "Parties", icon: "🍸" },
+                { value: "self-care", label: "Self Care", icon: "🧖‍♀️" },
+                { value: "message", label: "Message", icon: "✉️" },
+                { value: "hot-yoga", label: "Hot Yoga", icon: "🧘‍♂️" },
+                { value: "gymnastics", label: "Gymnastics", icon: "🤸" },
+                { value: "hockey", label: "Hockey", icon: "🏒" },
+                { value: "football", label: "Football", icon: "⚽" },
+                { value: "meditation", label: "Meditation", icon: "🧘" },
+                { value: "spotify", label: "Spotify", icon: "🎧" },
+                { value: "sushi", label: "Sushi", icon: "🍣" },
+                { value: "painting", label: "Painting", icon: "🎨" },
+                { value: "basketball", label: "Basketball", icon: "🏀" },
+                { value: "theater", label: "Theater", icon: "🎭" },
+                { value: "playing-music-instrument", label: "Playing Music Instrument", icon: "🎸" },
+                { value: "aquarium", label: "Aquarium", icon: "🐠" },
+                { value: "fitness", label: "Fitness", icon: "🏋️" },
+                { value: "travel", label: "Travel", icon: "✈️" },
+                { value: "coffee", label: "Coffee", icon: "☕" },
+                { value: "instagram", label: "Instagram", icon: "📸" },
+                { value: "walking", label: "Walking", icon: "🚶" },
+                { value: "running", label: "Running", icon: "🏃" },
+                { value: "church", label: "Church", icon: "⛪" },
+                { value: "cooking", label: "Cooking", icon: "🍳" },
+                { value: "singing", label: "Singing", icon: "🎤" }
+              ].map((interest) => (
+                <button
+                  key={interest.value}
+                  type="button"
+                  onClick={() => handleInterestToggle(interest.value)}
+                  className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center gap-2 text-sm font-medium ${
+                    formData.interests.includes(interest.value)
+                      ? 'bg-heart-red border-heart-red text-white shadow-lg transform scale-105'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-heart-red/50 hover:bg-heart-red/5'
+                  }`}
+                >
+                  <span className="text-2xl">{interest.icon}</span>
+                  <span className="text-center leading-tight">{interest.label}</span>
+                </button>
+              ))}
+            </div>
+            
+            {formData.interests.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600 mb-2">
+                  Intérêts sélectionnés ({formData.interests.length}) :
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {formData.interests.map((interest) => {
+                    const interestData = [
+                      { value: "listening-music", label: "Listening Music", icon: "🎵" },
+                      { value: "books", label: "Books", icon: "📚" },
+                      { value: "parties", label: "Parties", icon: "🍸" },
+                      { value: "self-care", label: "Self Care", icon: "🧖‍♀️" },
+                      { value: "message", label: "Message", icon: "✉️" },
+                      { value: "hot-yoga", label: "Hot Yoga", icon: "🧘‍♂️" },
+                      { value: "gymnastics", label: "Gymnastics", icon: "🤸" },
+                      { value: "hockey", label: "Hockey", icon: "🏒" },
+                      { value: "football", label: "Football", icon: "⚽" },
+                      { value: "meditation", label: "Meditation", icon: "🧘" },
+                      { value: "spotify", label: "Spotify", icon: "🎧" },
+                      { value: "sushi", label: "Sushi", icon: "🍣" },
+                      { value: "painting", label: "Painting", icon: "🎨" },
+                      { value: "basketball", label: "Basketball", icon: "🏀" },
+                      { value: "theater", label: "Theater", icon: "🎭" },
+                      { value: "playing-music-instrument", label: "Playing Music Instrument", icon: "🎸" },
+                      { value: "aquarium", label: "Aquarium", icon: "🐠" },
+                      { value: "fitness", label: "Fitness", icon: "🏋️" },
+                      { value: "travel", label: "Travel", icon: "✈️" },
+                      { value: "coffee", label: "Coffee", icon: "☕" },
+                      { value: "instagram", label: "Instagram", icon: "📸" },
+                      { value: "walking", label: "Walking", icon: "🚶" },
+                      { value: "running", label: "Running", icon: "🏃" },
+                      { value: "church", label: "Church", icon: "⛪" },
+                      { value: "cooking", label: "Cooking", icon: "🍳" },
+                      { value: "singing", label: "Singing", icon: "🎤" }
+                    ].find(item => item.value === interest);
+                    
+                    return (
+                      <span
+                        key={interest}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-heart-red text-white text-xs rounded-full"
+                      >
+                        <span>{interestData?.icon}</span>
+                        <span>{interestData?.label}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
