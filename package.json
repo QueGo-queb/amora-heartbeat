@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "build:pwa": "npm run generate-icons && vite build",
     "generate-icons": "node scripts/generate-icons.js",
+    "update-pwa-icons": "node scripts/update-pwa-icons.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "pwa:test": "npm run build:pwa && npm run preview"
