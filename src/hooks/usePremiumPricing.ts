@@ -10,9 +10,11 @@ export interface PremiumPrice {
   price_clp?: number;
   price_htg?: number;
   currency: string;
+  exchange_rates?: any;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: string;
 }
 
 export const usePremiumPricing = () => {
@@ -21,52 +23,104 @@ export const usePremiumPricing = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Charger tous les prix
+  // Vérifier si l'utilisateur est admin
+  const checkAdminAccess = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.email === 'clodenerc@yahoo.fr';
+  };
+
+  // Charger tous les prix en utilisant les fonctions PostgreSQL
   const loadPrices = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('premium_pricing')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPrices(data || []);
       
-      // Trouver le prix actif
-      const active = data?.find(p => p.is_active);
-      setActivePricing(active || null);
+      const { data: { user } } = await supabase.auth.getUser();
+      const isAdmin = user?.email === 'clodenerc@yahoo.fr';
+      
+      if (isAdmin) {
+        // Admin : récupérer tous les prix via fonction PostgreSQL
+        const { data, error } = await supabase.rpc('get_all_premium_pricing', {
+          admin_email: user.email
+        });
+
+        if (error) {
+          console.error('Erreur fonction admin:', error);
+          // Fallback : essayer la méthode directe
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('premium_pricing')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (fallbackError) throw fallbackError;
+          setPrices(fallbackData || []);
+        } else {
+          setPrices(data || []);
+        }
+        
+        // Trouver le prix actif
+        const active = (data || []).find((p: any) => p.is_active);
+        setActivePricing(active || null);
+      } else {
+        // Public : récupérer seulement le prix actif
+        const { data, error } = await supabase.rpc('get_active_premium_pricing');
+        
+        if (error) {
+          console.error('Erreur fonction publique:', error);
+          // Fallback : essayer la méthode directe
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('premium_pricing')
+            .select('*')
+            .eq('is_active', true)
+            .single();
+          
+          if (fallbackError && fallbackError.code !== 'PGRST116') {
+            throw fallbackError;
+          }
+          
+          setPrices(fallbackData ? [fallbackData] : []);
+          setActivePricing(fallbackData || null);
+        } else {
+          const activePrice = data?.[0] || null;
+          setPrices(activePrice ? [activePrice] : []);
+          setActivePricing(activePrice);
+        }
+      }
     } catch (error) {
       console.error('Erreur chargement prix:', error);
+      setPrices([]);
+      setActivePricing(null);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les prix",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Créer ou mettre à jour un prix
-  const savePricing = async (pricingData: Omit<PremiumPrice, 'id' | 'created_at' | 'updated_at'>) => {
+  // Sauvegarder un prix en utilisant la fonction PostgreSQL
+  const savePricing = async (pricingData: Omit<PremiumPrice, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
-
-      // Si on active ce prix, désactiver les autres
-      if (pricingData.is_active) {
-        await supabase
-          .from('premium_pricing')
-          .update({ is_active: false })
-          .eq('is_active', true);
+      if (!user || user.email !== 'clodenerc@yahoo.fr') {
+        throw new Error('Accès non autorisé - Admin requis');
       }
 
-      const { data, error } = await supabase
-        .from('premium_pricing')
-        .insert({
-          ...pricingData,
-          created_by: user.id,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      // Utiliser la fonction PostgreSQL
+      const { data, error } = await supabase.rpc('save_premium_pricing', {
+        admin_email: user.email,
+        p_price_usd: pricingData.price_usd,
+        p_price_eur: pricingData.price_eur,
+        p_price_cad: pricingData.price_cad,
+        p_price_clp: pricingData.price_clp,
+        p_price_htg: pricingData.price_htg,
+        p_currency: pricingData.currency || 'USD',
+        p_exchange_rates: pricingData.exchange_rates || {},
+        p_is_active: pricingData.is_active,
+        p_created_by: user.id
+      });
 
       if (error) throw error;
 
@@ -76,8 +130,8 @@ export const usePremiumPricing = () => {
       });
 
       await loadPrices();
-      return data;
     } catch (error: any) {
+      console.error('Erreur sauvegarde prix:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la sauvegarde",
@@ -93,20 +147,14 @@ export const usePremiumPricing = () => {
   const activatePricing = async (id: string) => {
     setLoading(true);
     try {
-      // Désactiver tous les prix
-      await supabase
-        .from('premium_pricing')
-        .update({ is_active: false })
-        .eq('is_active', true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'clodenerc@yahoo.fr') {
+        throw new Error('Accès non autorisé - Admin requis');
+      }
 
-      // Activer le prix sélectionné
-      const { error } = await supabase
-        .from('premium_pricing')
-        .update({ 
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      const { error } = await supabase.rpc('activate_premium_pricing', {
+        pricing_id: id
+      });
 
       if (error) throw error;
 
@@ -117,6 +165,7 @@ export const usePremiumPricing = () => {
 
       await loadPrices();
     } catch (error: any) {
+      console.error('Erreur activation prix:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de l'activation",
@@ -131,6 +180,12 @@ export const usePremiumPricing = () => {
   const deletePricing = async (id: string) => {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'clodenerc@yahoo.fr') {
+        throw new Error('Accès non autorisé - Admin requis');
+      }
+
+      // Utiliser une requête directe pour la suppression
       const { error } = await supabase
         .from('premium_pricing')
         .delete()
@@ -145,6 +200,7 @@ export const usePremiumPricing = () => {
 
       await loadPrices();
     } catch (error: any) {
+      console.error('Erreur suppression prix:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la suppression",

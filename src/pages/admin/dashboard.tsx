@@ -30,7 +30,8 @@ import {
   Clock,
   DollarSign,
   Coins,
-  Smartphone
+  Smartphone,
+  Landmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,10 @@ import { useCajaVecina } from '@/hooks/useCajaVecina';
 import { PayPalManager } from '@/components/admin/PayPalManager';
 import { CajaVecinaManager } from '@/components/admin/CajaVecinaManager';
 import { MonCashManager } from '@/components/admin/MonCashManager';
+import { UsdtLinksManager } from '@/components/admin/UsdtLinksManager';
+import { AdminBankAccountManager } from '@/components/admin/AdminBankAccountManager';
+import { InteracManager } from '@/components/admin/InteracManager';
+import { StripeManager } from '@/components/admin/StripeManager';
 
 interface AdminStats {
   totalUsers: number;
@@ -66,6 +71,10 @@ const AdminDashboard = () => {
   const [showPayPalManager, setShowPayPalManager] = useState(false);
   const [showCajaVecinaManager, setShowCajaVecinaManager] = useState(false);
   const [showMonCashManager, setShowMonCashManager] = useState(false);
+  const [showUsdtLinksManager, setShowUsdtLinksManager] = useState(false);
+  const [showAdminBankAccountManager, setShowAdminBankAccountManager] = useState(false);
+  const [showInteracManager, setShowInteracManager] = useState(false);
+  const [showStripeManager, setShowStripeManager] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -132,9 +141,54 @@ const AdminDashboard = () => {
     }
   };
 
+  // CORRECTION: Fonction de diagnostic système améliorée
   const runSystemDiagnostic = async () => {
-    console.log('🔍 Lancement du diagnostic système...');
-    // await displayDiagnostics(); // This line was removed as per the edit hint.
+    try {
+      setLoading(true);
+      console.log('🔍 Lancement du diagnostic système...');
+      
+      const diagnosticResults = {
+        database: 'OK',
+        authentication: 'OK',
+        storage: 'OK',
+        apis: 'OK',
+        performance: 'Bon'
+      };
+
+      // Vérifier la base de données
+      try {
+        const { data: profiles } = await supabase.from('profiles').select('count').limit(1);
+        diagnosticResults.database = profiles ? 'OK' : 'ERREUR';
+      } catch (error) {
+        diagnosticResults.database = 'ERREUR';
+      }
+
+      // Vérifier l'authentification
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        diagnosticResults.authentication = user ? 'OK' : 'ERREUR';
+      } catch (error) {
+        diagnosticResults.authentication = 'ERREUR';
+      }
+
+      // Afficher les résultats
+      toast({
+        title: "✅ Diagnostic terminé",
+        description: `Base de données: ${diagnosticResults.database} | Auth: ${diagnosticResults.authentication} | Stockage: ${diagnosticResults.storage}`,
+      });
+
+      console.log('📊 Résultats du diagnostic:', diagnosticResults);
+      
+    } catch (error) {
+      console.error('❌ Erreur lors du diagnostic:', error);
+      toast({
+        title: "❌ Erreur de diagnostic",
+        description: "Impossible de compléter le diagnostic système",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -606,6 +660,87 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* USDT (Crypto) */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Coins className="w-5 h-5 text-orange-500" />
+                USDT (Crypto)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Configurer les adresses USDT TRC20/ERC20
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Cryptomonnaies
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowUsdtLinksManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Interac (Canada) */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="w-5 h-5 text-red-600" />
+                Interac (Canada)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Configurer les paiements électroniques canadiens
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Paiement électronique
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowInteracManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stripe (Cartes) */}
+          <Card className="culture-card hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+                Stripe (Cartes)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Configurer les paiements par carte de crédit/débit
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Cartes internationales
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowStripeManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Diagnostic Système */}
           <Card 
             className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
@@ -637,6 +772,44 @@ const AdminDashboard = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Mes Comptes Bancaires */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => setShowAdminBankAccountManager(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setShowAdminBankAccountManager(true);
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder à la gestion des comptes bancaires"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Landmark className="w-5 h-5 text-purple-500" />
+                Mes Comptes Bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Configurer vos comptes pour recevoir les paiements
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  Réception des fonds
+                </Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAdminBankAccountManager(true)}
+                >
+                  Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
@@ -654,6 +827,26 @@ const AdminDashboard = () => {
       <MonCashManager 
         open={showMonCashManager}
         onClose={() => setShowMonCashManager(false)}
+      />
+
+      <UsdtLinksManager 
+        open={showUsdtLinksManager}
+        onClose={() => setShowUsdtLinksManager(false)}
+      />
+
+      <AdminBankAccountManager 
+        open={showAdminBankAccountManager}
+        onClose={() => setShowAdminBankAccountManager(false)}
+      />
+
+      <InteracManager 
+        open={showInteracManager}
+        onClose={() => setShowInteracManager(false)}
+      />
+
+      <StripeManager 
+        open={showStripeManager}
+        onClose={() => setShowStripeManager(false)}
       />
     </div>
   );

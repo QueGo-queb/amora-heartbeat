@@ -1,5 +1,5 @@
 /**
- * Page de gestion des paiements et abonnements
+ * Page de gestion des paiements et abonnements - CORRIGÉE
  * Surveille les transactions et gère les abonnements
  */
 
@@ -17,7 +17,9 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Crown,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,23 +28,24 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import HeaderAdmin from '@/components/admin/HeaderAdmin';
 
-interface Transaction {
+interface Subscription {
   id: string;
   user_id: string;
-  amount_cents: number;
-  currency: string;
-  stripe_payment_intent_id: string;
-  status: 'created' | 'succeeded' | 'failed';
+  plan: string;
+  start_date: string;
+  end_date?: string;
+  status: string;
   created_at: string;
-  user?: {
+  profiles?: {
     email: string;
     full_name?: string;
   };
 }
 
 const AdminPayments = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,7 +54,7 @@ const AdminPayments = () => {
 
   useEffect(() => {
     checkAdminAccess();
-    loadTransactions();
+    loadPaymentsData();
   }, []);
 
   const checkAdminAccess = async () => {
@@ -62,23 +65,46 @@ const AdminPayments = () => {
     }
   };
 
-  const loadTransactions = async () => {
+  const loadPaymentsData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          user:profiles(email, full_name)
-        `)
-        .order('created_at', { ascending: false });
+      setLoading(true);
+      
+      // Essayer d'abord de charger les abonnements premium
+      const { data: subsData, error: subsError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, plan, premium_since, created_at')
+        .not('plan', 'is', null);
 
-      if (error) throw error;
-      setTransactions(data || []);
+      if (subsError) {
+        console.error('Erreur abonnements:', subsError);
+      }
+
+      // Transformer les données en format subscription
+      const subscriptionsData = subsData?.map(profile => ({
+        id: profile.id,
+        user_id: profile.id,
+        plan: profile.plan || 'free',
+        start_date: profile.premium_since || profile.created_at,
+        status: profile.plan === 'premium' ? 'active' : 'inactive',
+        created_at: profile.created_at,
+        profiles: {
+          email: profile.email,
+          full_name: profile.full_name
+        }
+      })) || [];
+
+      setSubscriptions(subscriptionsData);
+      
+      toast({
+        title: "Données chargées",
+        description: `${subscriptionsData.length} abonnement(s) trouvé(s)`,
+      });
+
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      console.error('Error loading payments data:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les transactions",
+        description: "Impossible de charger les données de paiement",
         variant: "destructive",
       });
     } finally {
@@ -88,45 +114,46 @@ const AdminPayments = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'succeeded': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'created': return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'active': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'inactive': return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'pending': return <Clock className="w-4 h-4 text-yellow-500" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'succeeded': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'created': return 'bg-yellow-100 text-yellow-800';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.user?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.stripe_payment_intent_id.includes(searchTerm);
+  const filteredSubscriptions = subscriptions.filter(subscription => {
+    const matchesSearch = subscription.profiles?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         subscription.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filter === 'all') return matchesSearch;
-    return matchesSearch && transaction.status === filter;
+    if (filter === 'premium') return matchesSearch && subscription.plan === 'premium';
+    if (filter === 'free') return matchesSearch && subscription.plan === 'free';
+    return matchesSearch && subscription.status === filter;
   });
 
-  const totalRevenue = transactions
-    .filter(t => t.status === 'succeeded')
-    .reduce((sum, t) => sum + t.amount_cents, 0) / 100;
+  const premiumUsers = subscriptions.filter(s => s.plan === 'premium').length;
+  const freeUsers = subscriptions.filter(s => s.plan === 'free').length;
+  const totalRevenue = premiumUsers * 29.99; // Estimation basée sur le prix premium
 
-  const exportTransactions = () => {
+  const exportData = () => {
     const csvContent = [
-      ['ID', 'Email', 'Montant', 'Devise', 'Statut', 'Date', 'Stripe ID'],
-      ...filteredTransactions.map(t => [
-        t.id,
-        t.user?.email || '',
-        (t.amount_cents / 100).toFixed(2),
-        t.currency,
-        t.status,
-        new Date(t.created_at).toLocaleDateString(),
-        t.stripe_payment_intent_id
+      ['Email', 'Nom', 'Plan', 'Statut', 'Date début', 'Date création'],
+      ...filteredSubscriptions.map(s => [
+        s.profiles?.email || '',
+        s.profiles?.full_name || '',
+        s.plan,
+        s.status,
+        new Date(s.start_date).toLocaleDateString(),
+        new Date(s.created_at).toLocaleDateString()
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -134,7 +161,7 @@ const AdminPayments = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'transactions-amora.csv';
+    a.download = 'abonnements-amora.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -143,9 +170,7 @@ const AdminPayments = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <div className="heart-logo">
-            <div className="heart-shape animate-pulse" />
-          </div>
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           <span className="text-lg">Chargement des paiements...</span>
         </div>
       </div>
@@ -154,178 +179,195 @@ const AdminPayments = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/admin')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
-            </Button>
-            <span className="text-xl font-bold">Paiements & Abonnements</span>
-          </div>
-          
-          <Button onClick={exportTransactions} className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Exporter
-          </Button>
-        </div>
-      </header>
+      <HeaderAdmin 
+        title="Paiements & Abonnements"
+        showBackButton={true}
+        backTo="/admin"
+        backLabel="Admin principal"
+      />
 
       <main className="container mx-auto py-8 px-4">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenus Totaux</CardTitle>
-              <DollarSign className="w-4 h-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Toutes les transactions réussies
+        <div className="max-w-6xl mx-auto">
+          
+          {/* En-tête avec actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Paiements & Abonnements</h1>
+              <p className="text-muted-foreground">
+                Gérez les abonnements et suivez les revenus
               </p>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transactions Réussies</CardTitle>
-              <CheckCircle className="w-4 h-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {transactions.filter(t => t.status === 'succeeded').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transactions Échouées</CardTitle>
-              <XCircle className="w-4 h-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {transactions.filter(t => t.status === 'failed').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">En Attente</CardTitle>
-              <Clock className="w-4 h-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {transactions.filter(t => t.status === 'created').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1">
-            <Input
-              placeholder="Rechercher par email ou ID Stripe..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button onClick={loadPaymentsData} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Actualiser
+              </Button>
+              <Button onClick={exportData} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </div>
           </div>
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les transactions</SelectItem>
-              <SelectItem value="succeeded">Réussies</SelectItem>
-              <SelectItem value="failed">Échouées</SelectItem>
-              <SelectItem value="created">En attente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Transactions Table */}
-        <Card className="culture-card">
-          <CardHeader>
-            <CardTitle>Transactions ({filteredTransactions.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Utilisateur</th>
-                    <th className="text-left p-2">Montant</th>
-                    <th className="text-left p-2">Statut</th>
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Stripe ID</th>
-                    <th className="text-left p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                      <td className="p-2">
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Revenus Estimés</CardTitle>
+                <DollarSign className="w-4 h-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Basé sur {premiumUsers} abonnements premium
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Utilisateurs Premium</CardTitle>
+                <Crown className="w-4 h-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{premiumUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  Abonnements actifs
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Utilisateurs Gratuits</CardTitle>
+                <CheckCircle className="w-4 h-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{freeUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  Comptes gratuits
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Taux de Conversion</CardTitle>
+                <TrendingUp className="w-4 h-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {subscriptions.length > 0 ? ((premiumUsers / subscriptions.length) * 100).toFixed(1) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Gratuit vers Premium
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filtres */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Filtres</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Rechercher par email ou nom..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrer par plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les plans</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="free">Gratuit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Liste des abonnements */}
+          <Card className="culture-card">
+            <CardHeader>
+              <CardTitle>Abonnements ({filteredSubscriptions.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredSubscriptions.length === 0 ? (
+                <div className="text-center py-12">
+                  <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Aucun abonnement trouvé</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm || filter !== 'all' 
+                      ? "Aucun abonnement ne correspond aux critères de recherche."
+                      : "Aucun abonnement enregistré pour le moment."
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredSubscriptions.map((subscription) => (
+                    <div key={subscription.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {subscription.profiles?.full_name?.charAt(0) || subscription.profiles?.email?.charAt(0) || 'U'}
+                        </div>
                         <div>
-                          <div className="font-medium">{transaction.user?.email}</div>
-                          <div className="text-sm text-gray-600">{transaction.user?.full_name}</div>
+                          <div className="font-semibold">{subscription.profiles?.full_name || 'Nom non renseigné'}</div>
+                          <div className="text-sm text-muted-foreground">{subscription.profiles?.email}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Depuis: {new Date(subscription.start_date).toLocaleDateString()}
+                          </div>
                         </div>
-                      </td>
-                      <td className="p-2">
-                        <div className="font-medium">
-                          ${(transaction.amount_cents / 100).toFixed(2)}
-                        </div>
-                        <div className="text-sm text-gray-600">{transaction.currency.toUpperCase()}</div>
-                      </td>
-                      <td className="p-2">
-                        <Badge className={getStatusColor(transaction.status)}>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <Badge variant={subscription.plan === 'premium' ? 'default' : 'secondary'}>
+                          {subscription.plan === 'premium' ? (
+                            <>
+                              <Crown className="w-3 h-3 mr-1" />
+                              Premium
+                            </>
+                          ) : (
+                            'Gratuit'
+                          )}
+                        </Badge>
+                        
+                        <Badge className={getStatusColor(subscription.status)}>
                           <div className="flex items-center gap-1">
-                            {getStatusIcon(transaction.status)}
-                            {transaction.status}
+                            {getStatusIcon(subscription.status)}
+                            {subscription.status}
                           </div>
                         </Badge>
-                      </td>
-                      <td className="p-2 text-sm text-gray-600">
-                        {new Date(transaction.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="p-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {transaction.stripe_payment_intent_id.slice(-8)}
-                        </code>
-                      </td>
-                      <td className="p-2">
+
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(subscription.created_at).toLocaleDateString()}
+                        </div>
+
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/admin/payments/${transaction.id}`)}
+                          onClick={() => console.log('Voir détails:', subscription.id)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredTransactions.length === 0 && (
-              <div className="text-center py-12">
-                <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucune transaction trouvée</h3>
-                <p className="text-muted-foreground">
-                  {searchTerm || filter !== 'all' 
-                    ? "Aucune transaction ne correspond aux critères de recherche."
-                    : "Aucune transaction enregistrée pour le moment."
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

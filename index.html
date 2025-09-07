@@ -1,26 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#8B1538">
+    <meta name="background-color" content="#ffffff">
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AMORA">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+    
+    <!-- Microsoft PWA Meta Tags -->
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+    <meta name="msapplication-TileColor" content="#8B1538">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Favicon AMORA - CORRIGÉ -->
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://api.supabase.co">
+    
     <title>Amora - Rencontre Multiculturelle | L'amour sans frontières</title>
     <meta name="description" content="Trouvez l'amour sans frontières sur Amora, la plateforme de rencontre dédiée aux célibataires haïtiens, latinos, caribéens et africains dans le monde entier." />
     <meta name="author" content="Amora" />
-    <meta name="keywords" content="rencontre, multiculturelle, haïtien, latino, caribéen, africain, amour, célibataires, diaspora" />
+    <meta name="keywords" content="rencontre, multiculturelle, haïtien, latino, caribéen, africain, amour, célibataires, diaspora, PWA" />
 
+    <!-- Open Graph -->
     <meta property="og:title" content="Amora - Rencontre Multiculturelle | L'amour sans frontières" />
     <meta property="og:description" content="Trouvez l'amour sans frontières sur Amora, la plateforme de rencontre dédiée aux célibataires haïtiens, latinos, caribéens et africains." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/icons/icon-512x512.png" />
+    <meta property="og:url" content="https://amora.app" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Amora - L'amour sans frontières" />
     <meta name="twitter:description" content="Plateforme de rencontre multiculturelle pour la diaspora mondiale" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:image" content="/icons/icon-512x512.png" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA Install Script -->
+    <script>
+      // Détecter si l'app est déjà installée
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        console.log('🎉 AMORA PWA est installée et fonctionne en mode standalone');
+        
+        // Analytics pour les apps installées
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'pwa_standalone_launch', {
+            event_category: 'PWA',
+            event_label: 'Lancement en mode standalone'
+          });
+        }
+      }
+
+      // Précharger les icônes PWA après le chargement de la page
+      window.addEventListener('load', () => {
+        // Vérifier si les icônes existent avant de les précharger
+        const iconSizes = ['192x192', '512x512'];
+        iconSizes.forEach(size => {
+          const img = new Image();
+          img.src = `/icons/icon-${size}.png`;
+          img.onload = () => console.log(`✅ Icône ${size} préchargée`);
+          img.onerror = () => console.warn(`⚠️ Icône ${size} non trouvée`);
+        });
+      });
+    </script>
   </body>
 </html>

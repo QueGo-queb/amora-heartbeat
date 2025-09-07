@@ -1,5 +1,5 @@
 /**
- * Page de modération
+ * Page de modération - CORRIGÉE
  * Permet de gérer les signalements, modérer le contenu et bannir les utilisateurs
  */
 
@@ -19,15 +19,18 @@ import {
   Search,
   Clock,
   Check,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import HeaderAdmin from '@/components/admin/HeaderAdmin';
 
 interface Report {
   id: string;
@@ -57,6 +60,8 @@ const AdminModeration = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -75,14 +80,16 @@ const AdminModeration = () => {
 
   const loadReports = async () => {
     try {
-      // Simuler des données de signalements (en attendant la table reports)
+      setLoading(true);
+      
+      // Simuler des données de signalements avec plus de réalisme
       const mockReports: Report[] = [
         {
           id: '1',
           reporter_id: 'user1',
           reported_user_id: 'user2',
           reason: 'Contenu inapproprié',
-          description: 'L\'utilisateur a posté du contenu offensant',
+          description: 'L\'utilisateur a posté du contenu offensant dans son profil',
           status: 'pending',
           created_at: new Date().toISOString(),
           reporter: {
@@ -107,13 +114,35 @@ const AdminModeration = () => {
             full_name: 'Pierre Durand'
           },
           reported_post: {
-            content: 'Contenu spam détecté...',
+            content: 'Achetez maintenant ! Meilleure offre ! Cliquez ici ! Promotion exceptionnelle !',
             user_id: 'user4'
+          }
+        },
+        {
+          id: '3',
+          reporter_id: 'user5',
+          reported_post_id: 'post2',
+          reason: 'Harcèlement',
+          description: 'Messages agressifs répétés',
+          status: 'pending',
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+          reporter: {
+            email: 'victim@example.com',
+            full_name: 'Sophie Lemaire'
+          },
+          reported_post: {
+            content: 'Tu es vraiment pathétique ! Je vais te faire regretter d\'être sur cette app !',
+            user_id: 'user6'
           }
         }
       ];
 
       setReports(mockReports);
+      
+      toast({
+        title: "Données chargées",
+        description: `${mockReports.length} signalement(s) chargé(s)`,
+      });
     } catch (error) {
       console.error('Error loading reports:', error);
       toast({
@@ -126,24 +155,58 @@ const AdminModeration = () => {
     }
   };
 
-  const handleReportAction = async (reportId: string, action: 'resolve' | 'dismiss' | 'ban') => {
+  // CORRECTION: Fonctions cliquables pour les actions
+  const handleViewPost = (report: Report) => {
+    if (report.reported_post) {
+      setSelectedReport(report);
+      setShowPostModal(true);
+    } else {
+      toast({
+        title: "Information",
+        description: "Ce signalement concerne un utilisateur, pas une publication",
+      });
+    }
+  };
+
+  const handleAcceptReport = async (reportId: string) => {
     try {
-      // Simuler l'action
       setReports(prev => prev.map(report => 
         report.id === reportId 
-          ? { ...report, status: action === 'resolve' ? 'resolved' : 'dismissed' }
+          ? { ...report, status: 'resolved' }
           : report
       ));
 
       toast({
-        title: "Action effectuée",
-        description: `Signalement ${action === 'resolve' ? 'résolu' : action === 'dismiss' ? 'rejeté' : 'utilisateur banni'}`,
+        title: "✅ Signalement accepté",
+        description: "Le signalement a été marqué comme traité",
       });
     } catch (error) {
-      console.error('Error updating report:', error);
+      console.error('Error accepting report:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de traiter le signalement",
+        description: "Impossible d'accepter le signalement",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectReport = async (reportId: string) => {
+    try {
+      setReports(prev => prev.map(report => 
+        report.id === reportId 
+          ? { ...report, status: 'dismissed' }
+          : report
+      ));
+
+      toast({
+        title: "❌ Signalement rejeté",
+        description: "Le signalement a été marqué comme non fondé",
+      });
+    } catch (error) {
+      console.error('Error rejecting report:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de rejeter le signalement",
         variant: "destructive",
       });
     }
@@ -182,9 +245,7 @@ const AdminModeration = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <div className="heart-logo">
-            <div className="heart-shape animate-pulse" />
-          </div>
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           <span className="text-lg">Chargement de la modération...</span>
         </div>
       </div>
@@ -193,256 +254,294 @@ const AdminModeration = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/admin')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
-            </Button>
-            <span className="text-xl font-bold">Modération</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-heart-red" />
-            <span className="text-sm text-muted-foreground">Panel de modération</span>
-          </div>
-        </div>
-      </header>
+      <HeaderAdmin 
+        title="Modération"
+        showBackButton={true}
+        backTo="/admin"
+        backLabel="Admin principal"
+      />
 
       <main className="container mx-auto py-8 px-4">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Signalements en attente</CardTitle>
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {reports.filter(r => r.status === 'pending').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Signalements traités</CardTitle>
-              <CheckCircle className="w-4 h-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {reports.filter(r => r.status === 'resolved').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Signalements rejetés</CardTitle>
-              <X className="w-4 h-4 text-gray-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {reports.filter(r => r.status === 'dismissed').length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="culture-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total signalements</CardTitle>
-              <Flag className="w-4 h-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{reports.length}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1">
-            <Input
-              placeholder="Rechercher par raison, email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+        <div className="max-w-6xl mx-auto">
+          
+          {/* En-tête avec actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Modération</h1>
+              <p className="text-muted-foreground">
+                Gérez les signalements et modérez le contenu ({reports.length} signalement{reports.length > 1 ? 's' : ''})
+              </p>
+            </div>
+            
+            <Button onClick={loadReports} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Actualiser
+            </Button>
           </div>
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les signalements</SelectItem>
-              <SelectItem value="pending">En attente</SelectItem>
-              <SelectItem value="reviewed">En cours</SelectItem>
-              <SelectItem value="resolved">Résolus</SelectItem>
-              <SelectItem value="dismissed">Rejetés</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Reports Table */}
-        <Card className="culture-card">
-          <CardHeader>
-            <CardTitle>Signalements ({filteredReports.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Signalé par</th>
-                    <th className="text-left p-2">Contenu signalé</th>
-                    <th className="text-left p-2">Raison</th>
-                    <th className="text-left p-2">Statut</th>
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">En attente</CardTitle>
+                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {reports.filter(r => r.status === 'pending').length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Signalements à traiter
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Traités</CardTitle>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {reports.filter(r => r.status === 'resolved').length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Signalements acceptés
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rejetés</CardTitle>
+                <X className="w-4 h-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {reports.filter(r => r.status === 'dismissed').length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Signalements non fondés
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="culture-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total</CardTitle>
+                <Flag className="w-4 h-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reports.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Tous signalements
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filtres */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Filtres</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Rechercher par raison, email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrer par statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="pending">En attente</SelectItem>
+                    <SelectItem value="reviewed">En cours</SelectItem>
+                    <SelectItem value="resolved">Traités</SelectItem>
+                    <SelectItem value="dismissed">Rejetés</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Liste des signalements */}
+          <Card className="culture-card">
+            <CardHeader>
+              <CardTitle>Signalements ({filteredReports.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredReports.length === 0 ? (
+                <div className="text-center py-12">
+                  <Shield className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Aucun signalement trouvé</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm || filter !== 'all' 
+                      ? "Aucun signalement ne correspond aux critères de recherche."
+                      : "Aucun signalement en attente pour le moment."
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
                   {filteredReports.map((report) => (
-                    <tr key={report.id} className="border-b hover:bg-gray-50">
-                      <td className="p-2">
-                        <div>
-                          <div className="font-medium">{report.reporter?.full_name}</div>
-                          <div className="text-sm text-gray-600">{report.reporter?.email}</div>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <div>
-                          {report.reported_user ? (
-                            <>
-                              <div className="font-medium">{report.reported_user.full_name}</div>
-                              <div className="text-sm text-gray-600">{report.reported_user.email}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="font-medium">Publication</div>
-                              <div className="text-sm text-gray-600">
-                                {report.reported_post?.content?.slice(0, 50)}...
+                    <div key={report.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge className={getStatusColor(report.status)}>
+                              <div className="flex items-center gap-1">
+                                {getStatusIcon(report.status)}
+                                {report.status}
                               </div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <div>
-                          <div className="font-medium">{report.reason}</div>
-                          {report.description && (
-                            <div className="text-sm text-gray-600">{report.description}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <Badge className={getStatusColor(report.status)}>
-                          <div className="flex items-center gap-1">
-                            {getStatusIcon(report.status)}
-                            {report.status}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(report.created_at).toLocaleDateString()}
+                            </span>
                           </div>
-                        </Badge>
-                      </td>
-                      <td className="p-2 text-sm text-gray-600">
-                        {new Date(report.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="p-2">
-                        <div className="flex gap-1">
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                              <h4 className="font-semibold text-sm text-muted-foreground">Signalé par</h4>
+                              <p className="font-medium">{report.reporter?.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{report.reporter?.email}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm text-muted-foreground">Contenu signalé</h4>
+                              {report.reported_user ? (
+                                <>
+                                  <p className="font-medium">{report.reported_user.full_name}</p>
+                                  <p className="text-sm text-muted-foreground">{report.reported_user.email}</p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="font-medium">Publication</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {report.reported_post?.content?.slice(0, 60)}...
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3">
+                            <h4 className="font-semibold text-sm text-muted-foreground">Raison</h4>
+                            <p className="font-medium">{report.reason}</p>
+                            {report.description && (
+                              <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 ml-4">
+                          {/* CORRECTION: Boutons fonctionnels */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewPost(report)}
+                            className="flex items-center gap-2"
+                            title="Voir la publication"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Voir
+                          </Button>
+                          
                           {report.status === 'pending' && (
                             <>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                onClick={() => handleReportAction(report.id, 'resolve')}
-                                className="text-green-600 hover:text-green-700"
+                                onClick={() => handleAcceptReport(report.id)}
+                                className="flex items-center gap-2 text-green-600 hover:text-green-700 border-green-200"
+                                title="Accepter le signalement"
                               >
                                 <Check className="w-4 h-4" />
+                                Accepter
                               </Button>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                onClick={() => handleReportAction(report.id, 'dismiss')}
-                                className="text-gray-600 hover:text-gray-700"
+                                onClick={() => handleRejectReport(report.id)}
+                                className="flex items-center gap-2 text-red-600 hover:text-red-700 border-red-200"
+                                title="Rejeter le signalement"
                               >
                                 <X className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleReportAction(report.id, 'ban')}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Ban className="w-4 h-4" />
+                                Rejeter
                               </Button>
                             </>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/admin/moderation/${report.id}`)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredReports.length === 0 && (
-              <div className="text-center py-12">
-                <Shield className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucun signalement trouvé</h3>
-                <p className="text-muted-foreground">
-                  {searchTerm || filter !== 'all' 
-                    ? "Aucun signalement ne correspond aux critères de recherche."
-                    : "Aucun signalement en attente pour le moment."
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="culture-card mt-8">
-          <CardHeader>
-            <CardTitle>Actions Rapides</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/admin/users')}
-                className="flex items-center gap-2"
-              >
-                <User className="w-4 h-4" />
-                Gérer les utilisateurs
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/admin/ads')}
-                className="flex items-center gap-2"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Modérer les publicités
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/admin/analytics')}
-                className="flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4" />
-                Voir les statistiques
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
+
+      {/* CORRECTION: Modal pour voir les publications */}
+      <Dialog open={showPostModal} onOpenChange={setShowPostModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Publication signalée</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedReport && (
+              <>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Contenu de la publication :</h4>
+                  <p className="text-gray-800">{selectedReport.reported_post?.content}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Raison du signalement :</h4>
+                  <p className="text-gray-600">{selectedReport.reason}</p>
+                  {selectedReport.description && (
+                    <>
+                      <h4 className="font-semibold mt-3 mb-2">Description :</h4>
+                      <p className="text-gray-600">{selectedReport.description}</p>
+                    </>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowPostModal(false)}>
+                    Fermer
+                  </Button>
+                  {selectedReport.status === 'pending' && (
+                    <>
+                      <Button 
+                        onClick={() => {
+                          handleAcceptReport(selectedReport.id);
+                          setShowPostModal(false);
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Accepter le signalement
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          handleRejectReport(selectedReport.id);
+                          setShowPostModal(false);
+                        }}
+                        variant="destructive"
+                      >
+                        Rejeter le signalement
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

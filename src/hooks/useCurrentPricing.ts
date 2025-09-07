@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { convertPriceFromUSD, formatPrice } from '@/lib/currencyConverter';
 
 export interface CurrentPricing {
   price_usd: number;
@@ -11,28 +12,28 @@ export interface CurrentPricing {
 }
 
 export const useCurrentPricing = () => {
-  const [pricing, setPricing] = useState<CurrentPricing>({
-    price_usd: 29.99,
-    currency: 'USD'
-  });
+  const [pricing, setPricing] = useState<CurrentPricing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadCurrentPricing = async () => {
     try {
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: fetchError } = await supabase
         .from('premium_pricing')
         .select('*')
         .eq('is_active', true)
         .single();
 
-      // Gérer les erreurs de table manquante
-      if (error) {
-        if (error.code === 'PGRST106' || error.message.includes('relation') || error.message.includes('table')) {
-          console.log('Table premium_pricing n\'existe pas encore, utilisation des valeurs par défaut');
+      if (fetchError) {
+        if (fetchError.code === 'PGRST106' || fetchError.message.includes('relation') || fetchError.message.includes('table')) {
+          console.log('Table premium_pricing n\'existe pas encore');
+          setError('Aucun prix configuré par l\'administrateur');
+          setPricing(null);
           setLoading(false);
           return;
         }
-        throw error;
+        throw fetchError;
       }
 
       if (data) {
@@ -44,30 +45,36 @@ export const useCurrentPricing = () => {
           price_htg: data.price_htg,
           currency: data.currency || 'USD'
         });
+      } else {
+        setError('Aucun prix configuré par l\'administrateur');
+        setPricing(null);
       }
     } catch (error) {
       console.error('Erreur chargement prix:', error);
-      // Garder les valeurs par défaut en cas d'erreur
+      setError('Erreur lors du chargement des prix');
+      setPricing(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // AJOUTER la fonction formatPrice manquante
-  const formatPrice = (currency?: string) => {
+  // Fonction pour formater le prix selon la devise
+  const formatPriceForCurrency = (currency?: string) => {
+    if (!pricing) return null;
+    
     const targetCurrency = currency || 'USD';
     
     switch (targetCurrency.toUpperCase()) {
       case 'EUR':
-        return pricing.price_eur ? `€${pricing.price_eur}` : `$${pricing.price_usd}`;
+        return pricing.price_eur ? formatPrice(pricing.price_eur, 'EUR') : null;
       case 'CAD':
-        return pricing.price_cad ? `$${pricing.price_cad} CAD` : `$${pricing.price_usd}`;
+        return pricing.price_cad ? formatPrice(pricing.price_cad, 'CAD') : null;
       case 'CLP':
-        return pricing.price_clp ? `$${pricing.price_clp.toLocaleString()} CLP` : `$${(pricing.price_usd * 800).toLocaleString()} CLP`;
+        return pricing.price_clp ? formatPrice(pricing.price_clp, 'CLP') : null;
       case 'HTG':
-        return pricing.price_htg ? `${pricing.price_htg} G` : `${(pricing.price_usd * 133).toLocaleString()} G`;
+        return pricing.price_htg ? formatPrice(pricing.price_htg, 'HTG') : null;
       default:
-        return `$${pricing.price_usd}`;
+        return formatPrice(pricing.price_usd, 'USD');
     }
   };
 
@@ -93,7 +100,8 @@ export const useCurrentPricing = () => {
   return {
     pricing,
     loading,
-    formatPrice, // AJOUTER cette ligne
+    error,
+    formatPrice: formatPriceForCurrency,
     refreshPricing: loadCurrentPricing
   };
 };

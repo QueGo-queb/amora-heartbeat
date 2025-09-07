@@ -18,7 +18,11 @@ import {
   ArrowLeft,
   RefreshCw,
   AlertCircle,
-  LogOut
+  LogOut,
+  Mail,
+  Phone,
+  MessageSquare,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +33,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import { AIChatWidget } from '@/components/support/AIChatWidget';
 
 interface DashboardMenuProps {
   className?: string;
@@ -48,12 +53,13 @@ interface MenuItem {
 const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [legalModal, setLegalModal] = useState<string | null>(null);
+  const [showAIChat, setShowAIChat] = useState(false);
   const navigate = useNavigate();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const handleNavigation = (href: string) => {
-    console.log('Navigation vers:', href); // Debug
+    console.log('Navigation vers:', href);
     navigate(href);
     setIsOpen(false);
   };
@@ -65,27 +71,51 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
 
   const closeLegalModal = () => setLegalModal(null);
 
-  const handleProfileClick = () => {
-    navigate('/profile');
+  // Fonctions pour les boutons support
+  const handleEmailSupport = () => {
+    window.open('mailto:support@amora.ca?subject=Demande de support - AMORA', '_blank');
+    setIsOpen(false);
+  };
+
+  const handleAIChat = () => {
+    setShowAIChat(true);
+    setIsOpen(false);
+  };
+
+  const handleFAQ = () => {
+    openLegalModal('faq');
+  };
+
+  const handleDedicatedSupport = () => {
+    openLegalModal('dedicated-support');
+  };
+
+  // Fonctions pour les interactions sociales
+  const handleNewMatches = () => {
+    handleNavigation('/matching?filter=new');
+  };
+
+  const handleUnreadMessages = () => {
+    handleNavigation('/messages?filter=unread');
   };
 
   const menuItems: MenuItem[] = [
-    // Section principale
+    // Section des interactions sociales
     {
       id: 'matches',
       label: 'Nouveaux matches',
       icon: Heart,
       badge: 12,
       badgeText: '+3 depuis hier',
-      action: () => handleNavigation('/matching')
+      action: handleNewMatches
     },
     {
-      id: 'messages',
+      id: 'unread-messages',
       label: 'Messages non lus',
       icon: MessageCircle,
       badge: 5,
       badgeText: '+2 nouveaux messages',
-      action: () => handleNavigation('/messages')
+      action: handleUnreadMessages
     },
     {
       id: 'views',
@@ -93,7 +123,7 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
       icon: Eye,
       badge: 28,
       badgeText: '+8 cette semaine',
-      action: () => handleNavigation('/profile')
+      action: () => handleNavigation('/profile?tab=views')
     },
     
     // Séparateur
@@ -112,12 +142,11 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
       icon: MessageCircle,
       action: () => handleNavigation('/messages')
     },
-    // CORRECTION : Bouton Profil avec navigation correcte
     {
       id: 'profile',
       label: 'Profil',
       icon: User,
-      action: () => handleNavigation('/profile') // Navigation directe vers /profile
+      action: () => handleNavigation('/profile')
     },
     {
       id: 'settings',
@@ -136,11 +165,35 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
       icon: HelpCircle,
       action: () => openLegalModal('help')
     },
+    {
+      id: 'email-support',
+      label: '📧 Support par email',
+      icon: Mail,
+      action: handleEmailSupport
+    },
+    {
+      id: 'ai-chat',
+      label: '💬 Chat en ligne',
+      icon: MessageSquare,
+      action: handleAIChat
+    },
+    {
+      id: 'faq',
+      label: '📚 FAQ',
+      icon: BookOpen,
+      action: handleFAQ
+    },
+    {
+      id: 'dedicated-support',
+      label: 'Support dédié',
+      icon: Phone,
+      action: handleDedicatedSupport
+    },
     
     // Séparateur
     { id: 'separator3', label: '', icon: X },
     
-    // Liens légaux
+    // Règles et conditions
     {
       id: 'terms',
       label: 'Conditions d\'utilisation',
@@ -183,15 +236,13 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
       {/* Menu latéral */}
       {isOpen && (
         <div className="fixed inset-0 z-50">
-          {/* Overlay - FOND SOLIDE AU LIEU DE TRANSPARENT */}
           <div 
             className="absolute inset-0 bg-slate-900/80"
             onClick={toggleMenu}
           />
           
-          {/* Menu - DESIGN MODERNE ET SOLIDE */}
           <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-white border-l border-slate-200 shadow-2xl transform transition-transform duration-300 ease-in-out">
-            {/* Header du menu - DESIGN AMÉLIORÉ */}
+            {/* Header du menu */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50">
               <div className="flex items-center gap-3">
                 <div className="heart-logo">
@@ -209,7 +260,7 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
               </Button>
             </div>
 
-            {/* Contenu du menu - STYLE AMÉLIORÉ */}
+            {/* Contenu du menu */}
             <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-white">
               {menuItems.map((item) => {
                 if (item.id.startsWith('separator')) {
@@ -246,7 +297,7 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
               })}
             </div>
 
-            {/* Footer du menu - NOUVEAU */}
+            {/* Footer du menu */}
             <div className="p-4 border-t border-slate-200 bg-slate-50">
               <div className="text-xs text-slate-500 text-center">
                 © 2024 AMORA - Trouvez l'amour sans frontières
@@ -256,7 +307,13 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
         </div>
       )}
 
-      {/* Modals pour les liens légaux - STYLE AMÉLIORÉ */}
+      {/* Chat AI Widget */}
+      <AIChatWidget 
+        open={showAIChat} 
+        onClose={() => setShowAIChat(false)} 
+      />
+
+      {/* Modals pour les liens légaux et support */}
       <Dialog open={!!legalModal} onOpenChange={closeLegalModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white border border-slate-200 shadow-xl">
           <DialogHeader className="border-b border-slate-200 pb-4">
@@ -266,12 +323,16 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
               {legalModal === 'cookies' && <Cookie className="w-5 h-5 text-orange-600" />}
               {legalModal === 'legal' && <Scale className="w-5 h-5 text-purple-600" />}
               {legalModal === 'help' && <HelpCircle className="w-5 h-5 text-red-600" />}
+              {legalModal === 'faq' && <BookOpen className="w-5 h-5 text-blue-600" />}
+              {legalModal === 'dedicated-support' && <Phone className="w-5 h-5 text-green-600" />}
               
               {legalModal === 'terms' && 'Conditions d\'utilisation'}
               {legalModal === 'privacy' && 'Politique de confidentialité'}
               {legalModal === 'cookies' && 'Politique des cookies'}
               {legalModal === 'legal' && 'Mentions légales'}
               {legalModal === 'help' && 'Centre d\'aide'}
+              {legalModal === 'faq' && 'Questions fréquentes (FAQ)'}
+              {legalModal === 'dedicated-support' && 'Support dédié'}
             </DialogTitle>
           </DialogHeader>
           
@@ -351,6 +412,62 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
                   <div className="p-4 bg-orange-50 rounded-lg">
                     <h4 className="font-semibold text-orange-800"> Application mobile</h4>
                     <p className="text-orange-600 text-sm">Support dédié</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {legalModal === 'faq' && (
+              <div className="prose prose-sm max-w-none">
+                <h3>Questions fréquentes (FAQ)</h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold text-blue-800">Comment modifier mon profil ?</h4>
+                    <p className="text-blue-700 text-sm">Allez dans Menu &gt; Profil, puis cliquez sur &quot;Modifier le profil&quot;.</p>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-semibold text-green-800">Comment fonctionne le matching ?</h4>
+                    <p className="text-green-700 text-sm">Le matching se base sur vos préférences, centres d&apos;intérêt et localisation.</p>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h4 className="font-semibold text-purple-800">Qu&apos;apporte l&apos;abonnement Premium ?</h4>
+                    <p className="text-purple-700 text-sm">Messages illimités, voir qui vous a liké, boosts de profil et plus encore.</p>
+                  </div>
+                  <div className="p-4 bg-orange-50 rounded-lg">
+                    <h4 className="font-semibold text-orange-800">Comment signaler un profil suspect ?</h4>
+                    <p className="text-orange-700 text-sm">Utilisez le bouton &quot;Signaler&quot; sur le profil concerné.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {legalModal === 'dedicated-support' && (
+              <div className="prose prose-sm max-w-none">
+                <h3>Support dédié AMORA</h3>
+                <p>Notre équipe support est là pour vous aider :</p>
+                <div className="grid grid-cols-1 gap-4 mt-4">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-800 flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Demande de contact
+                    </h4>
+                    <p className="text-green-700 text-sm mt-2">
+                      Remplissez le formulaire ci-dessous et un agent vous contactera dans les 24h.
+                    </p>
+                    <Button 
+                      className="mt-3" 
+                      onClick={() => window.open('mailto:support@amora.ca?subject=Demande de support dédié&body=Merci de décrire votre problème en détail...', '_blank')}
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contacter un agent
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800">Heures d'ouverture</h4>
+                    <p className="text-blue-700 text-sm">
+                      Lun-Ven: 9h-18h EST<br/>
+                      Sam-Dim: 10h-16h EST
+                    </p>
                   </div>
                 </div>
               </div>

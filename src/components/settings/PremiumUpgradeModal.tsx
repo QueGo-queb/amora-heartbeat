@@ -72,6 +72,11 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
     receipt: null as File | null
   });
   const [step, setStep] = useState<'methods' | 'usdt' | 'caja_vecina' | 'stripe'>('methods');
+  const [monCashData, setMonCashData] = useState({
+    senderPhone: '',
+    transactionRef: '',
+    receipt: null as File | null
+  });
   
   const { toast } = useToast();
   const { upgradeToPremium } = usePremium();
@@ -292,6 +297,28 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
     }
   };
 
+  const handleMonCashSubmit = async () => {
+    if (!monCashData.senderPhone || !monCashData.transactionRef) return;
+    
+    try {
+      await submitMonCashPayment(
+        monCashData.senderPhone,
+        monCashData.transactionRef,
+        pricing?.price_htg || (pricing?.price_usd * 133) || 3999,
+        monCashData.receipt || undefined
+      );
+      
+      toast({
+        title: "Paiement soumis !",
+        description: "Votre paiement MonCash est en cours de vérification.",
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Erreur MonCash:', error);
+    }
+  };
+
   const premiumFeatures = [
     { name: 'Messages illimités', free: false, premium: true },
     { name: 'Publications avec liens', free: false, premium: true },
@@ -303,19 +330,31 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
     { name: 'Voir les profils', free: true, premium: true }
   ];
 
-  // Fonction locale simple pour formatter les prix
+  // Fonction locale simple pour formatter les prix - CORRECTION ICI
   const getFormattedPrice = (currency?: string) => {
+    // Vérification sécurisée de l'objet pricing
+    if (!pricing || pricing.price_usd === null || pricing.price_usd === undefined) {
+      return "Prix indisponible";
+    }
+
     const targetCurrency = currency || 'USD';
     
-    switch (targetCurrency.toUpperCase()) {
-      case 'CAD':
-        return pricing.price_cad ? `$${pricing.price_cad} CAD` : `$${pricing.price_usd}`;
-      case 'CLP':
-        return pricing.price_clp ? `$${pricing.price_clp.toLocaleString()} CLP` : `$${(pricing.price_usd * 800).toLocaleString()} CLP`;
-      case 'HTG':
-        return pricing.price_htg ? `${pricing.price_htg} G` : `${(pricing.price_usd * 133).toLocaleString()} G`;
-      default:
-        return `$${pricing.price_usd}`;
+    try {
+      switch (targetCurrency.toUpperCase()) {
+        case 'CAD':
+          return pricing.price_cad ? `$${pricing.price_cad} CAD` : `$${pricing.price_usd} USD`;
+        case 'CLP':
+          return pricing.price_clp ? `$${pricing.price_clp.toLocaleString()} CLP` : `$${(pricing.price_usd * 800).toLocaleString()} CLP`;
+        case 'HTG':
+          return pricing.price_htg ? `${pricing.price_htg} G` : `${(pricing.price_usd * 133).toLocaleString()} G`;
+        case 'EUR':
+          return pricing.price_eur ? `€${pricing.price_eur} EUR` : `$${pricing.price_usd} USD`;
+        default:
+          return `$${pricing.price_usd} USD`;
+      }
+    } catch (error) {
+      console.error('Erreur formatage prix:', error);
+      return "Prix indisponible";
     }
   };
 
@@ -665,7 +704,7 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
                       Retour
                     </Button>
                     <Button
-                      onClick={() => handleMonCashSubmit()}
+                      onClick={handleMonCashSubmit}
                       disabled={monCashLoading || !monCashData.senderPhone || !monCashData.transactionRef}
                       className="flex-1 btn-hero"
                     >
@@ -701,83 +740,100 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Instructions - MODIFIER CETTE SECTION */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold mb-3">Instructions de paiement</h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li>Rendez-vous dans n'importe quelle Caja Vecina</li>
-                  <li>Effectuez un dépôt de <strong>{pricing.price_clp ? `${pricing.price_clp.toLocaleString()} CLP` : `${(pricing.price_usd * 800).toLocaleString()} CLP`}</strong></li>
-                  <li>Conservez le reçu de transaction</li>
-                  <li>Téléchargez une photo claire du reçu ci-dessous</li>
-                </ol>
-              </div>
+              {accounts.length > 0 ? (
+                <>
+                  {/* Instructions */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold mb-3">Instructions de paiement</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Rendez-vous dans n'importe quelle Caja Vecina</li>
+                      <li>Effectuez un dépôt de <strong>{pricing?.price_clp ? `${pricing.price_clp.toLocaleString()} CLP` : `${(pricing?.price_usd * 800 || 23992).toLocaleString()} CLP`}</strong></li>
+                      <li>Utilisez les informations du compte ci-dessous</li>
+                      <li>Conservez le reçu de transaction</li>
+                      <li>Téléchargez une photo claire du reçu</li>
+                    </ol>
+                  </div>
 
-              {/* Informations du compte - MODIFIER CETTE SECTION */}
-              <div className="p-4 bg-gray-50 border rounded-lg">
-                <h4 className="font-semibold mb-3">Informations de dépôt</h4>
-                <div className="space-y-2 text-sm">
-                  <div><strong>Compte:</strong> 1234567890</div>
-                  <div><strong>Titulaire:</strong> Amora Heartbeat SPA</div>
-                  <div><strong>RUT:</strong> 12.345.678-9</div>
-                  <div><strong>Montant:</strong> {pricing.price_clp ? `${pricing.price_clp.toLocaleString()} CLP` : `${(pricing.price_usd * 800).toLocaleString()} CLP`}</div>
-                </div>
-              </div>
+                  {/* Informations du compte - SECTION CORRIGÉE */}
+                  <div className="p-4 bg-gray-50 border rounded-lg">
+                    <h4 className="font-semibold mb-3">Informations de dépôt</h4>
+                    <div className="space-y-2 text-sm">
+                      <div><strong>Compte:</strong> {accounts[0].account_number}</div>
+                      <div><strong>Titulaire:</strong> {accounts[0].account_name}</div>
+                      <div><strong>RUT:</strong> {accounts[0].rut}</div>
+                      <div><strong>Montant:</strong> {pricing?.price_clp ? `${pricing.price_clp.toLocaleString()} CLP` : `${(pricing?.price_usd * 800 || 23992).toLocaleString()} CLP`}</div>
+                    </div>
+                  </div>
 
-              {/* Upload du reçu */}
-              <div className="space-y-2">
-                <Label>Reçu de transaction *</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setCajaVecinaData(prev => ({ ...prev, receipt: file }));
-                      }
-                    }}
-                    className="hidden"
-                    id="caja-receipt"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById('caja-receipt')?.click()}
-                  >
-                    Choisir un fichier
+                  {/* Upload du reçu */}
+                  <div className="space-y-2">
+                    <Label>Reçu de transaction *</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setCajaVecinaData(prev => ({ ...prev, receipt: file }));
+                          }
+                        }}
+                        className="hidden"
+                        id="caja-receipt"
+                      />
+                      <Button 
+                        variant="outline" 
+                        onClick={() => document.getElementById('caja-receipt')?.click()}
+                      >
+                        Choisir un fichier
+                      </Button>
+                      {cajaVecinaData.receipt && (
+                        <p className="text-sm text-green-600 mt-2">
+                          ✓ {cajaVecinaData.receipt.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Référence de transaction */}
+                  <div className="space-y-2">
+                    <Label htmlFor="transactionRef">Référence de transaction (optionnel)</Label>
+                    <Input
+                      id="transactionRef"
+                      value={cajaVecinaData.transactionRef}
+                      onChange={(e) => setCajaVecinaData(prev => ({ ...prev, transactionRef: e.target.value }))}
+                      placeholder="Ex: TXN123456789"
+                    />
+                  </div>
+
+                  {/* Boutons d'action */}
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setStep('methods')}>
+                      Retour
+                    </Button>
+                    <Button
+                      onClick={handleCajaVecinaSubmit}
+                      disabled={cajaVecinaLoading || !cajaVecinaData.receipt}
+                      className="flex-1 btn-hero"
+                    >
+                      {cajaVecinaLoading ? 'Vérification...' : 'Soumettre le paiement'}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                // Message si aucun compte configuré
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-600 mb-2">Caja Vecina temporairement indisponible</p>
+                  <p className="text-sm text-gray-500">
+                    Aucun compte Caja Vecina n'est configuré par l'administrateur.
+                  </p>
+                  <Button variant="outline" onClick={() => setStep('methods')} className="mt-4">
+                    Choisir une autre méthode
                   </Button>
-                  {cajaVecinaData.receipt && (
-                    <p className="text-sm text-green-600 mt-2">
-                      ✓ {cajaVecinaData.receipt.name}
-                    </p>
-                  )}
                 </div>
-              </div>
-
-              {/* Référence de transaction */}
-              <div className="space-y-2">
-                <Label htmlFor="transactionRef">Référence de transaction (optionnel)</Label>
-                <Input
-                  id="transactionRef"
-                  value={cajaVecinaData.transactionRef}
-                  onChange={(e) => setCajaVecinaData(prev => ({ ...prev, transactionRef: e.target.value }))}
-                  placeholder="Ex: TXN123456789"
-                />
-              </div>
-
-              {/* Boutons d'action */}
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep('methods')}>
-                  Retour
-                </Button>
-                <Button
-                  onClick={handleCajaVecinaSubmit}
-                  disabled={cajaVecinaLoading || !cajaVecinaData.receipt}
-                  className="flex-1 btn-hero"
-                >
-                  {cajaVecinaLoading ? 'Vérification...' : 'Soumettre le paiement'}
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}

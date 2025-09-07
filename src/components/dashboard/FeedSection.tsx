@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Heart, 
   MessageCircle, 
@@ -12,7 +13,9 @@ import {
   Video,
   Mic,
   Crown,
-  Lock
+  Lock,
+  Plus,
+  Edit3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +24,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useGenderFilteredFeed } from '@/hooks/useGenderFilteredFeed';
 import { useMessaging } from '@/hooks/useMessaging';
 import { useToast } from '@/hooks/use-toast';
+import { PremiumUpgradeModal } from '@/components/settings/PremiumUpgradeModal';
+import { useCountryDetection } from '@/hooks/useCountryDetection';
+import { CreatePostModal } from '@/components/feed/CreatePostModal';
 
 interface FeedSectionProps {
   className?: string;
@@ -30,25 +36,32 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
   const { posts, loading, error, refresh, userProfile, userInterests } = useGenderFilteredFeed();
   const { sending, sendContactRequest, startAudioCall, startVideoCall } = useMessaging();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { countryInfo } = useCountryDetection();
+  
+  // État pour gérer l'ouverture des modals
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
 
   const handleContact = async (post: any) => {
     if (!post.canContact) {
-      toast({
-        title: "Plan gratuit requis",
-        description: post.contactRestriction || "Passez au plan premium pour contacter cette personne.",
-        variant: "destructive",
-      });
+      setShowPremiumModal(true);
       return;
     }
 
-    // Ouvrir le modal de contact ou rediriger vers la page de messages
     toast({
-      title: "💬 Contact",
-      description: "Redirection vers la page de messages...",
+      title: "Demande de contact envoyée",
+      description: `Votre demande a été envoyée à ${post.profiles?.full_name}`,
     });
-    
-    // Ici vous pouvez rediriger vers la page de messages
-    // navigate(`/messages?recipient=${post.author_id}`);
+  };
+
+  const handleCreatePost = () => {
+    setShowCreatePostModal(true);
+  };
+
+  const handlePostCreated = () => {
+    // Actualiser le feed après création d'un post
+    refresh();
   };
 
   const handleAudioCall = async (post: any) => {
@@ -65,6 +78,10 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
       // Logique pour démarrer l'appel
       console.log('Démarrage appel vidéo avec:', post.author_id);
     }
+  };
+
+  const handlePremiumModalClose = () => {
+    setShowPremiumModal(false);
   };
 
   if (loading) {
@@ -121,22 +138,41 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Bouton Créer une publication */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Edit3 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">Créer une publication</h3>
+                <p className="text-sm text-gray-600">Partagez vos pensées avec la communauté</p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleCreatePost}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Publier
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Header avec refresh */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">📱 Fil d'actualité personnalisé</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {userProfile && (
-              <>
-                {userProfile.gender === 'male' ? 'Homme' : 'Femme'} cherchant 
-                {userProfile.seeking_gender === 'both' ? ' tout le monde' : 
-                 userProfile.seeking_gender === 'male' ? ' des hommes' : ' des femmes'}
-                {userInterests.length > 0 && ` • ${userInterests.length} intérêt${userInterests.length > 1 ? 's' : ''}`}
-              </>
-            )}
-          </p>
-        </div>
-        <Button onClick={refresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <h2 className="text-2xl font-bold text-gray-900">Fil d'actualité</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refresh}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Actualiser
         </Button>
       </div>
@@ -205,13 +241,13 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
               {/* Actions de contact avec logique premium */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">
-                  {/* Bouton de contact principal */}
+                  {/* Bouton de contact principal - CORRECTION ICI */}
                   <Button
                     variant={post.canContact ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleContact(post)}
                     disabled={sending}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 cursor-pointer"
                   >
                     {post.canContact ? (
                       <>
@@ -275,6 +311,19 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
           </Card>
         ))}
       </div>
+
+      {/* Modals */}
+      <CreatePostModal
+        open={showCreatePostModal}
+        onClose={() => setShowCreatePostModal(false)}
+        onPostCreated={handlePostCreated}
+      />
+      
+      <PremiumUpgradeModal
+        open={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        userCountry={countryInfo?.country}
+      />
     </div>
   );
 };

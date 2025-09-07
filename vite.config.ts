@@ -19,4 +19,29 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Optimisations PWA
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-slot']
+        }
+      }
+    },
+    // Compression et optimisation
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: mode === 'production'
+      }
+    }
+  },
+  // Configuration PWA
+  define: {
+    __PWA_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString())
+  }
 }));

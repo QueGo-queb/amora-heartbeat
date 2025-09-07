@@ -57,81 +57,90 @@ export function useFeed(options: UseFeedOptions = {}) {
       if (!cursor) setLoading(true);
       if (cursor) setLoadingMore(true);
 
-      // Construire la requête de base
-      let query = supabase
-        .from('posts')
-        .select(`
-          *,
-          user:profiles!posts_user_id_fkey(
-            id,
-            full_name,
-            avatar_url,
-            is_premium
-          ),
-          post_likes!inner(user_id)
-        `)
-        .eq('visibility', 'public')
-        .order('created_at', { ascending: false })
-        .limit(pageSize);
+      // Préparer les filtres pour la fonction RPC
+      const userFilters = {
+        media_type: filters.media_type || 'all',
+        premium_only: filters.premium_only ? 'true' : 'false',
+        tags: filters.tags || []
+      };
 
-      // Appliquer les filtres
-      if (filters.media_type && filters.media_type !== 'all') {
-        query = query.contains('media', [{ type: filters.media_type }]);
+      console.log('🔄 Chargement du feed avec filtres:', userFilters);
+
+      // Utiliser notre fonction RPC optimisée
+      const { data, error: fetchError } = await supabase.rpc('get_feed_posts_optimized', {
+        page_size: pageSize,
+        cursor_date: cursor ? cursor : null,
+        user_filters: userFilters
+      });
+
+      if (fetchError) {
+        console.error('Erreur lors du chargement du feed:', fetchError);
+        throw fetchError;
       }
 
-      if (filters.tags && filters.tags.length > 0) {
-        query = query.overlaps('tags', filters.tags);
-      }
+      console.log('✅ Feed chargé:', data?.length, 'posts');
 
-      if (filters.premium_only) {
-        query = query.eq('is_premium', true);
-      }
-
-      if (cursor) {
-        query = query.lt('created_at', cursor);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) throw fetchError;
-
-      // Calculer les scores et trier
-      const postsWithScores = data?.map(post => ({
-        ...post,
-        score: calculatePostScore(post)
+      // Transformer les données pour correspondre au format attendu
+      const transformedPosts = data?.map(post => ({
+        id: post.id,
+        content: post.content,
+        media_urls: post.media_urls || [],
+        media_types: post.media_types || [],
+        target_group: post.target_group,
+        target_countries: post.target_countries || [],
+        target_languages: post.target_languages || [],
+        phone_number: post.phone_number,
+        external_links: post.external_links || [],
+        created_at: post.created_at,
+        
+        // Données utilisateur transformées
+        user: {
+          id: post.user_id,
+          email: post.user_email,
+          full_name: post.user_full_name,
+          avatar_url: post.user_avatar_url,
+          plan: post.user_plan,
+          is_premium: post.user_plan === 'premium'
+        },
+        
+        // Engagement
+        likes_count: post.likes_count,
+        comments_count: post.comments_count,
+        user_has_liked: post.user_has_liked,
+        
+        // Calculer le score pour le tri
+        score: calculatePostScore({
+          created_at: post.created_at,
+          is_premium: post.user_plan === 'premium',
+          likes_count: post.likes_count,
+          comments_count: post.comments_count,
+          media: post.media_urls || []
+        })
       })) || [];
 
       // Trier par score si demandé
       if (filters.sort_by === 'popular') {
-        postsWithScores.sort((a, b) => b.score - a.score);
+        transformedPosts.sort((a, b) => b.score - a.score);
       }
 
-      // Marquer les posts likés par l'utilisateur actuel
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userLikes } = await supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', user.id);
-
-        const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
-        postsWithScores.forEach(post => {
-          post.is_liked = likedPostIds.has(post.id);
-        });
-      }
-
-      if (append) {
-        setPosts(prev => [...prev, ...postsWithScores]);
+      // Mettre à jour l'état
+      if (append && cursor) {
+        setPosts(prev => [...prev, ...transformedPosts]);
       } else {
-        setPosts(postsWithScores);
+        setPosts(transformedPosts);
       }
 
-      setHasMore(postsWithScores.length === pageSize);
-      setNextCursor(postsWithScores.length > 0 ? postsWithScores[postsWithScores.length - 1].created_at : null);
+      // Gérer la pagination
+      setHasMore(transformedPosts.length === pageSize);
+      if (transformedPosts.length > 0) {
+        setNextCursor(transformedPosts[transformedPosts.length - 1].created_at);
+      }
+
+      console.log('✅ Feed mis à jour avec', transformedPosts.length, 'posts');
 
     } catch (err) {
-      console.error('Error loading posts:', err);
-      setError('Impossible de charger les posts');
+      console.error('Erreur lors du chargement du feed:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
       toast({
         title: "Erreur",
         description: "Impossible de charger le feed",
@@ -282,4 +291,3 @@ export function useFeed(options: UseFeedOptions = {}) {
     createPost
   };
 }
-```

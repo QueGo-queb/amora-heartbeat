@@ -1,5 +1,5 @@
 /**
- * Page de communication admin
+ * Page de communication admin - CORRIGÉE
  * Permet d'envoyer des notifications et messages aux utilisateurs
  */
 
@@ -47,17 +47,27 @@ const AdminCommunication = () => {
     }
   };
 
+  // CORRECTION: Fonction pour envoyer les messages avec intégration réelle
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Ici vous pouvez implémenter l'envoi de notifications
-      // via Supabase ou un service externe
-      
+      // Créer une notification système dans la base de données
+      const { error: insertError } = await supabase
+        .from('posts')
+        .insert({
+          content: `📢 ${messageData.title}\n\n${messageData.content}`,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          type: 'system_announcement',
+          created_at: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
+
       toast({
-        title: "Message envoyé",
-        description: "Le message a été envoyé avec succès.",
+        title: "✅ Message envoyé",
+        description: `Le message "${messageData.title}" a été publié dans le fil d'actualité`,
       });
 
       setMessageData({
@@ -68,9 +78,60 @@ const AdminCommunication = () => {
         priority: 'normal'
       });
     } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         title: "Erreur",
         description: "Impossible d'envoyer le message",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // CORRECTION: Actions rapides fonctionnelles
+  const handleQuickAction = async (actionType: string) => {
+    setLoading(true);
+    try {
+      let messageContent = '';
+      let messageTitle = '';
+
+      switch (actionType) {
+        case 'newsletter':
+          messageTitle = '📬 Newsletter AMORA';
+          messageContent = 'Découvrez les nouveautés et fonctionnalités de cette semaine sur AMORA ! Restez connectés pour ne rien manquer.';
+          break;
+        case 'maintenance':
+          messageTitle = '🔧 Maintenance programmée';
+          messageContent = 'Une maintenance est prévue ce soir de 23h à 1h du matin. Le service pourrait être temporairement indisponible. Merci de votre compréhension.';
+          break;
+        case 'welcome':
+          messageTitle = '🎉 Bienvenue aux nouveaux membres !';
+          messageContent = 'Un grand bienvenue à tous nos nouveaux membres qui nous ont rejoint cette semaine ! N\'hésitez pas à compléter votre profil et à explorer toutes les fonctionnalités.';
+          break;
+      }
+
+      // Publier directement dans le fil d'actualité
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          content: `${messageTitle}\n\n${messageContent}`,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          type: 'system_announcement',
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Action effectuée",
+        description: `${messageTitle} publié avec succès`,
+      });
+    } catch (error) {
+      console.error('Error with quick action:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'effectuer l'action",
         variant: "destructive",
       });
     } finally {
@@ -110,6 +171,7 @@ const AdminCommunication = () => {
                     id="title"
                     value={messageData.title}
                     onChange={(e) => setMessageData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Entrez le titre du message..."
                     required
                   />
                 </div>
@@ -120,6 +182,7 @@ const AdminCommunication = () => {
                     id="content"
                     value={messageData.content}
                     onChange={(e) => setMessageData(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Rédigez votre message..."
                     rows={4}
                     required
                   />
@@ -134,8 +197,8 @@ const AdminCommunication = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="notification">Notification</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="push">Push</SelectItem>
+                        <SelectItem value="announcement">Annonce</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -157,13 +220,13 @@ const AdminCommunication = () => {
 
                 <Button type="submit" disabled={loading} className="w-full">
                   <Send className="w-4 h-4 mr-2" />
-                  {loading ? 'Envoi...' : 'Envoyer'}
+                  {loading ? 'Envoi en cours...' : 'Publier le message'}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          {/* Statistiques */}
+          {/* Statistiques et Actions rapides */}
           <div className="space-y-6">
             <Card className="culture-card">
               <CardHeader>
@@ -179,17 +242,18 @@ const AdminCommunication = () => {
                     <span className="font-medium">12</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Taux d'ouverture</span>
-                    <span className="font-medium">78%</span>
+                    <span>Messages actifs</span>
+                    <span className="font-medium">8</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Utilisateurs actifs</span>
+                    <span>Utilisateurs connectés</span>
                     <span className="font-medium">1,234</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* CORRECTION: Actions rapides fonctionnelles */}
             <Card className="culture-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -199,18 +263,39 @@ const AdminCommunication = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => handleQuickAction('newsletter')}
+                    disabled={loading}
+                  >
                     <Mail className="w-4 h-4 mr-2" />
                     Envoyer newsletter
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => handleQuickAction('maintenance')}
+                    disabled={loading}
+                  >
                     <Bell className="w-4 h-4 mr-2" />
                     Notification de maintenance
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => handleQuickAction('welcome')}
+                    disabled={loading}
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Message aux nouveaux utilisateurs
                   </Button>
+                </div>
+                
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 Ces messages seront publiés automatiquement dans le fil d'actualité et visibles par tous les utilisateurs.
+                  </p>
                 </div>
               </CardContent>
             </Card>
