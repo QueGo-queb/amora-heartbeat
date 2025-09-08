@@ -36,6 +36,7 @@ const Footer = () => {
       case 'twitter': return Twitter;
       case 'linkedin': return Linkedin;
       case 'youtube': return Youtube;
+      case 'tiktok': return Globe; // TikTok utilise Globe pour l'instant
       default: return Globe;
     }
   };
@@ -50,12 +51,21 @@ const Footer = () => {
     }
   };
 
-  // Organiser les liens par catégorie
+  // ✅ CORRECTION: Organiser les liens et socials ACTIFS uniquement
   const linksByCategory = {
-    quick_links: links.filter(link => link.category === 'quick_links'),
-    support: links.filter(link => link.category === 'support'),
-    legal: links.filter(link => link.category === 'legal')
+    quick_links: links.filter(link => link.category === 'quick_links' && link.is_active),
+    support: links.filter(link => link.category === 'support' && link.is_active),
+    legal: links.filter(link => link.category === 'legal' && link.is_active)
   };
+
+  // ✅ CORRECTION: Filtrer seulement les réseaux sociaux ACTIFS
+  const activeSocials = socials.filter(social => social.is_active);
+
+  console.log('🔍 === FOOTER DEBUG ===');
+  console.log('Total socials:', socials.length);
+  console.log('Active socials:', activeSocials.length);
+  console.log('Socials data:', socials);
+  console.log('Active socials data:', activeSocials);
 
   if (loading) {
     return (
@@ -98,104 +108,33 @@ const Footer = () => {
                 {content?.company_description || 'La plateforme de rencontres qui transcende les frontières.'}
               </p>
               {/* Statistiques */}
-              <div className="space-y-4">
-                {content?.company_stats?.map((stat, index) => {
-                  const Icon = getStatIcon(stat.icon);
-                  return (
-                    <div key={index} className="flex items-center gap-3 text-sm">
-                      <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-red-400" />
+              {content?.company_stats && (
+                <div className="grid grid-cols-1 gap-4 mb-8">
+                  {content.company_stats.map((stat, index) => {
+                    const Icon = getStatIcon(stat.icon);
+                    return (
+                      <div key={index} className="flex items-center gap-3 text-sm">
+                        <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                          <Icon className="w-4 h-4 text-red-400" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white">{stat.value}</div>
+                          <div className="text-gray-400 text-xs">{stat.label}</div>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-semibold text-white">{stat.value}</span>
-                        <span className="text-gray-400 ml-1">{stat.label}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                    );
+                  })}
+                </div>
+              )}
 
-            {/* Liens rapides */}
-            <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Liens rapides</h3>
-              <ul className="space-y-3">
-                {linksByCategory.quick_links.map((link) => (
-                  <li key={link.id}>
-                    <a 
-                      href={link.href} 
-                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
-                    >
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              
-              <h4 className="text-lg font-semibold mt-8 mb-4 text-white">Support</h4>
-              <ul className="space-y-3">
-                {linksByCategory.support.map((link) => (
-                  <li key={link.id}>
-                    <a 
-                      href={link.href} 
-                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
-                    >
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Contact</h3>
-              <div className="space-y-4 mb-8">
-                {content?.contact_address && (
-                  <div className="flex items-start gap-3 text-sm">
-                    <MapPin className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-300">{content.contact_address}</span>
-                  </div>
-                )}
-                {content?.contact_phone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <a 
-                      href={`tel:${content.contact_phone}`} 
-                      className="text-gray-300 hover:text-white transition-colors"
-                    >
-                      {content.contact_phone}
-                    </a>
-                  </div>
-                )}
-                {content?.contact_email && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <a 
-                      href={`mailto:${content.contact_email}`} 
-                      className="text-gray-300 hover:text-white transition-colors"
-                    >
-                      {content.contact_email}
-                    </a>
-                  </div>
-                )}
-                {content?.contact_hours && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Clock className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <span className="text-gray-300">{content.contact_hours}</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Réseaux sociaux */}
-              {socials.length > 0 && (
+              {/* ✅ CORRECTION: Réseaux sociaux ACTIFS seulement */}
+              {activeSocials.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold mb-4 text-white">Suivez-nous</h4>
                   <div className="flex space-x-4">
-                    {socials.map((social) => {
+                    {activeSocials.map((social) => {
                       const Icon = getSocialIcon(social.icon_name);
+                      console.log('🔗 Affichage réseau social:', social.name, social.is_active);
                       return (
                         <a 
                           key={social.id}
@@ -204,12 +143,26 @@ const Footer = () => {
                           rel="noopener noreferrer"
                           className={`w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center transition-all duration-300 hover:transform hover:scale-110 hover:bg-slate-600 ${social.color_class}`}
                           aria-label={social.name}
+                          title={social.name}
                         >
                           <Icon className="w-5 h-5" />
                         </a>
                       );
                     })}
                   </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {activeSocials.length} réseau{activeSocials.length > 1 ? 'x' : ''} actif{activeSocials.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+
+              {/* ✅ DEBUG: Afficher si aucun réseau actif */}
+              {activeSocials.length === 0 && socials.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 text-white">Suivez-nous</h4>
+                  <p className="text-sm text-gray-400">
+                    Aucun réseau social actif ({socials.length} désactivé{socials.length > 1 ? 's' : ''})
+                  </p>
                 </div>
               )}
             </div>
@@ -249,51 +202,76 @@ const Footer = () => {
                     </>
                   )}
                 </button>
-                <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-green-400" />
-                    <span className="text-sm font-medium text-white">100% sécurisé</span>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    Vos données sont protégées et nous ne partageons jamais votre email avec des tiers.
-                  </p>
-                </div>
               </div>
+            </div>
+
+            {/* ✅ CORRECTION: Liens ACTIFS seulement */}
+            {/* Liens rapides */}
+            <div>
+              <h3 className="text-xl font-semibold mb-6 text-white">Liens rapides</h3>
+              <ul className="space-y-3">
+                {linksByCategory.quick_links.map((link) => (
+                  <li key={link.id}>
+                    <a 
+                      href={link.href} 
+                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                    >
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {link.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support & Légal */}
+            <div>
+              <h3 className="text-xl font-semibold mb-6 text-white">Support</h3>
+              <ul className="space-y-3 mb-8">
+                {linksByCategory.support.map((link) => (
+                  <li key={link.id}>
+                    <a 
+                      href={link.href} 
+                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                    >
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {link.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+
+              <h4 className="text-lg font-semibold mb-4 text-white">Légal</h4>
+              <ul className="space-y-3">
+                {linksByCategory.legal.map((link) => (
+                  <li key={link.id}>
+                    <a 
+                      href={link.href} 
+                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                    >
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {link.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
 
-        {/* Séparateur */}
-        <div className="border-t border-slate-700"></div>
-
-        {/* Footer bottom */}
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            {/* Copyright */}
-            <div className="text-center lg:text-left">
-              <p className="text-gray-400 text-sm">
-                © {currentYear} {content?.company_name || 'Amora'}. Tous droits réservés.
-              </p>
-              <p className="text-gray-500 text-xs mt-1">
-                L'amour n'a pas de frontières - Connectons les cœurs du monde entier
-              </p>
-            </div>
-            {/* Liens légaux */}
-            <div className="flex flex-wrap justify-center gap-6">
-              {linksByCategory.legal.map((link) => (
-                <a 
-                  key={link.id}
-                  href={link.href} 
-                  className="text-gray-400 hover:text-white text-sm transition-colors duration-300"
-                >
-                  {link.name}
-                </a>
-              ))}
-            </div>
-            {/* Badge de qualité */}
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Heart className="w-4 h-4 text-red-400 fill-current animate-pulse" />
-              <span>Fait avec amour au Canada</span>
+        {/* Ligne de séparation */}
+        <div className="border-t border-slate-700">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                <span>© {currentYear} Amora. Tous droits réservés.</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>Fait avec</span>
+                <Heart className="w-4 h-4 text-red-500" />
+                <span>en France</span>
+              </div>
             </div>
           </div>
         </div>

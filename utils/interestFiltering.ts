@@ -94,3 +94,74 @@ export function filterPostsByRelevance(
 ): any[] {
   return posts.filter(post => post.matchScore >= minScore);
 }
+
+export function filterByInterests(posts: any[], userInterests: string[]) {
+  return posts.filter(post => {
+    // Simple interest matching logic
+    return true; // Placeholder
+  });
+}
+
+// Copie du fichier utils/interestFiltering.ts existant
+export interface InterestFilter {
+  category: string;
+  interests: string[];
+  weight: number;
+}
+
+export interface UserInterests {
+  primary: string[];
+  secondary: string[];
+  excluded: string[];
+}
+
+export function filterUsersByInterests(
+  users: any[],
+  currentUserInterests: string[],
+  threshold: number = 0.3
+): any[] {
+  return users.filter(user => {
+    const userInterests = user.interests || [];
+    const commonInterests = userInterests.filter((interest: string) => 
+      currentUserInterests.includes(interest)
+    );
+    
+    const matchPercentage = commonInterests.length / Math.max(currentUserInterests.length, 1);
+    return matchPercentage >= threshold;
+  });
+}
+
+export function calculateInterestScore(
+  userA: string[],
+  userB: string[]
+): number {
+  const intersection = userA.filter(interest => userB.includes(interest));
+  const union = [...new Set([...userA, ...userB])];
+  
+  return union.length > 0 ? intersection.length / union.length : 0;
+}
+
+export function getInterestRecommendations(
+  userInterests: string[],
+  allUsers: any[]
+): string[] {
+  const allInterests = allUsers.flatMap(user => user.interests || []);
+  const interestCounts = allInterests.reduce((acc, interest) => {
+    acc[interest] = (acc[interest] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(interestCounts)
+    .filter(([interest]) => !userInterests.includes(interest))
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .map(([interest]) => interest);
+}
+
+export const INTEREST_CATEGORIES = {
+  SPORTS: ['football', 'basketball', 'tennis', 'natation', 'course'],
+  ARTS: ['peinture', 'musique', 'danse', 'théâtre', 'cinéma'],
+  TECHNOLOGY: ['programmation', 'gaming', 'robotique', 'IA'],
+  TRAVEL: ['voyages', 'aventure', 'camping', 'randonnée'],
+  FOOD: ['cuisine', 'pâtisserie', 'vin', 'gastronomie']
+};

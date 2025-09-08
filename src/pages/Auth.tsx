@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useLoader } from "@/hooks/use-loader";
+import { analytics } from '@/lib/analytics';
 
 const Auth = () => {
   const [loginData, setLoginData] = useState({
@@ -127,6 +128,8 @@ const Auth = () => {
         } else {
           navigate('/dashboard');
         }
+        // Tracker la connexion réussie
+        analytics.userLogin('email');
       }
     } catch (error) {
       setLoginError("Une erreur inattendue est survenue.");

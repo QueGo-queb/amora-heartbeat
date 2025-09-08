@@ -12,9 +12,21 @@ export const useAuth = () => {
   useEffect(() => {
     // Récupérer la session initiale
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erreur récupération session:', error);
+        }
+        
+        console.log('🔍 Session récupérée:', session?.user?.email || 'Aucun utilisateur');
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Erreur lors de la récupération de session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getInitialSession();
@@ -22,17 +34,17 @@ export const useAuth = () => {
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state change:', event, session?.user?.email || 'Aucun utilisateur');
+        
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Gérer les redirections automatiques
-        if (event === 'SIGNED_IN' && session?.user) {
-          if (session.user.email === 'clodenerc@yahoo.fr') {
-            navigate('/admin');
-          } else {
-            navigate('/dashboard');
-          }
-        } else if (event === 'SIGNED_OUT') {
+        // **SUPPRESSION DES REDIRECTIONS AUTOMATIQUES PROBLÉMATIQUES**
+        // Ne pas rediriger automatiquement depuis le feed
+        // L'utilisateur peut rester sur la page qu'il visite
+        
+        if (event === 'SIGNED_OUT') {
+          // Seulement rediriger lors de la déconnexion
           navigate('/');
         }
       }
@@ -57,11 +69,14 @@ export const useAuth = () => {
     }
   };
 
+  // Vérification admin simple et fiable
+  const isAdminLegacy = user?.email === 'clodenerc@yahoo.fr';
+
   return {
     user,
     loading,
     signOut,
     isAuthenticated: !!user,
-    isAdmin: user?.email === 'clodenerc@yahoo.fr'
+    isAdmin: isAdminLegacy,
   };
 };

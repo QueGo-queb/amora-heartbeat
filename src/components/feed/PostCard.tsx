@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS, es, ptBR } from 'date-fns/locale';
-import type { FeedPost } from '@/types/feed';
+import type { FeedPost } from '../../../types/feed';
 import { supabase } from '@/integrations/supabase/client';
 import { usePremium } from '@/hooks/usePremium';
 import { useToast } from '@/hooks/use-toast';

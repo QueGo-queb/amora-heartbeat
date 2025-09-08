@@ -39,7 +39,6 @@ export const useCajaVecina = () => {
 
       // Si la table n'existe pas encore, ne pas afficher d'erreur
       if (error && (error.code === 'PGRST116' || error.code === '42P01')) {
-        console.log('Table caja_vecina_accounts pas encore créée');
         return;
       }
 

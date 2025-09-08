@@ -59,7 +59,6 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const handleNavigation = (href: string) => {
-    console.log('Navigation vers:', href);
     navigate(href);
     setIsOpen(false);
   };

@@ -5,7 +5,7 @@ import {
   getAllPostsFromFilteredUsers,
   filterPostsByRelevance,
   UserWithCommonInterests 
-} from '@/utils/interestFiltering';
+} from '../../utils/interestFiltering';
 
 export function useTestData() {
   const [filteredUsers, setFilteredUsers] = useState<UserWithCommonInterests[]>([]);

@@ -68,16 +68,14 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
     const result = await startAudioCall(post.author_id);
     if (result.success) {
       // Logique pour démarrer l'appel
-      console.log('Démarrage appel audio avec:', post.author_id);
-    }
+      }
   };
 
   const handleVideoCall = async (post: any) => {
     const result = await startVideoCall(post.author_id);
     if (result.success) {
       // Logique pour démarrer l'appel
-      console.log('Démarrage appel vidéo avec:', post.author_id);
-    }
+      }
   };
 
   const handlePremiumModalClose = () => {

@@ -46,6 +46,8 @@ import { UsdtLinksManager } from '@/components/admin/UsdtLinksManager';
 import { AdminBankAccountManager } from '@/components/admin/AdminBankAccountManager';
 import { InteracManager } from '@/components/admin/InteracManager';
 import { StripeManager } from '@/components/admin/StripeManager';
+import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
+import { MoneyTransferButton } from '@/components/admin/MoneyTransferButton';
 
 interface AdminStats {
   totalUsers: number;
@@ -54,6 +56,7 @@ interface AdminStats {
   pendingReports: number;
   activeAds: number;
   activePromotions: number;
+  availableBalance?: number;
 }
 
 const AdminDashboard = () => {
@@ -63,7 +66,8 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     pendingReports: 0,
     activeAds: 0,
-    activePromotions: 0
+    activePromotions: 0,
+    availableBalance: 0
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -97,6 +101,7 @@ const AdminDashboard = () => {
       const { data: reports } = await supabase.from('reports').select('*');
       const { data: ads } = await supabase.from('ads').select('*');
       const { data: promotions } = await supabase.from('promotions').select('*');
+      const { data: adminTransfers } = await supabase.from('admin_transfers').select('*');
 
       setStats({
         totalUsers: users?.length || 0,
@@ -104,7 +109,8 @@ const AdminDashboard = () => {
         totalRevenue: (transactions?.filter(t => t.status === 'succeeded').reduce((sum, t) => sum + t.amount_cents, 0) || 0) / 100,
         pendingReports: reports?.filter(r => r.status === 'pending').length || 0,
         activeAds: ads?.filter(a => a.is_active).length || 0,
-        activePromotions: promotions?.filter(p => p.is_active).length || 0
+        activePromotions: promotions?.filter(p => p.is_active).length || 0,
+        availableBalance: await getAvailableBalance()
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -129,7 +135,7 @@ const AdminDashboard = () => {
   // Fonction de navigation sécurisée pour tous les boutons
   const handleNavigation = (path: string) => {
     try {
-      console.log(`Navigation vers: ${path}`); // Debug
+      // Debug
       navigate(path);
     } catch (error) {
       console.error(`Erreur de navigation vers ${path}:`, error);
@@ -145,8 +151,6 @@ const AdminDashboard = () => {
   const runSystemDiagnostic = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Lancement du diagnostic système...');
-      
       const diagnosticResults = {
         database: 'OK',
         authentication: 'OK',
@@ -177,9 +181,7 @@ const AdminDashboard = () => {
         description: `Base de données: ${diagnosticResults.database} | Auth: ${diagnosticResults.authentication} | Stockage: ${diagnosticResults.storage}`,
       });
 
-      console.log('📊 Résultats du diagnostic:', diagnosticResults);
-      
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Erreur lors du diagnostic:', error);
       toast({
         title: "❌ Erreur de diagnostic",
@@ -312,6 +314,22 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">
                 Ce mois
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Transfert d'argent - Nouvelle carte */}
+          <Card className="culture-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Solde disponible</CardTitle>
+              <DollarSign className="w-4 h-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {stats.availableBalance?.toFixed(2) || '0.00'}€
+              </div>
+              <div className="mt-4">
+                <MoneyTransferButton />
+              </div>
             </CardContent>
           </Card>
         </div>

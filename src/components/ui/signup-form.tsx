@@ -13,7 +13,8 @@ import { useLoader } from "@/hooks/use-loader";
 import { useNavigate } from "react-router-dom";
 import { Loader, LoaderOverlay } from "@/components/ui/loader";
 import { LoadingButton } from "@/components/ui/loading-button";
-import InterestsSelector from './InterestsSelector';
+import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
+import { analytics } from '@/lib/analytics';
 
 interface SignupFormProps {
   language: string;
@@ -397,16 +398,26 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       }
 
       // Ajout du console.log pour tester
-      console.log('Intérêts sélectionnés:', formData.interests);
       alert(`Intérêts sélectionnés: ${formData.interests.join(', ')}`);
 
-    } catch (error) {
+      // Si succès, tracker l'événement
+      analytics.userSignUp('email');
+
+    } catch (error: any) {
       const errorMessage = getErrorMessage(error, language);
       toast({
         title: "Erreur",
         description: errorMessage,
         variant: "destructive",
       });
+      
+      // Tracker les erreurs d'inscription
+      if (error.message?.includes('email')) {
+        analytics.trackEvent('signup_error', { 
+          type: 'email_validation',
+          error: error.message 
+        });
+      }
     } finally {
       setLoading(false);
       hideLoader();
@@ -733,104 +744,26 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Heart className="w-5 h-5" />
-              Vos intérêts
+              Vos centres d'intérêt
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Sélectionnez vos centres d'intérêt et passions
+              Sélectionnez vos centres d'intérêt pour nous aider à vous proposer des profils compatibles.
+              Vous pourrez modifier ces choix plus tard dans votre profil.
             </p>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[
-                { value: "listening-music", label: "Listening Music", icon: "🎵" },
-                { value: "books", label: "Books", icon: "📚" },
-                { value: "parties", label: "Parties", icon: "🍸" },
-                { value: "self-care", label: "Self Care", icon: "🧖‍♀️" },
-                { value: "message", label: "Message", icon: "✉️" },
-                { value: "hot-yoga", label: "Hot Yoga", icon: "🧘‍♂️" },
-                { value: "gymnastics", label: "Gymnastics", icon: "🤸" },
-                { value: "hockey", label: "Hockey", icon: "🏒" },
-                { value: "football", label: "Football", icon: "⚽" },
-                { value: "meditation", label: "Meditation", icon: "🧘" },
-                { value: "spotify", label: "Spotify", icon: "🎧" },
-                { value: "sushi", label: "Sushi", icon: "🍣" },
-                { value: "painting", label: "Painting", icon: "🎨" },
-                { value: "basketball", label: "Basketball", icon: "🏀" },
-                { value: "theater", label: "Theater", icon: "🎭" },
-                { value: "playing-music-instrument", label: "Playing Music Instrument", icon: "🎸" },
-                { value: "aquarium", label: "Aquarium", icon: "🐠" },
-                { value: "fitness", label: "Fitness", icon: "🏋️" },
-                { value: "travel", label: "Travel", icon: "✈️" },
-                { value: "coffee", label: "Coffee", icon: "☕" },
-                { value: "instagram", label: "Instagram", icon: "📸" },
-                { value: "walking", label: "Walking", icon: "🚶" },
-                { value: "running", label: "Running", icon: "🏃" },
-                { value: "church", label: "Church", icon: "⛪" },
-                { value: "cooking", label: "Cooking", icon: "🍳" },
-                { value: "singing", label: "Singing", icon: "🎤" }
-              ].map((interest) => (
-                <button
-                  key={interest.value}
-                  type="button"
-                  onClick={() => handleInterestToggle(interest.value)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center gap-2 text-sm font-medium ${
-                    formData.interests.includes(interest.value)
-                      ? 'bg-heart-red border-heart-red text-white shadow-lg transform scale-105'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-heart-red/50 hover:bg-heart-red/5'
-                  }`}
-                >
-                  <span className="text-2xl">{interest.icon}</span>
-                  <span className="text-center leading-tight">{interest.label}</span>
-                </button>
-              ))}
-            </div>
+            <EnhancedInterestsSelector
+              selectedInterests={formData.interests}
+              onInterestsChange={(interests) => handleInputChange("interests", interests)}
+              maxSelections={10}
+              showCategories={true}
+              className="mb-4"
+            />
             
             {formData.interests.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">
-                  Intérêts sélectionnés ({formData.interests.length}) :
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  ✅ {formData.interests.length} centre{formData.interests.length > 1 ? 's' : ''} d'intérêt sélectionné{formData.interests.length > 1 ? 's' : ''}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {formData.interests.map((interest) => {
-                    const interestData = [
-                      { value: "listening-music", label: "Listening Music", icon: "🎵" },
-                      { value: "books", label: "Books", icon: "📚" },
-                      { value: "parties", label: "Parties", icon: "🍸" },
-                      { value: "self-care", label: "Self Care", icon: "🧖‍♀️" },
-                      { value: "message", label: "Message", icon: "✉️" },
-                      { value: "hot-yoga", label: "Hot Yoga", icon: "🧘‍♂️" },
-                      { value: "gymnastics", label: "Gymnastics", icon: "🤸" },
-                      { value: "hockey", label: "Hockey", icon: "🏒" },
-                      { value: "football", label: "Football", icon: "⚽" },
-                      { value: "meditation", label: "Meditation", icon: "🧘" },
-                      { value: "spotify", label: "Spotify", icon: "🎧" },
-                      { value: "sushi", label: "Sushi", icon: "🍣" },
-                      { value: "painting", label: "Painting", icon: "🎨" },
-                      { value: "basketball", label: "Basketball", icon: "🏀" },
-                      { value: "theater", label: "Theater", icon: "🎭" },
-                      { value: "playing-music-instrument", label: "Playing Music Instrument", icon: "🎸" },
-                      { value: "aquarium", label: "Aquarium", icon: "🐠" },
-                      { value: "fitness", label: "Fitness", icon: "🏋️" },
-                      { value: "travel", label: "Travel", icon: "✈️" },
-                      { value: "coffee", label: "Coffee", icon: "☕" },
-                      { value: "instagram", label: "Instagram", icon: "📸" },
-                      { value: "walking", label: "Walking", icon: "🚶" },
-                      { value: "running", label: "Running", icon: "🏃" },
-                      { value: "church", label: "Church", icon: "⛪" },
-                      { value: "cooking", label: "Cooking", icon: "🍳" },
-                      { value: "singing", label: "Singing", icon: "🎤" }
-                    ].find(item => item.value === interest);
-                    
-                    return (
-                      <span
-                        key={interest}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-heart-red text-white text-xs rounded-full"
-                      >
-                        <span>{interestData?.icon}</span>
-                        <span>{interestData?.label}</span>
-                      </span>
-                    );
-                  })}
-                </div>
               </div>
             )}
           </div>

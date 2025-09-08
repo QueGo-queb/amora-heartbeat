@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -11,37 +12,54 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    // Plugin de développement seulement
+    mode === 'development' && componentTagger(),
+    // Plugin Sentry pour production
+    mode === 'production' && sentryVitePlugin({
+      org: "your-sentry-org",
+      project: "amora",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
   ].filter(Boolean),
+  
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+      "@": path.resolve(__dirname, "./src")
+    }
   },
+  
+  // Optimisations production
+  define: {
+    ...(mode === 'production' && {
+      'console.log': '(() => {})',
+      'console.debug': '(() => {})',
+      'console.warn': '(() => {})',
+    }),
+  },
+  
   build: {
-    // Optimisations PWA
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
           supabase: ['@supabase/supabase-js'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-slot']
-        }
-      }
+          utils: ['date-fns', 'clsx', 'zustand'],
+        },
+      },
     },
-    // Compression et optimisation
-    minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production'
-      }
-    }
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.debug', 'console.warn'],
+      },
+    },
   },
-  // Configuration PWA
-  define: {
-    __PWA_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
-    __BUILD_DATE__: JSON.stringify(new Date().toISOString())
-  }
+  
+  // Optimisations générales
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
 }));

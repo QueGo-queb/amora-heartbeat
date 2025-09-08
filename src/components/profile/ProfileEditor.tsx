@@ -10,7 +10,8 @@ import {
   AlertCircle,
   ArrowLeft,
   MapPin,
-  Globe
+  Globe,
+  Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import InterestsEditor from './InterestsEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AvatarUpload } from './AvatarUpload';
+import { useAvatar } from '@/hooks/useAvatar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { EnhancedInterestsSelector } from './EnhancedInterestsSelector';
 
 // Ajouter les données de localisation
 const countries = [
@@ -92,6 +97,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   const [userEmail, setUserEmail] = useState<string>(''); // Email séparé depuis auth
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const { avatarUrl, updateAvatar } = useAvatar();
 
   // Récupérer l'email de l'utilisateur connecté
   useEffect(() => {
@@ -179,8 +186,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 
       // Si la mise à jour échoue, essayer l'insertion
       if (updateError) {
-        console.log('Mise à jour échouée, tentative d\'insertion:', updateError);
-        
         const { error: insertError } = await supabase
           .from('profiles')
           .insert([{
@@ -372,6 +377,26 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Section Photo de Profil */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  Photo de profil
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AvatarUpload 
+                  currentAvatarUrl={avatarUrl}
+                  onAvatarUpdate={updateAvatar}
+                  size="lg"
+                />
+                <p className="text-sm text-gray-500 mt-4 text-center">
+                  Formats acceptés : JPG, PNG, GIF (max 5MB)
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Nom complet */}
             <div>
               <Label htmlFor="full_name" className="text-sm font-medium">
@@ -491,10 +516,17 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               </div>
             </div>
 
-            {/* Éditeur d'intérêts */}
-            <InterestsEditor
-              selectedInterests={formData.interests}
-              onInterestsChange={handleInterestsChange}
+            {/* Section Centres d'intérêt - VERSION CORRIGÉE */}
+            <EnhancedInterestsSelector
+              selectedInterests={profile.interests || []}
+              onInterestsChange={(interests) => {
+                console.log('🔧 Intérêts sélectionnés:', interests);
+                // CORRECTION: Mettre à jour à la fois profile ET formData
+                setProfile(prev => ({...prev, interests}));
+                setFormData(prev => ({...prev, interests}));
+              }}
+              maxSelections={15}
+              className="mb-6"
             />
 
             {/* Actions */}

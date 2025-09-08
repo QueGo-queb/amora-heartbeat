@@ -302,7 +302,7 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
     
     try {
       await submitMonCashPayment(
-        monCashData.senderPhone,
+        monCashData.senderPhone as string,
         monCashData.transactionRef,
         pricing?.price_htg || (pricing?.price_usd * 133) || 3999,
         monCashData.receipt || undefined

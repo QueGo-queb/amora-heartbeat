@@ -44,7 +44,6 @@ export const useMonCash = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.log('Aucune configuration MonCash trouvée');
         return;
       }
       

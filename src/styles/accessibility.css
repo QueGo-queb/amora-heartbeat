@@ -1,0 +1,72 @@
+/* Classes utilitaires pour l'accessibilité */
+
+/* Screen readers only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible amélioré */
+.focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Mode contraste élevé */
+@media (prefers-contrast: high) {
+  .text-muted {
+    color: #000 !important;
+  }
+  
+  .border {
+    border-color: #000 !important;
+    border-width: 2px !important;
+  }
+}
+
+/* Mode mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Styles pour les tailles de police personnalisées */
+@media (min-resolution: 2dppx) {
+  .text-sm {
+    font-size: 0.9rem;
+  }
+}
+
+/* Amélioration des zones de clic */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Indicateurs d'état pour les lecteurs d'écran */
+.loading::after {
+  content: " (Chargement en cours...)";
+}
+
+.error::after {
+  content: " (Erreur)";
+}
+
+.success::after {
+  content: " (Succès)";
+}

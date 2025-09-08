@@ -1,266 +1,223 @@
-const CACHE_NAME = 'amora-v1.0.0';
-const STATIC_CACHE_NAME = 'amora-static-v1.0.0';
-const DYNAMIC_CACHE_NAME = 'amora-dynamic-v1.0.0';
+const CACHE_NAME = 'amora-v1.2.0';
+const STATIC_CACHE = 'amora-static-v1.2.0';
+const DYNAMIC_CACHE = 'amora-dynamic-v1.2.0';
+const IMAGE_CACHE = 'amora-images-v1.2.0';
 
 // Ressources à mettre en cache immédiatement
 const STATIC_ASSETS = [
   '/',
-  '/dashboard',
-  '/profile',
-  '/messages',
-  '/matching',
-  '/offline.html',
+  '/auth',
+  '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/manifest.json'
+  '/offline.html'
 ];
 
-// URLs des API à mettre en cache avec stratégie network-first
-const API_URLS = [
-  '/api/',
-  'https://api.supabase.co/'
+// Ressources à précharger
+const PRELOAD_ASSETS = [
+  '/assets/amora-logo.svg',
+  '/icons/icon-maskable-512x512.png'
 ];
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installation...');
+  console.log('🔧 Service Worker: Installation');
   
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => {
-        console.log('📦 Service Worker: Mise en cache des ressources statiques');
+    Promise.all([
+      // Cache statique
+      caches.open(STATIC_CACHE).then(cache => {
+        console.log('📦 Cache statique créé');
         return cache.addAll(STATIC_ASSETS);
+      }),
+      
+      // Préchargement des assets critiques
+      caches.open(IMAGE_CACHE).then(cache => {
+        console.log('🖼️ Préchargement des images');
+        return cache.addAll(PRELOAD_ASSETS);
       })
-      .then(() => {
-        console.log('✅ Service Worker: Installation terminée');
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('❌ Service Worker: Erreur installation:', error);
-      })
+    ])
   );
+  
+  // Force l'activation immédiate
+  self.skipWaiting();
 });
 
 // Activation du Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker: Activation...');
+  console.log('🚀 Service Worker: Activation');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Nettoyage des anciens caches
+      caches.keys().then(cacheNames => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
-              console.log('🗑️ Service Worker: Suppression ancien cache:', cacheName);
+          cacheNames.map(cacheName => {
+            if (cacheName !== STATIC_CACHE && 
+                cacheName !== DYNAMIC_CACHE && 
+                cacheName !== IMAGE_CACHE) {
+              console.log('🗑️ Suppression ancien cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
-      })
-      .then(() => {
-        console.log('✅ Service Worker: Activation terminée');
-        return self.clients.claim();
-      })
+      }),
+      
+      // Prise de contrôle immédiate
+      self.clients.claim()
+    ])
   );
 });
 
-// Stratégie de cache pour les requêtes
+// Stratégies de cache avancées
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // Ignorer les requêtes non-GET
-  if (request.method !== 'GET') {
+  
+  // Ignore les requêtes non-GET
+  if (request.method !== 'GET') return;
+  
+  // Ignore les requêtes externes (sauf Supabase et APIs)
+  if (!url.origin.includes(location.origin) && 
+      !url.origin.includes('supabase') &&
+      !url.origin.includes('stripe')) {
     return;
   }
+  
+  event.respondWith(handleRequest(request));
+});
 
-  // Stratégie pour les ressources statiques (cache-first)
-  if (STATIC_ASSETS.some(asset => url.pathname === asset) || 
-      request.destination === 'image' || 
-      request.destination === 'style' || 
-      request.destination === 'script') {
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  
+  try {
+    // 1. API Supabase - Cache avec update en arrière-plan
+    if (url.origin.includes('supabase')) {
+      return handleApiRequest(request);
+    }
     
-    event.respondWith(
-      caches.match(request)
-        .then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          
-          return fetch(request)
-            .then((networkResponse) => {
-              if (networkResponse.ok) {
-                const responseClone = networkResponse.clone();
-                caches.open(STATIC_CACHE_NAME)
-                  .then((cache) => cache.put(request, responseClone));
-              }
-              return networkResponse;
-            });
-        })
-        .catch(() => {
-          // Fallback pour les pages
-          if (request.destination === 'document') {
-            return caches.match('/offline.html');
-          }
-        })
-    );
-    return;
-  }
-
-  // Stratégie pour les API (network-first)
-  if (API_URLS.some(apiUrl => url.href.includes(apiUrl))) {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse.ok) {
-            const responseClone = networkResponse.clone();
-            caches.open(DYNAMIC_CACHE_NAME)
-              .then((cache) => cache.put(request, responseClone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(request);
-        })
-    );
-    return;
-  }
-
-  // Stratégie par défaut (network-first avec fallback cache)
-  event.respondWith(
-    fetch(request)
-      .then((networkResponse) => {
-        if (networkResponse.ok) {
-          const responseClone = networkResponse.clone();
-          caches.open(DYNAMIC_CACHE_NAME)
-            .then((cache) => cache.put(request, responseClone));
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(request)
-          .then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            
-            // Fallback pour les pages
-            if (request.destination === 'document') {
-              return caches.match('/offline.html');
-            }
-          });
-      })
-  );
-});
-
-// Gestion des notifications push
-self.addEventListener('push', (event) => {
-  console.log('📱 Service Worker: Notification push reçue');
-  
-  let notificationData = {
-    title: 'AMORA',
-    body: 'Vous avez une nouvelle notification',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
-    tag: 'amora-notification',
-    requireInteraction: true,
-    actions: [
-      {
-        action: 'open',
-        title: 'Ouvrir',
-        icon: '/icons/icon-96x96.png'
-      },
-      {
-        action: 'close',
-        title: 'Fermer'
-      }
-    ]
-  };
-
-  if (event.data) {
-    try {
-      const data = event.data.json();
-      notificationData = { ...notificationData, ...data };
-    } catch (error) {
-      console.error('Erreur parsing notification:', error);
+    // 2. Images - Cache first avec fallback
+    if (request.destination === 'image') {
+      return handleImageRequest(request);
     }
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, notificationData)
-  );
-});
-
-// Gestion des clics sur les notifications
-self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Service Worker: Clic sur notification');
-  
-  event.notification.close();
-
-  const action = event.action;
-  const notificationData = event.notification.data || {};
-
-  if (action === 'close') {
-    return;
-  }
-
-  // Déterminer l'URL à ouvrir
-  let urlToOpen = '/dashboard';
-  
-  if (notificationData.url) {
-    urlToOpen = notificationData.url;
-  } else if (notificationData.type) {
-    switch (notificationData.type) {
-      case 'message':
-        urlToOpen = '/messages';
-        break;
-      case 'match':
-        urlToOpen = '/matching';
-        break;
-      case 'like':
-        urlToOpen = '/dashboard';
-        break;
-      case 'premium':
-        urlToOpen = '/premium';
-        break;
-      default:
-        urlToOpen = '/dashboard';
+    
+    // 3. Pages HTML - Network first avec cache fallback
+    if (request.destination === 'document') {
+      return handlePageRequest(request);
     }
+    
+    // 4. Assets statiques - Cache first
+    if (request.destination === 'script' || 
+        request.destination === 'style' ||
+        request.destination === 'font') {
+      return handleStaticRequest(request);
+    }
+    
+    // 5. Autres requêtes - Network first
+    return handleNetworkFirst(request);
+    
+  } catch (error) {
+    console.error('❌ Erreur Service Worker:', error);
+    return handleOffline(request);
   }
+}
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Vérifier si l'app est déjà ouverte
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            client.navigate(urlToOpen);
-            return client.focus();
-          }
-        }
-        
-        // Ouvrir une nouvelle fenêtre
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
-
-// Gestion de la synchronisation en arrière-plan
-self.addEventListener('sync', (event) => {
-  console.log('🔄 Service Worker: Synchronisation en arrière-plan');
+// Gestion des requêtes API (Stale While Revalidate)
+async function handleApiRequest(request) {
+  const cache = await caches.open(DYNAMIC_CACHE);
+  const cachedResponse = await cache.match(request);
   
-  if (event.tag === 'background-sync') {
-    event.waitUntil(
-      // Ici vous pouvez ajouter la logique pour synchroniser les données
-      // par exemple, envoyer les messages en attente, synchroniser le profil, etc.
-      Promise.resolve()
+  // Requête réseau en parallèle
+  const networkPromise = fetch(request).then(response => {
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  });
+  
+  // Retourne le cache immédiatement si disponible
+  if (cachedResponse) {
+    networkPromise.catch(() => {}); // Ignore les erreurs réseau
+    return cachedResponse;
+  }
+  
+  return networkPromise;
+}
+
+// Gestion des images (Cache First)
+async function handleImageRequest(request) {
+  const cache = await caches.open(IMAGE_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    // Retourne une image placeholder
+    return new Response(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#f0f0f0"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#999">Image</text></svg>',
+      { headers: { 'Content-Type': 'image/svg+xml' } }
     );
   }
-});
+}
 
-// Gestion des mises à jour du Service Worker
+// Gestion des pages (Network First)
+async function handlePageRequest(request) {
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open(DYNAMIC_CACHE);
+    cache.put(request, response.clone());
+    return response;
+  } catch {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const cachedResponse = await cache.match(request);
+    return cachedResponse || caches.match('/offline.html');
+  }
+}
+
+// Gestion des assets statiques (Cache First)
+async function handleStaticRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  const response = await fetch(request);
+  if (response.ok) {
+    cache.put(request, response.clone());
+  }
+  return response;
+}
+
+// Network First par défaut
+async function handleNetworkFirst(request) {
+  try {
+    const response = await fetch(request);
+    return response;
+  } catch {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    return cache.match(request);
+  }
+}
+
+// Gestion hors ligne
+async function handleOffline(request) {
+  if (request.destination === 'document') {
+    return caches.match('/offline.html');
+  }
+  return new Response('Offline', { status: 503 });
+}
+
+// Messages vers l'application
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

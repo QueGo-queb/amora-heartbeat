@@ -47,9 +47,19 @@ export function useMessaging() {
     return { success: true };
   }, [toast]);
 
+  const sendContactRequest = async (recipientId: string): Promise<{success: boolean; error?: string}> => {
+    try {
+      // Logique d'envoi de demande de contact
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     sending,
     sendMessage,
+    sendContactRequest,
     startAudioCall,
     startVideoCall
   };

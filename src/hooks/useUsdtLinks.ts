@@ -66,8 +66,7 @@ export function useUsdtLinks() {
           .update({ is_active: false })
           .eq('is_active', true);
       } catch (error) {
-        console.log('Aucun ancien lien à désactiver');
-      }
+        }
 
       // Créer les nouveaux liens avec gestion d'erreur RLS
       let insertData = {

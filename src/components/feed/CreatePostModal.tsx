@@ -78,7 +78,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const phonePattern = /(\+?[0-9\s\-\(\)]{7,})/g;
   const urlPattern = /(https?:\/\/[^\s]+)/g;
 
-
 // Charger le plan utilisateur depuis la vue unifiée avec cache
 useEffect(() => {
   const loadUserPlan = async () => {
@@ -91,7 +90,6 @@ useEffect(() => {
       // Si le cache est valide (moins de 5 minutes), l'utiliser
       if (cachedPlan && cacheTimestamp && (now - parseInt(cacheTimestamp)) < 5 * 60 * 1000) {
         setUserPlan(cachedPlan as 'free' | 'premium');
-        console.log('Plan utilisateur chargé depuis le cache:', cachedPlan);
         return;
       }
 
@@ -112,9 +110,7 @@ useEffect(() => {
         localStorage.setItem('userPlan', plan);
         localStorage.setItem('userPlanTimestamp', now.toString());
         
-        console.log('Plan utilisateur chargé depuis la DB:', plan, 'User ID:', data[0].id);
-      } else {
-        console.warn('Aucune donnée utilisateur trouvée');
+        } else {
         setUserPlan('free');
       }
     } catch (error) {
@@ -268,8 +264,6 @@ useEffect(() => {
         throw new Error('Utilisateur non authentifié. Veuillez vous reconnecter.');
       }
 
-      console.log('✅ Utilisateur authentifié:', user.id);
-
       // CORRECTION : Structure ultra-simple du post
       const postData: any = {
         user_id: user.id,
@@ -285,8 +279,6 @@ useEffect(() => {
           postData.external_links = formData.external_links;
         }
       }
-
-      console.log('📤 Données du post à insérer:', postData);
 
       // CORRECTION : Insertion avec gestion d'erreur détaillée
       const { data: insertedPost, error: insertError } = await supabase
@@ -305,12 +297,9 @@ useEffect(() => {
         throw insertError;
       }
 
-      console.log('✅ Post créé avec succès:', insertedPost.id);
-
       // Upload des médias (non-bloquant)
       if (formData.media_files && formData.media_files.length > 0) {
         try {
-          console.log('📁 Upload de', formData.media_files.length, 'fichiers...');
           const mediaUrls = await uploadMediaFiles(insertedPost.id);
           
           if (mediaUrls.length > 0) {
@@ -329,8 +318,7 @@ useEffect(() => {
             if (updateError) {
               console.error('⚠️ Erreur mise à jour médias (non-bloquante):', updateError);
             } else {
-              console.log('✅ Médias uploadés:', mediaUrls.length, 'fichiers');
-            }
+              }
           }
         } catch (mediaError) {
           console.error('⚠️ Erreur upload médias (non-bloquante):', mediaError);

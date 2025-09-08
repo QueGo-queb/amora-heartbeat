@@ -10,8 +10,6 @@ if ('serviceWorker' in navigator) {
         scope: '/'
       });
       
-      console.log('✅ Service Worker enregistré:', registration.scope);
-      
       // Écouter les mises à jour du Service Worker
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
@@ -19,8 +17,6 @@ if ('serviceWorker' in navigator) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // Nouvelle version disponible
-              console.log('🔄 Nouvelle version disponible');
-              
               // Optionnel: Afficher une notification de mise à jour
               if (confirm('Une nouvelle version d\'AMORA est disponible. Recharger maintenant ?')) {
                 newWorker.postMessage({ type: 'SKIP_WAITING' });

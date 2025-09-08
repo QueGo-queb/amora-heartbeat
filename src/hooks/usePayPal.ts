@@ -40,7 +40,6 @@ export const usePayPal = () => {
 
       // Si la table n'existe pas encore, ne pas afficher d'erreur
       if (error && (error.code === 'PGRST116' || error.code === '42P01')) {
-        console.log('Table paypal_config pas encore créée');
         return;
       }
       
@@ -87,8 +86,7 @@ export const usePayPal = () => {
           .update({ is_active: false })
           .eq('is_active', true);
       } catch (error) {
-        console.log('Aucune configuration existante à désactiver');
-      }
+        }
 
       // Créer la nouvelle configuration avec gestion d'erreur RLS
       const { data, error } = await supabase
@@ -178,8 +176,7 @@ export const usePayPal = () => {
           paymentId = data.id;
         }
       } catch (error) {
-        console.log('Table paypal_payments n\'existe pas encore, utilisation d\'un ID temporaire');
-      }
+        }
 
       // Générer l'URL PayPal corrigée
       const paypalUrl = generatePayPalUrl(config.paypal_email, finalAmount, paymentId);
@@ -253,8 +250,7 @@ export const usePayPal = () => {
 
         if (error) throw error;
       } catch (error) {
-        console.log('Impossible de mettre à jour paypal_payments, continuons avec la mise à jour utilisateur');
-      }
+        }
 
       // Mettre à jour le plan utilisateur
       const { data: { user } } = await supabase.auth.getUser();

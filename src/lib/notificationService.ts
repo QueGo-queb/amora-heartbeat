@@ -76,8 +76,7 @@ export async function sendNotification(data: NotificationData): Promise<void> {
 
     if (error) throw error;
 
-    console.log(`Notification ${data.type} envoyée à l'utilisateur ${data.user_id}`);
-  } catch (error) {
+    } catch (error) {
     console.error('Erreur envoi notification:', error);
     throw error;
   }
@@ -200,8 +199,7 @@ export async function checkAndSendExpirationNotifications(): Promise<void> {
       });
     }
 
-    console.log(`Processed ${expiringSoon?.length || 0} expiring subscriptions and ${expired?.length || 0} expired subscriptions`);
-  } catch (error) {
+    } catch (error) {
     console.error('Erreur vérification notifications expiration:', error);
     throw error;
   }

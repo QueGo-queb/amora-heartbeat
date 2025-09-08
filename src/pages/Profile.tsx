@@ -37,7 +37,7 @@ const Profile = () => {
 
   // Gestion des mises à jour du profil
   const handleProfileUpdate = (updatedProfile: any) => {
-    console.log('Profil mis à jour:', updatedProfile); // Debug
+    // Debug
     toast({
       title: "✅ Profil mis à jour",
       description: "Vos modifications ont été sauvegardées.",

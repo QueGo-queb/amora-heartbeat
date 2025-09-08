@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FeedPost } from '@/types/feed';
+import type { FeedPost, FeedFilters, FeedResponse } from '../../types/feed';
 
 export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
   const [newPosts, setNewPosts] = useState<FeedPost[]>([]);
@@ -38,7 +38,7 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
             if (error || !newPost) return;
 
             // Vérifier si le post correspond aux critères de l'utilisateur
-            const { attachScores } = await import('@/utils/scoring');
+            const { attachScores } = await import('../../utils/scoring');
             const scoredPosts = attachScores([newPost], viewerProfile);
             
             if (scoredPosts.length > 0) {

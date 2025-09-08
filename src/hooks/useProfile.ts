@@ -26,7 +26,7 @@ export function useProfile() {
   // Charger le profil de l'utilisateur connecté
   const loadProfile = useCallback(async () => {
     try {
-      console.log('🔄 Chargement du profil utilisateur...'); // Debug
+      // Debug
       setLoading(true);
       setError(null);
 
@@ -37,7 +37,7 @@ export function useProfile() {
         throw new Error("Utilisateur non authentifié");
       }
 
-      console.log('✅ Utilisateur authentifié:', user.id); // Debug
+      // Debug
 
       // Récupérer le profil depuis Supabase
       const { data, error: profileError } = await supabase
@@ -51,7 +51,7 @@ export function useProfile() {
         
         // Créer un profil par défaut si il n'existe pas
         if (profileError.code === 'PGRST116') { // No rows returned
-          console.log('📝 Création d\'un profil par défaut...'); // Debug
+          // Debug
           
           const defaultProfile: ProfileData = {
             id: user.id,
@@ -73,7 +73,7 @@ export function useProfile() {
               return;
             }
 
-            console.log('✅ Profil par défaut créé avec succès'); // Debug
+            // Debug
             setProfile(defaultProfile);
             return;
           } catch (insertErr) {
@@ -88,7 +88,7 @@ export function useProfile() {
       }
 
       if (data) {
-        console.log('✅ Profil récupéré:', data); // Debug
+        // Debug
         
         const profileData: ProfileData = {
           id: data.id,
@@ -115,7 +115,7 @@ export function useProfile() {
       setError(errorMessage);
     } finally {
       setLoading(false);
-      console.log('🏁 Chargement du profil terminé'); // Debug
+      // Debug
     }
   }, []);
 
@@ -127,7 +127,7 @@ export function useProfile() {
     }
 
     try {
-      console.log('🔄 Mise à jour du profil:', updatedData); // Debug
+      // Debug
 
       const { error } = await supabase
         .from('profiles')
@@ -142,7 +142,7 @@ export function useProfile() {
         throw error;
       }
 
-      console.log('✅ Profil mis à jour avec succès'); // Debug
+      // Debug
 
       // Mettre à jour le profil local
       setProfile(prev => prev ? { ...prev, ...updatedData, updated_at: new Date().toISOString() } : null);
@@ -157,7 +157,7 @@ export function useProfile() {
 
   // Rafraîchir le profil
   const refreshProfile = useCallback(async () => {
-    console.log('🔄 Rafraîchissement du profil...'); // Debug
+    // Debug
     await loadProfile();
   }, [loadProfile]);
 

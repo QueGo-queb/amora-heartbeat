@@ -131,6 +131,9 @@ const InterestsSelector: React.FC<InterestsSelectorProps> = ({
             color: 'white'
           })
         }}
+        components={{
+          MultiValueLabel: customMultiValueLabel
+        }}
       />
     </div>
   );

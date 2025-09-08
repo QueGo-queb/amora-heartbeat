@@ -1,0 +1,40 @@
+{
+  "app": {
+    "name": "AMORA",
+    "tagline": "L'amour authentique vous attend",
+    "description": "Connectez-vous avec des personnes qui partagent vos valeurs et votre culture"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "login": "Se connecter",
+    "signup": "S'inscrire",
+    "profile": "Profil",
+    "messages": "Messages",
+    "matches": "Matchs",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "buttons": {
+    "continue": "Continuer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "loading": "Chargement...",
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "general": "Une erreur est survenue",
+    "network": "Erreur de connexion",
+    "validation": "Données invalides",
+    "unauthorized": "Accès non autorisé",
+    "notFound": "Page non trouvée"
+  },
+  "success": {
+    "saved": "Enregistré avec succès",
+    "updated": "Mis à jour avec succès",
+    "deleted": "Supprimé avec succès"
+  }
+}

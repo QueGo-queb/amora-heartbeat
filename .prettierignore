@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+.vercel
+*.min.js
+*.min.css
+public/sw.js

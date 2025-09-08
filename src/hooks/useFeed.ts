@@ -6,7 +6,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { FeedPost, FeedFilters, FeedResponse } from '@/types/feed';
+import type { FeedPost, FeedFilters, FeedResponse } from '../../types/feed';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UseFeedOptions {
   filters?: FeedFilters;
@@ -28,6 +29,7 @@ export function useFeed(options: UseFeedOptions = {}) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fonction de scoring pour trier les posts
   const calculatePostScore = (post: FeedPost): number => {
@@ -64,10 +66,9 @@ export function useFeed(options: UseFeedOptions = {}) {
         tags: filters.tags || []
       };
 
-      console.log('🔄 Chargement du feed avec filtres:', userFilters);
-
       // Utiliser notre fonction RPC optimisée
       const { data, error: fetchError } = await supabase.rpc('get_feed_posts_optimized', {
+        user_id: user?.id || '',
         page_size: pageSize,
         cursor_date: cursor ? cursor : null,
         user_filters: userFilters
@@ -77,8 +78,6 @@ export function useFeed(options: UseFeedOptions = {}) {
         console.error('Erreur lors du chargement du feed:', fetchError);
         throw fetchError;
       }
-
-      console.log('✅ Feed chargé:', data?.length, 'posts');
 
       // Transformer les données pour correspondre au format attendu
       const transformedPosts = data?.map(post => ({
@@ -136,9 +135,7 @@ export function useFeed(options: UseFeedOptions = {}) {
         setNextCursor(transformedPosts[transformedPosts.length - 1].created_at);
       }
 
-      console.log('✅ Feed mis à jour avec', transformedPosts.length, 'posts');
-
-    } catch (err) {
+      } catch (err) {
       console.error('Erreur lors du chargement du feed:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
       toast({
@@ -150,7 +147,7 @@ export function useFeed(options: UseFeedOptions = {}) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [filters, pageSize, toast]);
+  }, [filters, pageSize, toast, user?.id]);
 
   // Charger plus de posts (pagination)
   const loadMore = useCallback(() => {

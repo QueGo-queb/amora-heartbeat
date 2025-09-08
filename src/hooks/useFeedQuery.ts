@@ -2,7 +2,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { FeedPost, FeedFilters } from '@/types/feed';
+import type { FeedPost, FeedFilters } from '../../types/feed';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UseFeedQueryOptions {
   filters?: FeedFilters;
@@ -19,14 +20,13 @@ export function useFeedQuery(options: UseFeedQueryOptions = {}) {
   const { filters = {}, pageSize = 10 } = options;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Clé de requête unique basée sur les filtres
   const queryKey = ['feed', filters];
 
   // Fonction pour charger une page de posts
   const fetchFeedPage = async ({ pageParam = null }): Promise<FeedPage> => {
-    console.log('🔄 Chargement page feed, cursor:', pageParam);
-
     const userFilters = {
       media_type: filters.media_type || 'all',
       premium_only: filters.premium_only ? 'true' : 'false',
@@ -34,6 +34,7 @@ export function useFeedQuery(options: UseFeedQueryOptions = {}) {
     };
 
     const { data, error } = await supabase.rpc('get_feed_posts_optimized', {
+      user_id: user?.id || '',
       page_size: pageSize,
       cursor_date: pageParam,
       user_filters: userFilters
@@ -75,8 +76,6 @@ export function useFeedQuery(options: UseFeedQueryOptions = {}) {
     const nextCursor = hasMore && transformedPosts.length > 0 
       ? transformedPosts[transformedPosts.length - 1].created_at 
       : null;
-
-    console.log('✅ Page chargée:', transformedPosts.length, 'posts, hasMore:', hasMore);
 
     return {
       posts: transformedPosts,

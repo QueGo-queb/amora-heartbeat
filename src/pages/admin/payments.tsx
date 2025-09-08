@@ -356,7 +356,9 @@ const AdminPayments = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => console.log('Voir détails:', subscription.id)}
+                          onClick={() => {
+                            // Voir détails paiement
+                          }}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>

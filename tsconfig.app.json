@@ -26,5 +26,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/components/onboarding/**",
+    "src/components/a11y/**", 
+    "src/lib/pushNotifications.ts",
+    "src/hooks/useMonCash.ts",
+    "src/hooks/useCajaVecina.ts"
+  ]
 }

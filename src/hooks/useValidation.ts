@@ -1,7 +1,7 @@
 // Nouveau fichier: src/hooks/useValidation.ts
 import { useState } from 'react';
 import { z } from 'zod';
-import { useAnalytics } from '@/utils/analytics';
+import { useAnalytics } from '../../utils/analytics';
 
 interface ValidationResult<T> {
   isValid: boolean;

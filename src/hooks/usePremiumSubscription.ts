@@ -5,15 +5,16 @@ import { useToast } from '@/hooks/use-toast';
 export interface PremiumSubscription {
   id: string;
   user_id: string;
-  plan: 'free' | 'premium';
+  plan_id: string;
+  status: 'active' | 'inactive' | 'canceled' | 'expired';
   start_date: string;
   end_date: string;
-  status: 'active' | 'expiring' | 'expired' | 'cancelled';
-  auto_renewal: boolean;
   notification_sent: boolean;
-  transaction_id?: string;
   created_at: string;
-  updated_at: string;
+  plan?: string; // Optionnel pour compatibilité
+  auto_renewal?: boolean; // Optionnel pour compatibilité
+  updated_at?: string; // Optionnel pour compatibilité
+  transaction_id?: string;
 }
 
 export interface SubscriptionStatus {
@@ -66,7 +67,7 @@ export const usePremiumSubscription = (userId?: string) => {
     try {
       setLoading(true);
       
-      const userIdToUse = targetUserId || userId;
+      let userIdToUse = targetUserId || userId;
       if (!userIdToUse) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Utilisateur non connecté');

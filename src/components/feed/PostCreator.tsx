@@ -1,214 +1,161 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/components/feed/PostCreator.tsx - VERSION ULTRA-SIMPLE
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Camera, Video, Crown, AlertTriangle, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePremium } from '@/hooks/usePremium';
-import { validatePostContent } from '@/utils/contentValidation';
 import { supabase } from '@/integrations/supabase/client';
-import { SearchPostCreator } from './SearchPostCreator';
+import { Send, PenTool } from 'lucide-react';
 
 interface PostCreatorProps {
   onPostCreated?: () => void;
 }
 
 export function PostCreator({ onPostCreated }: PostCreatorProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [showSearchPostCreator, setShowSearchPostCreator] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  
   const { toast } = useToast();
-  const { isPremium, plan } = usePremium();
-  const navigate = useNavigate();
 
-  const handleContentChange = (value: string) => {
-    setContent(value);
-    setValidationError(null);
-
-    // Validation en temps réel
-    const validation = validatePostContent(value, isPremium);
-    if (!validation.isValid) {
-      setValidationError(validation.message);
-    }
-  };
+  // Récupérer l'utilisateur directement
+  React.useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      console.log('🎯 PostCreator user:', user);
+    };
+    getUser();
+  }, []);
 
   const handleSubmit = async () => {
-    if (!content.trim()) {
+    if (!content.trim() || !user) {
       toast({
         title: "Erreur",
-        description: "Veuillez saisir du contenu pour votre publication",
-        variant: "destructive",
+        description: "Vous devez être connecté et saisir du contenu.",
+        variant: "destructive"
       });
       return;
     }
 
-    // Validation finale
-    const validation = validatePostContent(content, isPremium);
-    if (!validation.isValid) {
-      toast({
-        title: "Contenu restreint",
-        description: validation.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
+    setIsPosting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
-
-      // Créer le post
       const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
           content: content.trim(),
-          visibility: 'public'
+          visibility: 'public',
+          likes_count: 0,
+          comments_count: 0
         });
 
-      if (error) throw error;
-
-      toast({
-        title: "Publication créée",
-        description: "Votre publication a été ajoutée au fil d'actualité",
-      });
+      if (error) {
+        console.error('Erreur Supabase:', error);
+        throw error;
+      }
 
       setContent('');
+      setIsExpanded(false);
+
+      toast({
+        title: "Post publié !",
+        description: "Votre publication a été ajoutée au fil d'actualité.",
+      });
+
       onPostCreated?.();
-    } catch (error) {
-      console.error('Erreur création post:', error);
+
+    } catch (error: any) {
+      console.error('Erreur lors de la publication:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer la publication",
-        variant: "destructive",
+        description: `Impossible de publier: ${error.message}`,
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsPosting(false);
     }
   };
 
-  const handlePremiumRedirect = () => {
-    navigate('/premium');
-  };
-
+  // Toujours afficher le composant pour le debug
   return (
-    <>
-      <Card className="culture-card mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>Créer une publication</span>
-            {isPremium && (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                <Crown className="w-3 h-3 mr-1" />
-                Premium
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            placeholder="Partagez vos pensées, vos expériences, vos passions..."
-            value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
-            rows={4}
-            className={validationError ? 'border-red-500' : ''}
-          />
+    <Card className="mb-6 border-2 border-green-300 bg-green-50">
+      <CardContent className="p-4">
+        <div className="mb-2 text-sm text-green-700 font-semibold">
+          🎯 PostCreator - {user ? `✅ Connecté: ${user.email}` : '❌ Non connecté'}
+        </div>
+        
+        {!isExpanded ? (
+          // Version compacte
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+              {user?.email?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <Button
+              variant="outline"
+              className="flex-1 justify-start text-gray-500"
+              onClick={() => setIsExpanded(true)}
+              disabled={!user}
+            >
+              <PenTool className="w-4 h-4 mr-2" />
+              {user ? "Que voulez-vous partager ?" : "Connectez-vous pour publier"}
+            </Button>
+          </div>
+        ) : (
+          // Version étendue
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">{user?.email || 'Utilisateur'}</p>
+                <p className="text-sm text-gray-500">🌍 Public</p>
+              </div>
+            </div>
 
-          {validationError && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-red-700 font-medium">Contenu restreint</p>
-                <p className="text-sm text-red-600">{validationError}</p>
+            <Textarea
+              placeholder="Que voulez-vous partager ?"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[120px] text-lg"
+              maxLength={5000}
+            />
+
+            <div className="flex items-center justify-between pt-3 border-t">
+              <span className="text-xs text-gray-500">
+                {content.length}/5000
+              </span>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="mt-2 border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                  onClick={handlePremiumRedirect}
+                  onClick={() => setIsExpanded(false)}
                 >
-                  <Crown className="w-4 h-4 mr-1" />
-                  Passer au Premium
+                  Annuler
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!content.trim() || isPosting || !user}
+                  className="gap-2"
+                >
+                  {isPosting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Publication...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Publier
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={!isPremium}>
-                <Camera className="w-4 h-4 mr-1" />
-                Photo
-              </Button>
-              <Button variant="outline" size="sm" disabled={!isPremium}>
-                <Video className="w-4 h-4 mr-1" />
-                Vidéo
-              </Button>
-              
-              {/* NOUVEAU: Bouton de publication de recherche */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowSearchPostCreator(true)}
-                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-              >
-                <Search className="w-4 h-4" />
-                Recherche ciblée
-              </Button>
-              
-              {!isPremium && (
-                <span 
-                  className="text-xs text-gray-500 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
-                  onClick={handlePremiumRedirect}
-                  title="Cliquez pour passer au Premium"
-                >
-                  (Premium requis pour les médias)
-                </span>
-              )}
-            </div>
-
-            <Button 
-              onClick={handleSubmit}
-              disabled={loading || !!validationError || !content.trim()}
-              className="btn-hero"
-            >
-              {loading ? 'Publication...' : 'Publier'}
-            </Button>
           </div>
-
-          {!isPremium && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Plan Gratuit :</strong> Vous pouvez publier du texte uniquement. 
-                Passez au Premium pour inclure des liens, numéros de téléphone, photos et vidéos.
-              </p>
-            </div>
-          )}
-
-          {/* NOUVEAU: Information sur les publications de recherche */}
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <Search className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-green-700 font-medium">Publications de recherche ciblée</p>
-                <p className="text-sm text-green-600">
-                  Créez des publications visibles uniquement par les personnes correspondant à vos critères spécifiques (âge, pays, langues, centres d'intérêt).
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Modal de création de publication de recherche */}
-      <SearchPostCreator 
-        open={showSearchPostCreator}
-        onClose={() => setShowSearchPostCreator(false)}
-        onPostCreated={onPostCreated}
-      />
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

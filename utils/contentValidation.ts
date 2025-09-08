@@ -17,19 +17,38 @@ export const detectRestrictedContent = (content: string) => {
     };
   };
   
-  export const validatePostContent = (content: string, isPremium: boolean) => {
-    const detection = detectRestrictedContent(content);
-    
-    if (!isPremium && detection.hasRestrictedContent) {
-      return {
-        isValid: false,
-        message: "Pour inclure un numéro de téléphone ou un lien dans votre publication, vous devez passer au plan Premium.",
-        restrictedItems: detection.restrictedItems
-      };
+  export interface ValidationResult {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }
+
+  export function validatePostContent(content: string): ValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validation de la longueur
+    if (!content || content.trim().length === 0) {
+      errors.push('Le contenu ne peut pas être vide');
     }
-  
+
+    if (content.length > 5000) {
+      errors.push('Le contenu ne peut pas dépasser 5000 caractères');
+    }
+
+    // Validation des mots interdits (exemple basique)
+    const forbiddenWords = ['spam', 'hack', 'virus'];
+    const lowerContent = content.toLowerCase();
+    
+    forbiddenWords.forEach(word => {
+      if (lowerContent.includes(word)) {
+        warnings.push(`Contenu potentiellement inapproprié détecté: "${word}"`);
+      }
+    });
+
     return {
-      isValid: true,
-      message: "Contenu valide"
+      isValid: errors.length === 0,
+      errors,
+      warnings
     };
-  };
+  }

@@ -8,6 +8,7 @@ import { LanguageSelector } from "@/components/ui/language-selector";
 import { AnimatedSlogan } from "@/components/ui/animated-slogan";
 import { CultureCarousel } from "@/components/ui/culture-carousel";
 import { SignupForm } from "@/components/ui/signup-form";
+import { analytics } from '@/lib/analytics';
 
 const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("fr");

@@ -1,6 +1,5 @@
 /**
- * Page de gestion des utilisateurs - CORRIGÉE
- * Permet de voir, modifier et gérer tous les utilisateurs
+ * Page de gestion des utilisateurs - AVEC BOUTON CRÉER ADMIN
  */
 
 import { useState, useEffect } from 'react';
@@ -21,13 +20,19 @@ import {
   Trash2,
   Download,
   Crown,
-  RefreshCw
+  RefreshCw,
+  UserPlus,
+  X,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HeaderAdmin from '@/components/admin/HeaderAdmin';
@@ -43,6 +48,7 @@ interface User {
   bio?: string;
   location?: string;
   interests?: string[];
+  role?: string; // Ajout du champ role
 }
 
 const AdminUsers = () => {
@@ -50,6 +56,13 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  const [showCreateAdminDialog, setShowCreateAdminDialog] = useState(false);
+  const [createAdminLoading, setCreateAdminLoading] = useState(false);
+  const [newAdminForm, setNewAdminForm] = useState({
+    email: '',
+    full_name: '',
+    password: ''
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -69,7 +82,6 @@ const AdminUsers = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      // Requête corrigée pour récupérer les utilisateurs depuis la table profiles
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -80,7 +92,6 @@ const AdminUsers = () => {
         throw error;
       }
 
-      console.log('Données utilisateurs chargées:', data);
       setUsers(data || []);
       
       toast({
@@ -91,7 +102,7 @@ const AdminUsers = () => {
       console.error('Error loading users:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les utilisateurs. Vérifiez les permissions.",
+        description: "Impossible de charger les utilisateurs",
         variant: "destructive",
       });
     } finally {
@@ -99,7 +110,103 @@ const AdminUsers = () => {
     }
   };
 
-  const handleUserAction = async (userId: string, action: 'premium' | 'free' | 'delete') => {
+  // Créer un nouvel administrateur
+  const handleCreateAdmin = async () => {
+    if (!newAdminForm.email || !newAdminForm.password) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreateAdminLoading(true);
+    
+    try {
+      // 1. Créer l'utilisateur dans Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newAdminForm.email,
+        password: newAdminForm.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: newAdminForm.full_name || newAdminForm.email,
+          role: 'admin'
+        }
+      });
+
+      if (authError) {
+        console.error('Erreur création auth:', authError);
+        throw authError;
+      }
+
+      // 2. Créer le profil avec le rôle admin
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          user_id: authData.user.id,
+          email: newAdminForm.email,
+          full_name: newAdminForm.full_name || newAdminForm.email,
+          role: 'admin',
+          plan: 'admin',
+          created_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        console.error('Erreur création profil:', profileError);
+        // Si le profil échoue, essayer de mettre à jour le profil existant
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            role: 'admin',
+            plan: 'admin',
+            full_name: newAdminForm.full_name || newAdminForm.email
+          })
+          .eq('id', authData.user.id);
+
+        if (updateError) {
+          console.error('Erreur mise à jour profil:', updateError);
+        }
+      }
+
+      // 3. Attribuer les permissions RBAC si le système existe
+      try {
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role_id: 'admin'
+          });
+      } catch (rbacError) {
+        console.log('RBAC non disponible, utilisation du système simple');
+      }
+
+      toast({
+        title: "✅ Administrateur créé",
+        description: `Nouvel admin créé: ${newAdminForm.email}`,
+      });
+
+      // Reset du formulaire
+      setNewAdminForm({ email: '', full_name: '', password: '' });
+      setShowCreateAdminDialog(false);
+      
+      // Recharger la liste
+      await loadUsers();
+
+    } catch (error: any) {
+      console.error('Erreur création admin:', error);
+      toast({
+        title: "❌ Erreur",
+        description: error.message || "Impossible de créer l'administrateur",
+        variant: "destructive",
+      });
+    } finally {
+      setCreateAdminLoading(false);
+    }
+  };
+
+  const handleUserAction = async (userId: string, action: 'premium' | 'free' | 'admin' | 'delete') => {
     try {
       if (action === 'delete' && !confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
         return;
@@ -118,16 +225,23 @@ const AdminUsers = () => {
           description: "Utilisateur supprimé avec succès",
         });
       } else {
+        const updateData: any = { plan: action };
+        
+        // Si c'est admin, ajouter le rôle
+        if (action === 'admin') {
+          updateData.role = 'admin';
+        }
+
         const { error } = await supabase
           .from('profiles')
-          .update({ plan: action })
+          .update(updateData)
           .eq('id', userId);
         
         if (error) throw error;
         
         toast({
           title: "Succès",
-          description: `Plan utilisateur mis à jour: ${action}`,
+          description: `Utilisateur mis à jour: ${action}`,
         });
       }
 
@@ -148,38 +262,40 @@ const AdminUsers = () => {
     
     if (filter === 'all') return matchesSearch;
     if (filter === 'premium') return matchesSearch && user.plan === 'premium';
+    if (filter === 'admin') return matchesSearch && (user.role === 'admin' || user.plan === 'admin');
     if (filter === 'free') return matchesSearch && (user.plan === 'free' || !user.plan);
     return matchesSearch;
   });
 
   const exportUsers = () => {
     const csvContent = [
-      ['Email', 'Nom', 'Plan', 'Date création', 'Localisation'],
+      ['Email', 'Nom complet', 'Plan', 'Rôle', 'Date création'].join(','),
       ...filteredUsers.map(user => [
-        user.email || '',
+        user.email,
         user.full_name || '',
         user.plan || 'free',
-        new Date(user.created_at).toLocaleDateString(),
-        user.location || ''
-      ])
-    ].map(row => row.join(',')).join('\n');
+        user.role || 'user',
+        new Date(user.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'utilisateurs-amora.csv';
+    a.download = 'utilisateurs.csv';
     a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-lg">Chargement des utilisateurs...</span>
-        </div>
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Chargement des utilisateurs...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -206,45 +322,110 @@ const AdminUsers = () => {
             </div>
             
             <div className="flex gap-2">
+              {/* NOUVEAU BOUTON CRÉER ADMIN */}
+              <Dialog open={showCreateAdminDialog} onOpenChange={setShowCreateAdminDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Créer Admin
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Créer un nouvel administrateur</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <Label htmlFor="admin-email">Email *</Label>
+                      <Input
+                        id="admin-email"
+                        type="email"
+                        value={newAdminForm.email}
+                        onChange={(e) => setNewAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="admin@example.com"
+                        disabled={createAdminLoading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="admin-name">Nom complet</Label>
+                      <Input
+                        id="admin-name"
+                        value={newAdminForm.full_name}
+                        onChange={(e) => setNewAdminForm(prev => ({ ...prev, full_name: e.target.value }))}
+                        placeholder="Nom de l'administrateur"
+                        disabled={createAdminLoading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="admin-password">Mot de passe temporaire *</Label>
+                      <Input
+                        id="admin-password"
+                        type="password"
+                        value={newAdminForm.password}
+                        onChange={(e) => setNewAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="Mot de passe sécurisé"
+                        disabled={createAdminLoading}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleCreateAdmin}
+                        disabled={createAdminLoading || !newAdminForm.email || !newAdminForm.password}
+                        className="flex-1"
+                      >
+                        {createAdminLoading ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4 mr-2" />
+                        )}
+                        {createAdminLoading ? 'Création...' : 'Créer Admin'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowCreateAdminDialog(false)}
+                        disabled={createAdminLoading}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Button onClick={loadUsers} variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Actualiser
               </Button>
               <Button onClick={exportUsers} variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
-                Exporter CSV
+                Exporter
               </Button>
             </div>
           </div>
 
           {/* Filtres et recherche */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Filtres</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Rechercher par email ou nom..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Filtrer par plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les plans</SelectItem>
-                    <SelectItem value="free">Gratuit</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Rechercher par email ou nom..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrer par..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les utilisateurs</SelectItem>
+                <SelectItem value="admin">Administrateurs</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="free">Gratuit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Liste des utilisateurs */}
           <Card>
@@ -252,80 +433,76 @@ const AdminUsers = () => {
               <CardTitle>Utilisateurs ({filteredUsers.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-8">
-                  <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Aucun utilisateur trouvé</h3>
-                  <p className="text-muted-foreground">
-                    {searchTerm ? 'Aucun utilisateur ne correspond à vos critères de recherche.' : 'Aucun utilisateur dans la base de données.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{user.full_name || 'Nom non renseigné'}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                          {user.location && (
-                            <div className="text-xs text-muted-foreground">{user.location}</div>
-                          )}
-                        </div>
+              <div className="space-y-4">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                        ) : (
+                          <User className="w-5 h-5 text-gray-500" />
+                        )}
                       </div>
-
-                      <div className="flex items-center gap-4">
-                        <Badge variant={user.plan === 'premium' ? 'default' : 'secondary'}>
-                          {user.plan === 'premium' ? (
-                            <>
-                              <Crown className="w-3 h-3 mr-1" />
-                              Premium
-                            </>
-                          ) : (
-                            'Gratuit'
+                      <div>
+                        <div className="font-medium">{user.full_name || user.email}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant={
+                            user.role === 'admin' || user.plan === 'admin' ? 'destructive' :
+                            user.plan === 'premium' ? 'default' : 'secondary'
+                          }>
+                            {user.role === 'admin' || user.plan === 'admin' ? 'Admin' :
+                             user.plan === 'premium' ? 'Premium' : 'Gratuit'}
+                          </Badge>
+                          {user.role === 'admin' && (
+                            <Badge variant="outline">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Administrateur
+                            </Badge>
                           )}
-                        </Badge>
-                        
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </div>
-
-                        <div className="flex gap-2">
-                          {user.plan !== 'premium' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUserAction(user.id, 'premium')}
-                            >
-                              <Crown className="w-4 h-4 mr-1" />
-                              Premium
-                            </Button>
-                          )}
-                          {user.plan === 'premium' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUserAction(user.id, 'free')}
-                            >
-                              Gratuit
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleUserAction(user.id, 'delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="flex gap-1">
+                      {user.role !== 'admin' && user.plan !== 'admin' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleUserAction(user.id, 'admin')}
+                          >
+                            <Shield className="w-4 h-4 mr-1" />
+                            Admin
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleUserAction(user.id, 'premium')}
+                          >
+                            <Crown className="w-4 h-4 mr-1" />
+                            Premium
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleUserAction(user.id, 'delete')}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    Aucun utilisateur trouvé
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

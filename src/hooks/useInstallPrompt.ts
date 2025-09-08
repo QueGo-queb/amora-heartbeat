@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 
+// Déclaration globale gtag
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -59,15 +66,14 @@ export const useInstallPrompt = () => {
 
     // Écouter l'installation réussie
     const handleAppInstalled = () => {
-      console.log('🎉 AMORA PWA installée avec succès');
       setIsInstalled(true);
       setIsInstallable(false);
       setShowInstallBanner(false);
       setDeferredPrompt(null);
       
       // Analytics - tracker l'installation
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'pwa_install', {
+      if (typeof window.gtag !== 'undefined') {
+        window.gtag('event', 'pwa_install', {
           event_category: 'PWA',
           event_label: 'Installation réussie'
         });
@@ -86,7 +92,6 @@ export const useInstallPrompt = () => {
   // Déclencher l'installation
   const promptInstall = async (): Promise<boolean> => {
     if (!deferredPrompt) {
-      console.log('Pas de prompt d\'installation disponible');
       return false;
     }
 
@@ -97,15 +102,12 @@ export const useInstallPrompt = () => {
       // Attendre la réponse de l'utilisateur
       const { outcome } = await deferredPrompt.userChoice;
       
-      console.log(`Résultat installation: ${outcome}`);
-      
       if (outcome === 'accepted') {
-        console.log('✅ Utilisateur a accepté l\'installation');
         setShowInstallBanner(false);
         
         // Analytics
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'pwa_install_accepted', {
+        if (typeof window.gtag !== 'undefined') {
+          window.gtag('event', 'pwa_install_accepted', {
             event_category: 'PWA',
             event_label: 'Installation acceptée'
           });
@@ -113,12 +115,11 @@ export const useInstallPrompt = () => {
         
         return true;
       } else {
-        console.log('❌ Utilisateur a refusé l\'installation');
         dismissInstallBanner();
         
         // Analytics
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'pwa_install_dismissed', {
+        if (typeof window.gtag !== 'undefined') {
+          window.gtag('event', 'pwa_install_dismissed', {
             event_category: 'PWA',
             event_label: 'Installation refusée'
           });
@@ -141,8 +142,8 @@ export const useInstallPrompt = () => {
     localStorage.setItem('amora-install-dismissed', Date.now().toString());
     
     // Analytics
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'pwa_banner_dismissed', {
+    if (typeof window.gtag !== 'undefined') {
+      window.gtag('event', 'pwa_banner_dismissed', {
         event_category: 'PWA',
         event_label: 'Bannière fermée'
       });

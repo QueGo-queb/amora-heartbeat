@@ -1,90 +1,95 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
   requireAdmin?: boolean;
-  redirectTo?: string;
+  fallback?: React.ReactNode;
 }
 
-const ProtectedRoute = ({ 
-  children, 
-  requireAuth = true, 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireAuth = true,
   requireAdmin = false,
-  redirectTo = '/auth'
-}: ProtectedRouteProps) => {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  fallback,
+}) => {
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const location = useLocation();
-  const { toast } = useToast();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Auth error:', error);
-          setUser(null);
-        } else {
-          setUser(session?.user || null);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Composant de chargement
+  const LoadingComponent = () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <Card className="w-full max-w-md mx-auto">
+        <CardContent className="flex flex-col items-center justify-center p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Vérification des permissions...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-    checkAuth();
+  // Composant d'accès refusé
+  const AccessDeniedComponent = () => {
+    if (fallback) return <>{fallback}</>;
 
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Afficher un loader pendant la vérification
-  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <div className="heart-logo">
-            <div className="heart-shape animate-pulse" />
-          </div>
-          <span className="text-lg">Vérification...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Accès refusé</h2>
+            <p className="text-muted-foreground text-center mb-4">
+              Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => window.history.back()}
+                className="px-4 py-2 text-sm border rounded hover:bg-muted"
+              >
+                Retour
+              </button>
+              <button
+                onClick={() => window.location.href = '/dashboard'}
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
+              >
+                Tableau de bord
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
+  };
+
+  // Attendre le chargement
+  if (authLoading) {
+    return <LoadingComponent />;
   }
 
-  // Vérifier l'authentification
-  if (requireAuth && !user) {
-    toast({
-      title: "Accès restreint",
-      description: "Vous devez être connecté pour accéder à cette page.",
-      variant: "destructive",
-    });
-    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+  // Vérification de l'authentification
+  if (requireAuth && !isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Vérifier les droits admin
-  if (requireAdmin && user?.email !== 'clodenerc@yahoo.fr') {
-    toast({
-      title: "Accès refusé",
-      description: "Vous n'avez pas les droits d'administrateur.",
-      variant: "destructive",
-    });
-    return <Navigate to="/dashboard" replace />;
+  // **🚨 VÉRIFICATION ADMIN SIMPLIFIÉE ET ROBUSTE**
+  if (requireAdmin) {
+    // Vérification directe par email (méthode la plus fiable)
+    const isAdminByEmail = user?.email === 'clodenerc@yahoo.fr';
+    
+    console.log('🔍 Vérification admin:');
+    console.log('- Email utilisateur:', user?.email);
+    console.log('- Est admin:', isAdminByEmail);
+
+    if (!isAdminByEmail) {
+      console.log('❌ Accès admin refusé pour:', user?.email);
+      return <AccessDeniedComponent />;
+    }
+
+    console.log('✅ Accès admin autorisé pour:', user?.email);
   }
 
   return <>{children}</>;

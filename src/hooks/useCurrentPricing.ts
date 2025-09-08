@@ -27,7 +27,6 @@ export const useCurrentPricing = () => {
 
       if (fetchError) {
         if (fetchError.code === 'PGRST106' || fetchError.message.includes('relation') || fetchError.message.includes('table')) {
-          console.log('Table premium_pricing n\'existe pas encore');
           setError('Aucun prix configuré par l\'administrateur');
           setPricing(null);
           setLoading(false);
