@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent, trackError } from '@/lib/sentry';
 
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
@@ -21,6 +22,15 @@ export const useAuth = () => {
         
         console.log('🔍 Session récupérée:', session?.user?.email || 'Aucun utilisateur');
         setUser(session?.user ?? null);
+
+        // Tracker les connexions réussies dans getInitialSession
+        if (session?.user) {
+          trackEvent('user_session_restored', {
+            category: 'auth',
+            action: 'session_restore',
+            userId: session.user.id,
+          });
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération de session:', error);
         setUser(null);
@@ -56,11 +66,29 @@ export const useAuth = () => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      
+      // Tracker la déconnexion
+      trackEvent('user_logout', {
+        category: 'auth',
+        action: 'logout',
+        userId: user?.id,
+      });
+      
       toast({
         title: "Déconnexion",
         description: "Vous avez été déconnecté avec succès.",
       });
     } catch (error) {
+      // Tracker l'erreur de déconnexion
+      trackError(error as Error, {
+        userId: user?.id,
+        action: 'logout',
+        metadata: { 
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent 
+        }
+      });
+      
       toast({
         title: "Erreur",
         description: "Erreur lors de la déconnexion.",

@@ -141,6 +141,7 @@ const MenuHamburger = () => {
   };
 
   const handleNavigation = (href: string) => {
+    console.log('🔍 Navigation vers:', href); // DEBUG temporaire
     navigate(href);
     setOpen(false);
   };
@@ -172,7 +173,10 @@ const MenuHamburger = () => {
                 key={item.id}
                 variant={isActive ? "secondary" : "ghost"}
                 className="w-full justify-start h-12"
-                onClick={() => handleNavigation(item.href)}
+                onClick={() => {
+                  console.log('🔍 Clic sur item:', item.id, item.href); // DEBUG
+                  handleNavigation(item.href);
+                }}
               >
                 <Icon className="w-5 h-5 mr-3" />
                 <span className="flex-1 text-left">{item.label}</span>

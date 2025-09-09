@@ -114,23 +114,57 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (posts.length === 0) {
     return (
-      <Card className={`${className}`}>
-        <CardContent className="p-8 text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">💡</span>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Aucun post à afficher</h3>
-          <p className="text-muted-foreground mb-4">
-            {userProfile?.interests.length === 0 
-              ? "Ajoutez des intérêts et préférences à votre profil pour voir des publications personnalisées !"
-              : "Aucune publication ne correspond à vos préférences actuelles. Modifiez vos critères pour voir plus de contenu !"
-            }
-          </p>
-          <Button onClick={refresh} variant="outline">
-            Actualiser
-          </Button>
-        </CardContent>
-      </Card>
+      <div className={`space-y-6 ${className}`}>
+        {/* Bouton Créer une publication - toujours visible */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Edit3 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Créer une publication</h3>
+                  <p className="text-sm text-gray-600">Partagez vos pensées avec la communauté</p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleCreatePost}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Publier
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Message aucun post */}
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">💡</span>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Aucun post à afficher</h3>
+            <p className="text-muted-foreground mb-4">
+              {userProfile?.interests.length === 0 
+                ? "Ajoutez des intérêts et préférences à votre profil pour voir des publications personnalisées !"
+                : "Aucune publication ne correspond à vos préférences actuelles. Modifiez vos critères pour voir plus de contenu !"
+              }
+            </p>
+            <Button onClick={refresh} variant="outline">
+              Actualiser
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Modal de création de post */}
+        <CreatePostModal
+          open={showCreatePostModal}
+          onClose={() => setShowCreatePostModal(false)}
+          onPostCreated={handlePostCreated}
+        />
+      </div>
     );
   }
 
@@ -310,13 +344,14 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
         ))}
       </div>
 
-      {/* Modals */}
+      {/* Modal de création de post */}
       <CreatePostModal
         open={showCreatePostModal}
         onClose={() => setShowCreatePostModal(false)}
         onPostCreated={handlePostCreated}
       />
-      
+
+      {/* Modal Premium */}
       <PremiumUpgradeModal
         open={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}

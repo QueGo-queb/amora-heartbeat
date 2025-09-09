@@ -77,11 +77,43 @@ const Header = ({ showLoginButton = true, className = '' }: HeaderProps) => {
               📱 Fil d'actualité
             </Link>
             
+            {/* NOUVEAU: Lien vers les événements */}
+            <Link 
+              to="/events" 
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              🎉 Événements
+            </Link>
+            
             <Link 
               to="/matching" 
               className="text-sm font-medium transition-colors hover:text-primary"
             >
               Matching
+            </Link>
+
+            {/* NOUVEAU: Lien vers les badges */}
+            <Link 
+              to="/badges" 
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              🏆 Badges
+            </Link>
+
+            {/* NOUVEAU: Lien vers l'IA */}
+            <Link 
+              to="/ai" 
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              🤖 IA
+            </Link>
+
+            {/* NOUVEAU: Lien vers le mode voyage */}
+            <Link 
+              to="/travel" 
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              ✈️ Voyage
             </Link>
           </nav>
 
@@ -148,14 +180,51 @@ const Header = ({ showLoginButton = true, className = '' }: HeaderProps) => {
                   className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Fil d'actualité
+                  📱 Fil d'actualité
                 </Link>
+                
+                {/* NOUVEAU: Lien mobile vers les événements */}
+                <Link 
+                  to="/events" 
+                  className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  🎉 Événements
+                </Link>
+                
                 <Link 
                   to="/matching" 
                   className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Matching
+                </Link>
+
+                {/* NOUVEAU: Lien mobile vers les badges */}
+                <Link 
+                  to="/badges" 
+                  className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  🏆 Badges
+                </Link>
+
+                {/* NOUVEAU: Lien mobile vers l'IA */}
+                <Link 
+                  to="/ai" 
+                  className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  🤖 IA & Suggestions
+                </Link>
+
+                {/* NOUVEAU: Lien mobile vers le mode voyage */}
+                <Link 
+                  to="/travel" 
+                  className="block py-3 px-4 text-lg font-medium transition-colors hover:text-primary hover:bg-accent rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  ✈️ Mode Voyage
                 </Link>
 
                 {/* Séparateur */}

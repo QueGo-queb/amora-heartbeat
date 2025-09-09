@@ -1,0 +1,66 @@
+name: 📦 Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 📦 Install dependencies
+        run: npm ci
+        
+      - name: 🏗️ Build production
+        run: npm run build:prod
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_APP_VERSION: ${{ github.ref_name }}
+          
+      - name: 📝 Generate changelog
+        id: changelog
+        run: |
+          # Générer le changelog depuis les commits
+          CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" --no-merges)
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: 🏷️ Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: AMORA Heartbeat ${{ github.ref_name }}
+          body: |
+            ## 🎉 Nouvelle version d'AMORA Heartbeat
+            
+            ### 📋 Changements dans cette version:
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ### 🔗 Liens utiles:
+            - 🌍 [Production](https://amora.app)
+            - 📊 [Monitoring Sentry](https://sentry.io/organizations/your-org/projects/amora/)
+            - 📈 [Analytics](https://analytics.amora.app)
+            
+            ### ⚡ Performance:
+            - Bundle size: optimisé
+            - Lighthouse score: > 90
+            - Tests coverage: > 70%
+          draft: false
+          prerelease: false

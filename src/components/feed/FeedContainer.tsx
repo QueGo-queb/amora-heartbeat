@@ -52,6 +52,11 @@ const FeedContainer = () => {
   }, [preloadCriticalData]);
 
   console.log('🎯 FeedContainer DEBUG:', debugInfo);
+  console.log('🔍 DEBUG FeedContainer:');
+  console.log('- authLoading:', authLoading);
+  console.log('- user:', user);
+  console.log('- debugInfo:', debugInfo);
+  console.log('- Condition PostCreator:', !authLoading && user);
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -9,6 +9,7 @@ import { AnimatedSlogan } from "@/components/ui/animated-slogan";
 import { CultureCarousel } from "@/components/ui/culture-carousel";
 import { SignupForm } from "@/components/ui/signup-form";
 import { analytics } from '@/lib/analytics';
+import Footer from "@/components/layout/Footer";
 
 const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("fr");
@@ -298,20 +299,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 border-t">
-        <div className="container mx-auto max-w-6xl text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="heart-logo">
-              <div className="heart-shape" />
-            </div>
-            <span className="text-2xl font-bold gradient-text">AMORA</span>
-          </div>
-          <p className="text-muted-foreground">
-            L'amour sans frontières • Love without borders • Lanmou san fwontyè • Amor sin fronteras • Amor sem fronteiras
-          </p>
-        </div>
-      </footer>
+      {/* Footer dynamique */}
+      <Footer />
     </div>
   );
 };

@@ -90,7 +90,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     ...profile,
     country: profile.country || '',
     region: profile.region || '',
-    city: profile.city || ''
+    city: profile.city || '',
+    interests: Array.isArray(profile.interests) ? profile.interests : [] // ✅ Protection renforcée
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,8 +116,15 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     getUserEmail();
   }, []);
 
+  // Synchroniser formData avec les changements de profile
   useEffect(() => {
-    setFormData(profile);
+    setFormData({
+      ...profile,
+      country: profile.country || '',
+      region: profile.region || '',
+      city: profile.city || '',
+      interests: Array.isArray(profile.interests) ? profile.interests : [] // ✅ Protection renforcée
+    });
   }, [profile]);
 
   const validateForm = (): boolean => {
@@ -167,22 +175,34 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
         interests: formData.interests,
         bio: formData.bio || null,
         age: formData.age || null,
-        // Nouveaux champs de localisation
+        // Champs de localisation
         country: formData.country || null,
         region: formData.region || null,
         city: formData.city || null,
-        // Construire la localisation complète pour l'affichage
+        // Construire la localisation complète (cette colonne existe !)
         location: [formData.city, formData.region, countries.find(c => c.code === formData.country)?.name]
           .filter(Boolean)
-          .join(', ') || null,
-        updated_at: new Date().toISOString()
+          .join(', ') || null
+        // SUPPRIMER : updated_at (cette colonne n'existe pas)
       };
+
+      // 🔧 LOGS TEMPORAIRES 
+      console.log('🔧 ProfileData à sauvegarder:', profileData);
+      console.log('🔧 Intérêts:', profileData.interests);
+      console.log('🔧 Longueur intérêts:', profileData.interests?.length);
 
       // Essayer d'abord la mise à jour
       let { error: updateError } = await supabase
         .from('profiles')
         .update(profileData)
         .eq('id', profile.id);
+
+      console.log('🔧 Résultat mise à jour:', { updateError });
+      if (updateError) {
+        console.log('🔧 Erreur mise à jour:', updateError.message);
+      } else {
+        console.log('🔧 Mise à jour réussie !');
+      }
 
       // Si la mise à jour échoue, essayer l'insertion
       if (updateError) {
@@ -518,12 +538,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 
             {/* Section Centres d'intérêt - VERSION CORRIGÉE */}
             <EnhancedInterestsSelector
-              selectedInterests={profile.interests || []}
+              selectedInterests={formData.interests || []} // ✅ Déjà correct !
               onInterestsChange={(interests) => {
                 console.log('🔧 Intérêts sélectionnés:', interests);
-                // CORRECTION: Mettre à jour à la fois profile ET formData
-                setProfile(prev => ({...prev, interests}));
-                setFormData(prev => ({...prev, interests}));
+                handleInputChange('interests', interests); // ✅ Déjà correct !
               }}
               maxSelections={15}
               className="mb-6"

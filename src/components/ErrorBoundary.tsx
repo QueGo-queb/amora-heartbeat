@@ -1,8 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import * as Sentry from '@sentry/react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { RefreshCw, Home, MessageCircle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -13,6 +13,7 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  eventId?: string;
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -22,28 +23,29 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-    };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('🚨 ErrorBoundary caught an error:', error, errorInfo);
     
-    // Envoyer à Sentry avec contexte
-    Sentry.withScope((scope) => {
-      scope.setContext('errorBoundary', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-      });
-      Sentry.captureException(error);
+    // Envoyer à Sentry avec contexte riche
+    const eventId = Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        section: 'error_boundary',
+      },
+      level: 'error',
     });
 
     this.setState({
       error,
       errorInfo,
+      eventId,
     });
   }
 
@@ -55,60 +57,80 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
+  handleReportFeedback = () => {
+    if (this.state.eventId) {
+      Sentry.showReportDialog({ eventId: this.state.eventId });
+    }
+  };
+
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
+      // Interface d'erreur personnalisée pour AMORA
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <Card className="w-full max-w-md mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-destructive" />
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <MessageCircle className="w-8 h-8 text-red-600" />
               </div>
-              <CardTitle className="text-destructive">
+              <CardTitle className="text-xl text-red-900">
                 Oups ! Une erreur est survenue
               </CardTitle>
+              <CardDescription>
+                Nous sommes désolés, quelque chose s'est mal passé. Notre équipe a été notifiée.
+              </CardDescription>
             </CardHeader>
+            
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                Nous sommes désolés, mais quelque chose s'est mal passé. 
-                L'erreur a été automatiquement signalée à notre équipe.
-              </p>
-              
-              {import.meta.env.MODE === 'development' && this.state.error && (
-                <details className="text-xs bg-muted p-2 rounded">
+              {import.meta.env.MODE === 'development' && (
+                <details className="bg-gray-50 rounded p-3 text-sm">
                   <summary className="cursor-pointer font-medium">
-                    Détails de l'erreur (mode développement)
+                    Détails techniques (dev)
                   </summary>
-                  <pre className="mt-2 whitespace-pre-wrap">
-                    {this.state.error.message}
-                    {'\n\n'}
-                    {this.state.error.stack}
+                  <pre className="mt-2 text-xs overflow-auto">
+                    {this.state.error?.stack}
                   </pre>
                 </details>
               )}
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1" 
-                  onClick={this.handleReload}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Recharger
-                </Button>
-                <Button 
-                  className="flex-1" 
-                  onClick={this.handleGoHome}
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  Accueil
-                </Button>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>En attendant :</strong> Essayez de recharger la page ou retournez à l'accueil.
+                </p>
               </div>
             </CardContent>
+            
+            <CardFooter className="flex gap-2">
+              <Button 
+                onClick={this.handleReload}
+                variant="outline"
+                className="flex-1"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Recharger
+              </Button>
+              
+              <Button 
+                onClick={this.handleGoHome}
+                className="flex-1"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Accueil
+              </Button>
+            </CardFooter>
+            
+            {this.state.eventId && (
+              <div className="px-6 pb-6">
+                <Button 
+                  onClick={this.handleReportFeedback}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-gray-600"
+                >
+                  Signaler ce problème
+                </Button>
+              </div>
+            )}
           </Card>
         </div>
       );
@@ -118,4 +140,4 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export { ErrorBoundary };
+export default ErrorBoundary;

@@ -7,12 +7,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    // Retirer la référence au fichier setup.ts supprimé
-    // setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./src/test/setup.ts'],
     css: false,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/test/',
@@ -20,7 +19,32 @@ export default defineConfig({
         '**/*.config.*',
         'dist/',
         'coverage/',
+        'src/components/ui/**', // UI components from shadcn
+        'src/lib/sentry.ts', // External service config
+        'src/main.tsx', // Entry point
+        'src/vite-env.d.ts',
       ],
+      thresholds: {
+        global: {
+          branches: 70,
+          functions: 70,
+          lines: 70,
+          statements: 70,
+        },
+        // Critical modules need higher coverage
+        'src/hooks/useAuth.ts': {
+          branches: 90,
+          functions: 90,
+          lines: 90,
+          statements: 90,
+        },
+        'src/hooks/useFeed.ts': {
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85,
+        },
+      },
     },
   },
   resolve: {

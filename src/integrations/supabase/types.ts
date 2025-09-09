@@ -1166,6 +1166,125 @@ export type Database = {
         }
         Relationships: []
       }
+      call_sessions: {
+        Row: {
+          id: string
+          caller_id: string
+          receiver_id: string
+          call_type: 'audio' | 'video'
+          status: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
+          duration_seconds: number
+          created_at: string
+          started_at: string | null
+          ended_at: string | null
+          last_activity_at: string
+          caller_sdp: Json | null
+          receiver_sdp: Json | null
+          ice_candidates: Json | null
+          connection_quality: 'excellent' | 'good' | 'poor' | 'unknown' | null
+        }
+        Insert: {
+          id?: string
+          caller_id: string
+          receiver_id: string
+          call_type: 'audio' | 'video'
+          status?: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
+          duration_seconds?: number
+          created_at?: string
+          started_at?: string | null
+          ended_at?: string | null
+          last_activity_at?: string
+          caller_sdp?: Json | null
+          receiver_sdp?: Json | null
+          ice_candidates?: Json | null
+          connection_quality?: 'excellent' | 'good' | 'poor' | 'unknown' | null
+        }
+        Update: {
+          id?: string
+          caller_id?: string
+          receiver_id?: string
+          call_type?: 'audio' | 'video'
+          status?: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
+          duration_seconds?: number
+          created_at?: string
+          started_at?: string | null
+          ended_at?: string | null
+          last_activity_at?: string
+          caller_sdp?: Json | null
+          receiver_sdp?: Json | null
+          ice_candidates?: Json | null
+          connection_quality?: 'excellent' | 'good' | 'poor' | 'unknown' | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sessions_caller_id_fkey"
+            columns: ["caller_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_sessions_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      call_preferences: {
+        Row: {
+          user_id: string
+          allow_calls_from: 'everyone' | 'matches' | 'premium' | 'none'
+          auto_answer: boolean
+          call_notifications: boolean
+          video_quality: 'low' | 'medium' | 'high' | 'auto'
+          audio_echo_cancellation: boolean
+          available_for_calls: boolean
+          available_hours_start: string
+          available_hours_end: string
+          timezone: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          allow_calls_from?: 'everyone' | 'matches' | 'premium' | 'none'
+          auto_answer?: boolean
+          call_notifications?: boolean
+          video_quality?: 'low' | 'medium' | 'high' | 'auto'
+          audio_echo_cancellation?: boolean
+          available_for_calls?: boolean
+          available_hours_start?: string
+          available_hours_end?: string
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          allow_calls_from?: 'everyone' | 'matches' | 'premium' | 'none'
+          auto_answer?: boolean
+          call_notifications?: boolean
+          video_quality?: 'low' | 'medium' | 'high' | 'auto'
+          audio_echo_cancellation?: boolean
+          available_for_calls?: boolean
+          available_hours_start?: string
+          available_hours_end?: string
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

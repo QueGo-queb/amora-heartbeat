@@ -268,9 +268,8 @@ const Footer = () => {
                 <span>© {currentYear} Amora. Tous droits réservés.</span>
               </div>
               <div className="flex items-center gap-4">
-                <span>Fait avec</span>
+                <span>Créé avec Amour</span>
                 <Heart className="w-4 h-4 text-red-500" />
-                <span>en France</span>
               </div>
             </div>
           </div>

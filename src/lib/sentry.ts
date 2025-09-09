@@ -1,88 +1,91 @@
-import * as Sentry from "@sentry/react";
-import { createBrowserRouter } from "react-router-dom";
+import * as Sentry from '@sentry/react';
 
-// Configuration Sentry
-export const initSentry = () => {
-  if (!import.meta.env.VITE_SENTRY_DSN) {
-    return;
-  }
-  
+// Configuration de base
+const SENTRY_CONFIG = {
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.VITE_ENVIRONMENT || 'development',
+  tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  beforeSend(event) {
+    // Ne pas envoyer en développement si pas de DSN
+    if (!SENTRY_CONFIG.dsn && import.meta.env.DEV) {
+      console.log('🐛 Sentry event (dev):', event);
+      return null;
+    }
+    return event;
+  },
+};
+
+/**
+ * Initialise Sentry avec configuration de base
+ */
+export function initSentry() {
   try {
+    if (!SENTRY_CONFIG.dsn) {
+      console.warn('⚠️ Sentry DSN non configuré - monitoring désactivé');
+      return;
+    }
+
     Sentry.init({
-      dsn: import.meta.env.VITE_SENTRY_DSN,
-      environment: import.meta.env.MODE,
-      
-      // Performance monitoring
-      tracesSampleRate: import.meta.env.MODE === 'production' ? 0.1 : 1.0,
-      
-      // Session replay pour debug
-      replaysSessionSampleRate: import.meta.env.MODE === 'production' ? 0.01 : 0.1,
-      replaysOnErrorSampleRate: 1.0,
-      
-      // Intégrations spécifiques
+      ...SENTRY_CONFIG,
       integrations: [
         Sentry.browserTracingIntegration(),
-        Sentry.replayIntegration(),
-        Sentry.feedbackIntegration({
-          colorScheme: "system",
-          showBranding: false,
+        Sentry.replayIntegration({
+          maskAllText: false,
+          blockAllMedia: false,
         }),
       ],
-      
-      // Filtrage des erreurs
-      beforeSend(event) {
-        // Filtrer les erreurs non critiques
-        if (event.exception) {
-          const error = event.exception.values?.[0];
-          if (error?.value?.includes('Network Error')) {
-            return null; // Ignorer les erreurs réseau temporaires
-          }
-        }
-        return event;
-      },
-      
-      // Tags par défaut
-      initialScope: {
-        tags: {
-          component: "amora-frontend",
-          version: "1.0.0"
-        },
-      },
     });
-    
-    } catch (error) {
+
+    console.log('✅ Sentry initialisé avec succès');
+  } catch (error) {
     console.error('❌ Erreur initialisation Sentry:', error);
   }
+}
+
+/**
+ * Helper pour tracker les erreurs manuellement avec contexte riche
+ */
+export const trackError = (error: Error, context?: {
+  userId?: string;
+  page?: string;
+  action?: string;
+  metadata?: Record<string, any>;
+}) => {
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setContext('error_context', context);
+      if (context.userId) scope.setUser({ id: context.userId });
+      if (context.page) scope.setTag('page', context.page);
+      if (context.action) scope.setTag('action', context.action);
+    }
+    Sentry.captureException(error);
+  });
 };
 
-// Router avec Sentry
-export const createSentryRouter = createBrowserRouter;
-
-// Helper pour tracker les erreurs manuellement
-export const trackError = (error: Error, context?: Record<string, any>) => {
-  try {
-    Sentry.withScope((scope) => {
-      if (context) {
-        Object.entries(context).forEach(([key, value]) => {
-          scope.setContext(key, value);
-        });
-      }
-      Sentry.captureException(error);
-      });
-  } catch (err) {
-    console.error('❌ Erreur lors de l\'envoi à Sentry:', err);
-  }
+/**
+ * Helper pour tracker les événements personnalisés
+ */
+export const trackEvent = (message: string, level: 'info' | 'warning' | 'error' = 'info', context?: Record<string, any>) => {
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setContext('event_context', context);
+    }
+    Sentry.captureMessage(message, level);
+  });
 };
 
-// Helper pour tracker les événements business
-export const trackEvent = (name: string, data?: Record<string, any>) => {
-  try {
-    Sentry.addBreadcrumb({
-      message: name,
-      level: 'info',
-      data,
-    });
-    } catch (err) {
-    console.error('❌ Erreur lors du tracking:', err);
-  }
+/**
+ * Helper pour définir l'utilisateur actuel
+ */
+export const setSentryUser = (user: { id: string; email?: string; name?: string }) => {
+  Sentry.setUser(user);
+};
+
+/**
+ * Helper pour effacer les données utilisateur (logout)
+ */
+export const clearSentryUser = () => {
+  Sentry.setUser(null);
 };
