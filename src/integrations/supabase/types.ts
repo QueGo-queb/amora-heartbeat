@@ -1341,6 +1341,79 @@ export type Database = {
         Returns: any
       }
     }
+    // NOUVELLES TABLES POUR LE SYSTÈME DE TRANSFERT D'ARGENT
+    payment_methods: {
+      Row: {
+        id: string
+        type: 'bank' | 'card' | 'interac'
+        name: string
+        details: string
+        is_default: boolean
+        is_active: boolean
+        created_by: string
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        type: 'bank' | 'card' | 'interac'
+        name: string
+        details: string
+        is_default?: boolean
+        is_active?: boolean
+        created_by: string
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        type?: 'bank' | 'card' | 'interac'
+        name?: string
+        details?: string
+        is_default?: boolean
+        is_active?: boolean
+        created_by?: string
+        created_at?: string
+        updated_at?: string
+      }
+      Relationships: []
+    }
+    admin_transfers: {
+      Row: {
+        id: string
+        amount: number
+        status: 'pending' | 'completed' | 'failed'
+        transfer_method: string
+        payment_method_id: string
+        requested_by: string
+        description: string
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        amount: number
+        status?: 'pending' | 'completed' | 'failed'
+        transfer_method: string
+        payment_method_id: string
+        requested_by: string
+        description: string
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        amount?: number
+        status?: 'pending' | 'completed' | 'failed'
+        transfer_method?: string
+        payment_method_id?: string
+        requested_by?: string
+        description?: string
+        created_at?: string
+        updated_at?: string
+      }
+      Relationships: []
+    }
     Enums: {
       [_ in never]: never
     }

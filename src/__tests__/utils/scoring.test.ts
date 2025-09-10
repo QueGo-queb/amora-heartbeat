@@ -3,7 +3,7 @@ import {
   calculateRecencyScore, 
   calculateTagMatches,
   computeScore 
-} from '@/utils/scoring';
+} from '../../../utils/scoring'; // Corrigé: chemin relatif correct
 
 describe('Scoring Utils', () => {
   describe('calculateRecencyScore', () => {

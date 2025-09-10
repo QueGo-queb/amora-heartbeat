@@ -8,7 +8,7 @@ interface AdSpaceToggleProps {
 }
 
 const AdSpaceToggle: React.FC<AdSpaceToggleProps> = ({ className = '' }) => {
-  const { isVisible, toggleVisibility } = useAdSpaceVisibility();
+  const { isVisible, toggleAdSpaceVisibility } = useAdSpaceVisibility(); // Corrigé: utiliser toggleAdSpaceVisibility
 
   return (
     <div className={`flex items-center space-x-3 p-4 bg-slate-50 rounded-lg border ${className}`}>
@@ -16,7 +16,7 @@ const AdSpaceToggle: React.FC<AdSpaceToggleProps> = ({ className = '' }) => {
         <Switch
           id="ad-space-toggle"
           checked={isVisible}
-          onCheckedChange={toggleVisibility}
+          onCheckedChange={toggleAdSpaceVisibility} // Corrigé: utiliser toggleAdSpaceVisibility
           className="data-[state=checked]:bg-green-600"
         />
         <Label 

@@ -14,7 +14,11 @@ interface PaymentMethod {
   type: 'bank' | 'card' | 'interac';
   name: string;
   details: string;
-  isDefault: boolean;
+  is_default: boolean; // Corrigé: utiliser is_default au lieu de isDefault
+  is_active: boolean; // Ajouté: propriété manquante
+  created_by: string; // Ajouté: propriété manquante
+  created_at: string; // Ajouté: propriété manquante
+  updated_at: string; // Ajouté: propriété manquante
 }
 
 interface PlatformBalance {
@@ -50,10 +54,23 @@ export const EnhancedMoneyTransferButton = () => {
 
       if (error) throw error;
       
-      setPaymentMethods(data || []);
+      // Corrigé: conversion des données de la base vers l'interface
+      const paymentMethodsData: PaymentMethod[] = (data || []).map(item => ({
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        details: item.details,
+        is_default: item.is_default,
+        is_active: item.is_active,
+        created_by: item.created_by,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setPaymentMethods(paymentMethodsData);
       
       // Sélectionner la méthode par défaut
-      const defaultMethod = data?.find(m => m.is_default);
+      const defaultMethod = paymentMethodsData.find(m => m.is_default);
       if (defaultMethod) setSelectedMethod(defaultMethod.id);
       
     } catch (error) {
@@ -74,10 +91,12 @@ export const EnhancedMoneyTransferButton = () => {
 
       const totalRevenue = (transactions?.reduce((sum, t) => sum + (t.amount_cents || 0), 0) || 0) / 100;
       
-      const { data: transfers } = await supabase
+      const { data: transfers, error: transfersError } = await supabase
         .from('admin_transfers')
         .select('amount, created_at')
         .order('created_at', { ascending: false });
+
+      if (transfersError) throw transfersError;
 
       const totalTransferred = (transfers?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0);
       const availableBalance = totalRevenue - totalTransferred;
@@ -292,7 +311,7 @@ export const EnhancedMoneyTransferButton = () => {
                           <div className="flex items-center gap-2">
                             {getMethodIcon(method.type)}
                             <span>{method.name}</span>
-                            {method.isDefault && (
+                            {method.is_default && (
                               <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">
                                 Défaut
                               </span>
@@ -321,7 +340,7 @@ export const EnhancedMoneyTransferButton = () => {
                     <Label>Type</Label>
                     <Select 
                       value={newMethodForm.type} 
-                      onValueChange={(value: any) => setNewMethodForm(prev => ({ ...prev, type: value }))}
+                      onValueChange={(value: 'bank' | 'card' | 'interac') => setNewMethodForm(prev => ({ ...prev, type: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
