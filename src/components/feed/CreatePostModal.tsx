@@ -634,3 +634,5 @@ useEffect(() => {
     </Dialog>
   );
 };
+
+export default CreatePostModal;

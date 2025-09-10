@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 
 // Configuration de base
 const SENTRY_CONFIG = {
-  dsn: import.meta.env.VITE_SENTRY_DSN,
+  dsn: import.meta.env.VITE_SENTRY_DSN || 'https://9113ad775d1e6f720897fe4a79d4f337@o4509978966163456.ingest.us.sentry.io/4509979007778816',
   environment: import.meta.env.VITE_ENVIRONMENT || 'development',
   tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
   replaysSessionSampleRate: 0.1,
