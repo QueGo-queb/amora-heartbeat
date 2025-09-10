@@ -12,7 +12,7 @@ import { analytics } from '@/lib/analytics';
 import Footer from "@/components/layout/Footer";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
 import { AdSpace } from '@/components/advertising/AdSpace';
 

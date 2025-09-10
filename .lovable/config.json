@@ -1,0 +1,8 @@
+{
+  "projectId": "amora-heartbeat",
+  "repository": "QueGo-queb/amora-heartbeat",
+  "branch": "main",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite"
+}
