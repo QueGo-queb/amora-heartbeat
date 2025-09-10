@@ -93,16 +93,17 @@ export const useFooter = () => {
       // Requêtes avec logs détaillés
       console.log('🔍 Exécution des requêtes...');
       
-      const [contentResult, linksResult, socialsResult] = await Promise.all([
+      const [contentResult, socialsResult, legalPagesResult] = await Promise.all([
         supabase.from('footer_content').select('*').eq('is_active', true).maybeSingle(),
-        supabase.from('footer_links').select('*').order('category, order_index'),
-        supabase.from('footer_socials').select('*').order('order_index')
+        supabase.from('footer_socials').select('*').order('order_index'),
+        // UTILISER SEULEMENT legal_pages pour les liens
+        supabase.from('legal_pages').select('*').eq('is_active', true).order('category, order_index')
       ]);
 
       console.log('📊 === RÉSULTATS BRUTS ===');
       console.log('Content:', contentResult);
-      console.log('Links:', linksResult);
       console.log('Socials:', socialsResult);
+      console.log('Legal Pages:', legalPagesResult);
 
       // Traitement avec logs détaillés
       if (contentResult.error) {
@@ -112,13 +113,24 @@ export const useFooter = () => {
         console.log('✅ Content chargé:', contentResult.data);
       }
 
-      if (linksResult.error) {
-        console.error('❌ Erreur footer_links:', linksResult.error);
-        setLinks([]);
-      } else {
-        setLinks(linksResult.data || []);
-        console.log('✅ Links chargés:', linksResult.data?.length, 'éléments');
-      }
+      // 🔧 NOUVELLE LOGIQUE : Combiner footer_links + legal_pages
+      let allLinks = [];
+      
+      // Convertir legal_pages vers le format footer_links
+      const linksFromPages = (legalPagesResult.data || []).map(page => ({
+        id: `legal_page_${page.id}`,
+        category: page.category === 'legal' ? 'legal' : 
+                  page.category === 'support' ? 'support' : 'company',
+        name: page.title,
+        href: `/${page.slug}`,
+        order_index: page.order_index || 0,
+        is_active: page.is_active,
+        created_at: page.created_at,
+        updated_at: page.updated_at
+      }));
+
+      setLinks(linksFromPages);
+      console.log('✅ Links chargés (après déduplication):', linksFromPages.length, 'éléments');
 
       if (socialsResult.error) {
         console.error('❌ Erreur footer_socials:', socialsResult.error);
@@ -387,6 +399,52 @@ export const useFooter = () => {
   // Charger les données au montage
   useEffect(() => {
     loadAllFooterData();
+  }, [loadAllFooterData]);
+
+  // Écouter les changements en temps réel sur legal_pages
+  useEffect(() => {
+    console.log('🔄 Configuration des listeners temps réel...');
+    
+    // Listener pour les changements sur legal_pages
+    const legalPagesChannel = supabase
+      .channel('legal_pages_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'legal_pages'
+        },
+        (payload) => {
+          console.log('🔄 Changement détecté sur legal_pages:', payload);
+          // Recharger les données du footer quand legal_pages change
+          loadAllFooterData();
+        }
+      )
+      .subscribe();
+
+    // Listener pour les changements sur footer_links
+    const footerLinksChannel = supabase
+      .channel('footer_links_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'footer_links'
+        },
+        (payload) => {
+          console.log('🔄 Changement détecté sur footer_links:', payload);
+          loadAllFooterData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🧹 Nettoyage des listeners temps réel...');
+      supabase.removeChannel(legalPagesChannel);
+      supabase.removeChannel(footerLinksChannel);
+    };
   }, [loadAllFooterData]);
 
   return {

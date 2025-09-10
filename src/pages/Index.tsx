@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Heart, Users, MessageCircle, ArrowRight, Sparkles, Shield, Award } from "lucide-react";
+import { Heart, Users, MessageCircle, ArrowRight, Sparkles, Shield, Award, Megaphone, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { AnimatedSlogan } from "@/components/ui/animated-slogan";
@@ -10,10 +10,17 @@ import { CultureCarousel } from "@/components/ui/culture-carousel";
 import { SignupForm } from "@/components/ui/signup-form";
 import { analytics } from '@/lib/analytics';
 import Footer from "@/components/layout/Footer";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
+import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
+import { AdSpace } from '@/components/advertising/AdSpace';
 
 const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("fr");
   const [showSignupForm, setShowSignupForm] = useState(false);
+  const { isVisible: adSpaceVisible, toggleAdSpaceVisibility, loading: adSpaceLoading } = useAdSpaceVisibility();
+  const { toast } = useToast();
 
   const translations = {
     fr: {
@@ -155,19 +162,35 @@ const Index = () => {
 
   const t = translations[selectedLanguage as keyof typeof translations] || translations.fr;
 
+  const handleAdSpaceToggle = async (checked: boolean) => {
+    const success = await toggleAdSpaceVisibility(checked);
+    if (success) {
+      toast({
+        title: "Espace publicitaire",
+        description: `Espace publicitaire ${checked ? 'activé' : 'désactivé'}`,
+      });
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'espace publicitaire",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      {/* Header - DESIGN MAINTENU avec nouvelle palette */}
+      <header className="sticky top-0 z-50 w-full border-b border-[#CED4DA] bg-[#F8F9FA]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F8F9FA]/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="heart-logo">
-              <div className="heart-shape" />
+              <div className="heart-shape bg-gradient-to-br from-[#E63946] to-[#52B788]" />
             </div>
-            <span className="text-2xl font-bold gradient-text">AMORA</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-[#E63946] to-[#52B788] bg-clip-text text-transparent">AMORA</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="inline-flex" asChild>
+            <Button variant="outline" className="border-[#CED4DA] text-[#212529] hover:bg-[#E63946] hover:text-white hover:border-[#E63946]" asChild>
               <Link to="/auth">{t.login}</Link>
             </Button>
             <LanguageSelector 
@@ -178,14 +201,14 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - DESIGN MAINTENU avec nouvelle palette */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 gradient-text">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#E63946] to-[#52B788] bg-clip-text text-transparent">
               {t.hero}
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-[#CED4DA] mb-8 max-w-3xl mx-auto">
               {t.subtitle}
             </p>
             
@@ -194,7 +217,7 @@ const Index = () => {
             <div className="mt-8">
               <Dialog open={showSignupForm} onOpenChange={setShowSignupForm}>
                 <DialogTrigger asChild>
-                  <Button className="btn-hero">
+                  <Button className="bg-gradient-to-r from-[#E63946] to-[#E63946]/90 hover:from-[#E63946]/90 hover:to-[#E63946] text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                     {t.cta}
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
@@ -206,81 +229,86 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Culture Carousel */}
+          {/* Culture Carousel - DESIGN MAINTENU */}
           <div className="mb-16">
             <CultureCarousel />
           </div>
+
+          {/* NOUVEL ESPACE PUBLICITAIRE */}
+          <div className="mb-16">
+            <AdSpace />
+          </div>
         </div>
       </section>
 
-      {/* Premium Features Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-accent/10 via-heart-red/10 to-heart-green/10">
+      {/* Premium Features Section - DESIGN MAINTENU avec nouvelle palette */}
+      <section className="py-16 px-4 bg-gradient-to-r from-[#CED4DA]/10 via-[#E63946]/10 to-[#52B788]/10">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="w-6 h-6 text-accent" />
-              <h2 className="text-3xl font-bold">{t.premium.title}</h2>
+              <Sparkles className="w-6 h-6 text-[#E63946]" />
+              <h2 className="text-3xl font-bold text-[#212529]">{t.premium.title}</h2>
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t.premium.subtitle}</p>
+            <p className="text-lg text-[#CED4DA] max-w-2xl mx-auto">{t.premium.subtitle}</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="culture-card border-heart-red/20">
+            <Card className="bg-[#F8F9FA] border-[#E63946]/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-1">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Shield className="w-8 h-8 text-heart-red" />
-                  <h3 className="text-xl font-semibold">{t.premium.security}</h3>
+                  <Shield className="w-8 h-8 text-[#E63946]" />
+                  <h3 className="text-xl font-semibold text-[#212529]">{t.premium.security}</h3>
                 </div>
-                <p className="text-muted-foreground">{t.premium.securityDesc}</p>
+                <p className="text-[#CED4DA]">{t.premium.securityDesc}</p>
               </CardContent>
             </Card>
             
-            <Card className="culture-card border-heart-green/20">
+            <Card className="bg-[#F8F9FA] border-[#52B788]/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-1">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Award className="w-8 h-8 text-heart-green" />
-                  <h3 className="text-xl font-semibold">{t.premium.matching}</h3>
+                  <Award className="w-8 h-8 text-[#52B788]" />
+                  <h3 className="text-xl font-semibold text-[#212529]">{t.premium.matching}</h3>
                 </div>
-                <p className="text-muted-foreground">{t.premium.matchingDesc}</p>
+                <p className="text-[#CED4DA]">{t.premium.matchingDesc}</p>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features - DESIGN MAINTENU avec nouvelle palette */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="culture-card text-center">
+            <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-1 text-center">
               <CardContent className="pt-6">
-                <Heart className="w-12 h-12 mx-auto mb-4 text-heart-red" />
-                <h3 className="text-xl font-semibold mb-2">{t.features.matching}</h3>
-                <p className="text-muted-foreground">{t.features.matchingDesc}</p>
+                <Heart className="w-12 h-12 mx-auto mb-4 text-[#E63946]" />
+                <h3 className="text-xl font-semibold mb-2 text-[#212529]">{t.features.matching}</h3>
+                <p className="text-[#CED4DA]">{t.features.matchingDesc}</p>
               </CardContent>
             </Card>
 
-            <Card className="culture-card text-center">
+            <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-1 text-center">
               <CardContent className="pt-6">
-                <Users className="w-12 h-12 mx-auto mb-4 text-heart-orange" />
-                <h3 className="text-xl font-semibold mb-2">{t.features.community}</h3>
-                <p className="text-muted-foreground">{t.features.communityDesc}</p>
+                <Users className="w-12 h-12 mx-auto mb-4 text-[#52B788]" />
+                <h3 className="text-xl font-semibold mb-2 text-[#212529]">{t.features.community}</h3>
+                <p className="text-[#CED4DA]">{t.features.communityDesc}</p>
               </CardContent>
             </Card>
 
-            <Card className="culture-card text-center">
+            <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-1 text-center">
               <CardContent className="pt-6">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-heart-green" />
-                <h3 className="text-xl font-semibold mb-2">{t.features.messaging}</h3>
-                <p className="text-muted-foreground">{t.features.messagingDesc}</p>
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-[#52B788]" />
+                <h3 className="text-xl font-semibold mb-2 text-[#212529]">{t.features.messaging}</h3>
+                <p className="text-[#CED4DA]">{t.features.messagingDesc}</p>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 px-4 bg-primary text-primary-foreground">
+      {/* Stats - DESIGN MAINTENU avec nouvelle palette */}
+      <section className="py-16 px-4 bg-[#E63946] text-white">
         <div className="container mx-auto max-w-4xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>

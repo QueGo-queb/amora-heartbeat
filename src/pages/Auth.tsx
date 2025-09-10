@@ -148,40 +148,50 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-heart-red hover:text-heart-red/80 transition-colors">
+        {/* Header - Mobile optimized */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-[#E63946] hover:text-[#E63946]/80 transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Retour à l'accueil
+            <span className="text-sm md:text-base">Retour à l'accueil</span>
           </Link>
         </div>
 
-        {/* Auth Card */}
-        <Card className="culture-card">
-          <CardHeader className="text-center">
+        {/* Auth Card - Mobile responsive */}
+        <Card className="bg-[#F8F9FA] border-[#CED4DA] shadow-lg rounded-xl">
+          <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Heart className="w-6 h-6 text-heart-red" />
-              <CardTitle className="text-2xl">Connexion</CardTitle>
+              <Heart className="w-6 h-6 text-[#E63946]" />
+              <CardTitle className="text-xl md:text-2xl text-[#212529]">Connexion</CardTitle>
             </div>
-            <CardDescription>
+            <CardDescription className="text-[#CED4DA]">
               Connectez-vous à votre compte Amora
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Connexion</TabsTrigger>
-                <TabsTrigger value="signup">Inscription</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-[#CED4DA]/20 rounded-lg p-1">
+                <TabsTrigger 
+                  value="login"
+                  className="data-[state=active]:bg-[#E63946] data-[state=active]:text-white text-[#212529] rounded-md"
+                >
+                  Connexion
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="signup"
+                  className="data-[state=active]:bg-[#E63946] data-[state=active]:text-white text-[#212529] rounded-md"
+                >
+                  Inscription
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="login" className="space-y-4">
+              <TabsContent value="login" className="space-y-4 mt-6">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                    <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
+                      <Mail className="w-4 h-4 text-[#E63946]" />
                       Email
                     </Label>
                     <Input
@@ -190,12 +200,13 @@ const Auth = () => {
                       value={loginData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
+                      className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4" />
+                    <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
+                      <Lock className="w-4 h-4 text-[#E63946]" />
                       Mot de passe
                     </Label>
                     <PasswordInput
@@ -203,11 +214,12 @@ const Auth = () => {
                       onChange={(value) => handleInputChange("password", value)}
                       placeholder="Votre mot de passe"
                       required
+                      className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                     />
                   </div>
 
                   {loginError && (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                    <div className="text-sm text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 p-3 rounded-md">
                       {loginError}
                     </div>
                   )}
@@ -215,15 +227,17 @@ const Auth = () => {
                   <LoadingButton
                     type="submit"
                     loading={loading}
-                    className="w-full"
+                    className="w-full bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
                   >
                     Se connecter
                   </LoadingButton>
                 </form>
               </TabsContent>
               
-              <TabsContent value="signup">
-                <SignupForm language="fr" onClose={() => setActiveTab("login")} />
+              <TabsContent value="signup" className="mt-6">
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <SignupForm language="fr" onClose={() => setActiveTab("login")} />
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

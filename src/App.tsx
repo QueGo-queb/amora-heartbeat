@@ -25,6 +25,8 @@ import AdminSettings from "./pages/admin/settings";
 import AdminAds from "./pages/admin/ads";
 import AdminPromotions from "./pages/admin/promotions";
 import AdminFooter from "./pages/admin/footer";
+import AdminLegalPages from "./pages/admin/legal-pages";
+import LegalPage from "./pages/LegalPage";
 
 // Events pages
 import { EventsPage } from "./pages/EventsPage";
@@ -340,6 +342,16 @@ function App() {
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />
+
+                <Route path="/admin/legal-pages" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <AdminLegalPages />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/:slug" element={<LegalPage />} />
 
                 {/* Route 404 */}
                 <Route path="*" element={<NotFound />} />

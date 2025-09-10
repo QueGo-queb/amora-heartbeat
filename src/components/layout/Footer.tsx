@@ -67,6 +67,12 @@ const Footer = () => {
   console.log('Socials data:', socials);
   console.log('Active socials data:', activeSocials);
 
+  console.log('🔍 === LINKS DEBUG ===');
+  console.log('All links:', links);
+  console.log('Links by category:', linksByCategory);
+  console.log('Legal links:', linksByCategory.legal);
+  console.log('Support links:', linksByCategory.support);
+
   if (loading) {
     return (
       <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -92,7 +98,8 @@ const Footer = () => {
       <div className="relative z-10">
         {/* Section principale */}
         <div className="container mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          {/* Modifier la grille principale pour avoir 5 colonnes au lieu de 4 : */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
             {/* À propos d'Amora */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-6">
@@ -138,12 +145,11 @@ const Footer = () => {
                       return (
                         <a 
                           key={social.id}
-                          href={social.href} 
+                          href={social.href}
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className={`w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center transition-all duration-300 hover:transform hover:scale-110 hover:bg-slate-600 ${social.color_class}`}
+                          className={`w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all duration-300 hover:transform hover:scale-110 ${social.color_class}`}
                           aria-label={social.name}
-                          title={social.name}
                         >
                           <Icon className="w-5 h-5" />
                         </a>
@@ -205,12 +211,11 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* ✅ CORRECTION: Liens ACTIFS seulement */}
-            {/* Liens rapides */}
+            {/* Support - Colonne séparée */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Liens rapides</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">Support</h3>
               <ul className="space-y-3">
-                {linksByCategory.quick_links.map((link) => (
+                {linksByCategory.support.map((link) => (
                   <li key={link.id}>
                     <a 
                       href={link.href} 
@@ -224,24 +229,9 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Support & Légal */}
+            {/* Légal - Colonne séparée */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Support</h3>
-              <ul className="space-y-3 mb-8">
-                {linksByCategory.support.map((link) => (
-                  <li key={link.id}>
-                    <a 
-                      href={link.href} 
-                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
-                    >
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-
-              <h4 className="text-lg font-semibold mb-4 text-white">Légal</h4>
+              <h3 className="text-xl font-semibold mb-6 text-white">Légal</h3>
               <ul className="space-y-3">
                 {linksByCategory.legal.map((link) => (
                   <li key={link.id}>

@@ -31,7 +31,16 @@ import {
   DollarSign,
   Coins,
   Smartphone,
-  Landmark
+  Landmark,
+  FileText,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  Search,
+  Filter,
+  Save,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -824,6 +833,43 @@ const AdminDashboard = () => {
                   onClick={() => setShowAdminBankAccountManager(true)}
                 >
                   Gérer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pages légales */}
+          <Card className="culture-card group hover:shadow-lg transition-all duration-300 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#52B788]/10 rounded-lg group-hover:bg-[#52B788]/20 transition-colors">
+                    <FileText className="w-5 h-5 text-[#52B788]" />
+                  </div>
+                  <span className="text-[#212529]">Pages légales</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-[#CED4DA] mb-4">
+                Gérez toutes vos pages légales, FAQ et contenus d'aide
+              </p>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => navigate('/admin/legal-pages')}
+                  variant="outline" 
+                  className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Gérer les pages
+                </Button>
+                <Button 
+                  onClick={() => window.open('/terms-of-service', '_blank')}
+                  variant="outline" 
+                  className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Prévisualiser
                 </Button>
               </div>
             </CardContent>

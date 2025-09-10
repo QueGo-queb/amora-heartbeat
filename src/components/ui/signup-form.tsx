@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock } from "lucide-react";
+import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,21 +26,21 @@ const translations = {
     title: "Créer votre compte Amora",
     subtitle: "Rejoignez la communauté multiculturelle de l'amour",
     fullName: "Nom complet",
-    email: "Adresse e-mail",
+    email: "Adresse email",
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
     country: "Pays",
     region: "Région",
     city: "Ville",
     language: "Langue principale",
-    bio: "Petite biographie",
-    gender: "Sexe",
-    seekingGender: "Sexe recherché",
+    bio: "Biographie courte",
+    gender: "Genre",
+    seekingGender: "Genre recherché",
     age: "Âge",
-    ageRange: "Tranche d'âge recherchée",
+    ageRange: "Tranche d'âge préférée",
     ageRangeMin: "Âge minimum recherché",
     ageRangeMax: "Âge maximum recherché",
-    targetCountry: "Pays recherché",
+    targetCountry: "Pays cible",
     seekingLanguages: "Langues recherchées",
     createAccount: "Créer mon compte",
     male: "Homme",
@@ -48,11 +48,16 @@ const translations = {
     any: "Peu importe",
     bioPlaceholder: "Parlez-nous un peu de vous...",
     preferences: "Préférences de recherche",
+    step1: "Informations personnelles",
+    step2: "Préférences de recherche",
+    step3: "Centres d'intérêt",
+    continue: "Continuer",
+    previous: "Précédent",
     // Messages d'erreur
     errors: {
       emailAlreadyExists: "Cette adresse email est déjà utilisée.",
       weakPassword: "Le mot de passe doit contenir au moins 6 caractères.",
-      invalidEmail: "Veuillez saisir une adresse email valide.",
+      invalidEmail: "Veuillez entrer une adresse email valide.",
       passwordMismatch: "Les mots de passe ne correspondent pas.",
       networkError: "Erreur de connexion. Veuillez réessayer.",
       generalError: "Une erreur est survenue lors de l'inscription.",
@@ -85,6 +90,11 @@ const translations = {
     any: "Any",
     bioPlaceholder: "Tell us a bit about yourself...",
     preferences: "Search preferences",
+    step1: "Personal information",
+    step2: "Search preferences",
+    step3: "Interests",
+    continue: "Continue",
+    previous: "Previous",
     // Error messages
     errors: {
       emailAlreadyExists: "This email address is already in use.",
@@ -98,39 +108,43 @@ const translations = {
   },
   ht: {
     title: "Kreye kont Amora ou",
-    subtitle: "Vin nan kominote lanmou miltikiltirèl la",
+    subtitle: "Rantre nan kominote miltikiltirèl lanmou an",
     fullName: "Non konplè",
     email: "Adrès imel",
-    password: "Mo kle",
-    confirmPassword: "Konfime mo kle",
+    password: "Mo de pase",
+    confirmPassword: "Konfime mo de pase",
     country: "Peyi",
     region: "Rejyon",
     city: "Vil",
     language: "Lang prensipal",
-    bio: "Ti byografi",
+    bio: "Kout byografi",
     gender: "Sèks",
     seekingGender: "Sèks w ap chèche",
     age: "Laj",
-    ageRange: "Laj w ap chèche",
+    ageRange: "Tranche laj ou pi renmen",
     ageRangeMin: "Laj minimòm w ap chèche",
     ageRangeMax: "Laj maksimòm w ap chèche",
-    targetCountry: "Peyi ki vize",
-    seekingLanguages: "Lang yo w ap chèche",
+    targetCountry: "Peyi sib",
+    seekingLanguages: "Lang w ap chèche",
     createAccount: "Kreye kont mwen",
     male: "Gason",
-    female: "Fanm",
-    any: "Nenpòt sa",
-    bioPlaceholder: "Di nou yon ti kras sou ou...",
+    female: "Fi",
+    any: "Nenpòt",
+    bioPlaceholder: "Di nou yon ti jan sou ou...",
     preferences: "Preferans rechèch",
-    // Mesaj erè
+    step1: "Enfòmasyon pèsonèl",
+    step2: "Preferans rechèch",
+    step3: "Entegè",
+    continue: "Kontinye",
+    previous: "Anvan",
     errors: {
-      emailAlreadyExists: "Adrès imel sa a deja itilize.",
-      weakPassword: "Mo kle a dwe gen omwen 6 karaktè.",
-      invalidEmail: "Tanpri antre yon adrès imel ki valab.",
-      passwordMismatch: "Mo kle yo pa matche.",
-      networkError: "Erè koneksyon. Tanpri eseye ankò.",
-      generalError: "Yon erè te fèt pandan enskripsyon an.",
-      success: "Enskripsyon reyisi! Tcheke imel ou pou konfime kont ou."
+      emailAlreadyExists: "Adrès imel sa a deja ap itilize.",
+      weakPassword: "Mo de pase a dwe gen omwen 6 karaktè.",
+      invalidEmail: "Tanpri antre yon adrès imel valid.",
+      passwordMismatch: "Mo de pase yo pa koreye.",
+      networkError: "Erè konneksyon. Tanpri eseye ankò.",
+      generalError: "Yon erè te rive pandan enskripsyon an.",
+      success: "Enskripsyon reyisi ! Verifye imel ou pou konfime kont ou."
     }
   },
   es: {
@@ -144,7 +158,7 @@ const translations = {
     region: "Región",
     city: "Ciudad",
     language: "Idioma principal",
-    bio: "Biografía breve",
+    bio: "Biografía corta",
     gender: "Género",
     seekingGender: "Género buscado",
     age: "Edad",
@@ -159,7 +173,11 @@ const translations = {
     any: "Cualquiera",
     bioPlaceholder: "Cuéntanos un poco sobre ti...",
     preferences: "Preferencias de búsqueda",
-    // Mensajes de error
+    step1: "Información personal",
+    step2: "Preferencias de búsqueda",
+    step3: "Intereses",
+    continue: "Continuar",
+    previous: "Anterior",
     errors: {
       emailAlreadyExists: "Esta dirección de correo ya está en uso.",
       weakPassword: "La contraseña debe contener al menos 6 caracteres.",
@@ -196,6 +214,11 @@ const translations = {
     any: "Qualquer",
     bioPlaceholder: "Conte-nos um pouco sobre você...",
     preferences: "Preferências de busca",
+    step1: "Informações pessoais",
+    step2: "Preferências de busca",
+    step3: "Interesses",
+    continue: "Continuar",
+    previous: "Anterior",
     // Mensagens de erro
     errors: {
       emailAlreadyExists: "Este endereço de email já está em uso.",
@@ -217,73 +240,59 @@ const countries = [
   "Niger", "Guinée", "Bénin", "Togo", "Rwanda", "Burundi"
 ];
 
-const ageRanges = [
-  { label: "18-25", min: 18, max: 25 },
-  { label: "26-35", min: 26, max: 35 },
-  { label: "36-45", min: 36, max: 45 },
-  { label: "46-55", min: 46, max: 55 },
-  { label: "56+", min: 56, max: 99 }
-];
-
 const languages = [
   { code: "fr", name: "Français" },
   { code: "en", name: "English" },
   { code: "ht", name: "Kreyòl" },
   { code: "es", name: "Español" },
-  { code: "ptBR", name: "Português" }
+  { code: "ptBR", name: "Português (BR)" }
 ];
 
-// Fonction pour analyser et traduire les erreurs Supabase
-const getErrorMessage = (error: any, language: string): string => {
-  const t = translations[language as keyof typeof translations] || translations.fr;
-  
+const getErrorMessage = (error: any, t: any): string => {
   if (!error) return t.errors.generalError;
   
   const errorMessage = error.message?.toLowerCase() || '';
-  const errorCode = error.status || error.code;
   
-  // Erreurs d'email
+  // Email déjà utilisé
   if (errorMessage.includes('email') && errorMessage.includes('already')) {
     return t.errors.emailAlreadyExists;
   }
   
-  if (errorMessage.includes('invalid email') || errorMessage.includes('email format')) {
+  // Mot de passe trop faible
+  if (errorMessage.includes('password') && (errorMessage.includes('weak') || errorMessage.includes('short'))) {
+    return t.errors.weakPassword;
+  }
+  
+  // Email invalide
+  if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
     return t.errors.invalidEmail;
   }
   
-  // Erreurs de mot de passe
-  if (errorMessage.includes('password') && errorMessage.includes('weak')) {
-    return t.errors.weakPassword;
-  }
-  
-  if (errorMessage.includes('password') && errorMessage.includes('length')) {
-    return t.errors.weakPassword;
-  }
-  
-  // Erreurs de réseau
-  if (errorMessage.includes('network') || errorMessage.includes('connection')) {
-    return t.errors.networkError;
-  }
-  
-  if (errorCode === 500 || errorCode === 502 || errorCode === 503) {
+  // Problème de réseau
+  if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('connection')) {
     return t.errors.networkError;
   }
   
   // Erreurs spécifiques Supabase
-  if (errorCode === 422) {
-    if (errorMessage.includes('email')) {
-      return t.errors.invalidEmail;
-    }
-    if (errorMessage.includes('password')) {
-      return t.errors.weakPassword;
-    }
+  if (errorMessage.includes('user_already_exists')) {
+    return t.errors.emailAlreadyExists;
   }
+  
+  if (errorMessage.includes('signup_disabled')) {
+    return "Les inscriptions sont temporairement désactivées.";
+  }
+  
+  if (errorMessage.includes('rate_limit')) {
+    return "Trop de tentatives. Veuillez attendre avant de réessayer.";
+  }
+
   
   // Erreur par défaut
   return t.errors.generalError;
 };
 
 export function SignupForm({ language, onClose }: SignupFormProps) {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -301,7 +310,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     seekingAgeMax: "",
     seekingCountry: "",
     seekingLanguages: [] as string[],
-    interests: [] as string[] // Ajout du champ intérêts
+    interests: [] as string[]
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -335,89 +344,79 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
 
     setLoading(true);
     showLoader("Création de votre compte...", "heart");
-    
+
     try {
-      // Étape 1: Créer le compte utilisateur
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Analyser les événements d'inscription
+      analytics.userSignup('email', {
+        country: formData.country,
+        language: formData.primaryLanguage,
+        gender: formData.gender,
+        hasInterests: formData.interests.length > 0
+      });
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             full_name: formData.fullName,
-            country: formData.country,
-            region: formData.region,
-            city: formData.city,
-            language: formData.primaryLanguage,
-            bio: formData.bio,
-            gender: formData.gender,
-            age: parseInt(formData.age),
-            seeking_gender: formData.seekingGender,
-            seeking_age_min: parseInt(formData.seekingAgeMin),
-            seeking_age_max: parseInt(formData.seekingAgeMax),
-            seeking_country: formData.seekingCountry,
-            seeking_languages: formData.seekingLanguages,
-            interests: formData.interests // Ajout des intérêts
+            primary_language: formData.primaryLanguage
           }
         }
       });
 
-      if (signUpError) {
-        const errorMessage = getErrorMessage(signUpError, language);
-        toast({
-          title: "Erreur d'inscription",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
+      if (authError) {
+        throw authError;
       }
 
-      // Étape 2: Vérifier si l'email nécessite confirmation
-      if (signUpData.user && !signUpData.user.email_confirmed_at) {
-        // Email nécessite confirmation
-        toast({
-          title: "Inscription réussie",
-          description: "Veuillez vérifier votre email et cliquer sur le lien de confirmation pour activer votre compte.",
-        });
-        
-        if (onClose) {
-          onClose();
-        } else {
-          navigate('/auth');
+      if (authData.user) {
+        // Créer le profil utilisateur
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            full_name: formData.fullName,
+            bio: formData.bio,
+            country: formData.country,
+            region: formData.region,
+            city: formData.city,
+            primary_language: formData.primaryLanguage,
+            gender: formData.gender,
+            age: parseInt(formData.age),
+            seeking_gender: formData.seekingGender,
+            seeking_age_min: formData.seekingAgeMin ? parseInt(formData.seekingAgeMin) : null,
+            seeking_age_max: formData.seekingAgeMax ? parseInt(formData.seekingAgeMax) : null,
+            seeking_country: formData.seekingCountry,
+            seeking_languages: formData.seekingLanguages,
+            interests: formData.interests,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // Ne pas bloquer l'inscription si le profil échoue
         }
-        return;
-      }
 
-      // Étape 3: Si l'email est déjà confirmé ou pas de confirmation requise, connecter automatiquement
-      if (signUpData.user && signUpData.user.email_confirmed_at) {
-        // L'utilisateur est déjà connecté après l'inscription
-        await handleAutoLogin(formData.email, formData.password);
-      } else {
+        toast({
+          title: "Inscription réussie !",
+          description: t.errors.success,
+        });
+
         // Tentative de connexion automatique
         await handleAutoLogin(formData.email, formData.password);
       }
 
-      // Ajout du console.log pour tester
-      alert(`Intérêts sélectionnés: ${formData.interests.join(', ')}`);
-
-      // Si succès, tracker l'événement
-      analytics.userSignUp('email');
-
     } catch (error: any) {
-      const errorMessage = getErrorMessage(error, language);
+      console.error('Signup error:', error);
+      
+      const errorMessage = getErrorMessage(error, t);
+      
       toast({
-        title: "Erreur",
+        title: "Erreur d'inscription",
         description: errorMessage,
         variant: "destructive",
       });
-      
-      // Tracker les erreurs d'inscription
-      if (error.message?.includes('email')) {
-        analytics.trackEvent('signup_error', { 
-          type: 'email_validation',
-          error: error.message 
-        });
-      }
     } finally {
       setLoading(false);
       hideLoader();
@@ -490,194 +489,210 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     }
   };
 
-  const handleInterestToggle = (interest: string) => {
-    const currentInterests = formData.interests;
-    if (currentInterests.includes(interest)) {
-      handleInputChange("interests", currentInterests.filter(int => int !== interest));
-    } else {
-      handleInputChange("interests", [...currentInterests, interest]);
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  return (
-    <Card className="w-full max-w-2xl mx-auto culture-card">
-      <CardHeader className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Heart className="w-6 h-6 text-heart-red" />
-          <CardTitle className="text-2xl">{t.title}</CardTitle>
-        </div>
-        <CardDescription>{t.subtitle}</CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                {t.fullName}
-              </Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
-                required
-              />
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            {/* Nom et Email */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="flex items-center gap-2 text-[#212529]">
+                  <User className="w-4 h-4 text-[#E63946]" />
+                  {t.fullName}
+                </Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  required
+                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
+                  <Mail className="w-4 h-4 text-[#E63946]" />
+                  {t.email}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  required
+                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                />
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                {t.email}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-              />
+
+            {/* Mots de passe */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
+                  <Lock className="w-4 h-4 text-[#E63946]" />
+                  {t.password}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  required
+                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-[#212529]">
+                  <Lock className="w-4 h-4 text-[#E63946]" />
+                  {t.confirmPassword}
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  required
+                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                />
+              </div>
+            </div>
+
+            {/* Localisation */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-[#212529]">
+                  <MapPin className="w-4 h-4 text-[#E63946]" />
+                  {t.country}
+                </Label>
+                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
+                    <SelectValue placeholder={t.country} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="region" className="text-[#212529]">{t.region}</Label>
+                  <Input
+                    id="region"
+                    value={formData.region}
+                    onChange={(e) => handleInputChange("region", e.target.value)}
+                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-[#212529]">{t.city}</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Langue et âge */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#212529]">{t.language}</Label>
+                <Select value={formData.primaryLanguage} onValueChange={(value) => handleInputChange("primaryLanguage", value)}>
+                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>{lang.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-[#212529]">
+                  <Calendar className="w-4 h-4 text-[#E63946]" />
+                  {t.age}
+                </Label>
+                <Input
+                  type="number"
+                  min="18"
+                  max="100"
+                  value={formData.age}
+                  onChange={(e) => handleInputChange("age", e.target.value)}
+                  required
+                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                />
+              </div>
+            </div>
+
+            {/* Genre */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[#212529]">{t.gender}</Label>
+                <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
+                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
+                    <SelectValue placeholder={t.gender} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">{t.male}</SelectItem>
+                    <SelectItem value="female">{t.female}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#212529]">{t.seekingGender}</Label>
+                <Select value={formData.seekingGender} onValueChange={(value) => handleInputChange("seekingGender", value)}>
+                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
+                    <SelectValue placeholder={t.seekingGender} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">{t.male}</SelectItem>
+                    <SelectItem value="female">{t.female}</SelectItem>
+                    <SelectItem value="any">{t.any}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+        );
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {t.country}
-              </Label>
-              <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.country} />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map((country) => (
-                    <SelectItem key={country} value={country}>{country}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2 text-[#212529] flex items-center justify-center gap-2">
+                <Users className="w-5 h-5 text-[#E63946]" />
+                {t.preferences}
+              </h3>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="region">{t.region}</Label>
-              <Input
-                id="region"
-                value={formData.region}
-                onChange={(e) => handleInputChange("region", e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="city">{t.city}</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t.language}</Label>
-              <Select value={formData.primaryLanguage} onValueChange={(value) => handleInputChange("primaryLanguage", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>{lang.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {t.age}
-              </Label>
-              <Input
-                type="number"
-                min="18"
-                max="100"
-                value={formData.age}
-                onChange={(e) => handleInputChange("age", e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                {t.password}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                {t.confirmPassword}
-              </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t.gender}</Label>
-              <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.gender} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">{t.male}</SelectItem>
-                  <SelectItem value="female">{t.female}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>{t.seekingGender}</Label>
-              <Select value={formData.seekingGender} onValueChange={(value) => handleInputChange("seekingGender", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.seekingGender} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">{t.male}</SelectItem>
-                  <SelectItem value="female">{t.female}</SelectItem>
-                  <SelectItem value="any">{t.any}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Preferences Section */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              {t.preferences}
-            </h3>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tranche d'âge */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="seekingAgeMin">{t.ageRangeMin}</Label>
+                  <Label htmlFor="seekingAgeMin" className="text-[#212529]">{t.ageRangeMin}</Label>
                   <Input
                     id="seekingAgeMin"
                     type="number"
@@ -685,11 +700,12 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     max="99"
                     value={formData.seekingAgeMin}
                     onChange={(e) => handleInputChange("seekingAgeMin", e.target.value)}
+                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="seekingAgeMax">{t.ageRangeMax}</Label>
+                  <Label htmlFor="seekingAgeMax" className="text-[#212529]">{t.ageRangeMax}</Label>
                   <Input
                     id="seekingAgeMax"
                     type="number"
@@ -697,17 +713,19 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     max="99"
                     value={formData.seekingAgeMax}
                     onChange={(e) => handleInputChange("seekingAgeMax", e.target.value)}
+                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                   />
                 </div>
               </div>
 
+              {/* Pays cible */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Globe className="w-4 h-4" />
+                <Label className="flex items-center gap-2 text-[#212529]">
+                  <Globe className="w-4 h-4 text-[#E63946]" />
                   {t.targetCountry}
                 </Label>
                 <Select value={formData.seekingCountry} onValueChange={(value) => handleInputChange("seekingCountry", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
                     <SelectValue placeholder={t.targetCountry} />
                   </SelectTrigger>
                   <SelectContent>
@@ -718,18 +736,23 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </Select>
               </div>
 
+              {/* Langues recherchées */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Languages className="w-4 h-4" />
+                <Label className="flex items-center gap-2 text-[#212529]">
+                  <Languages className="w-4 h-4 text-[#E63946]" />
                   {t.seekingLanguages}
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {languages.map((lang) => (
                     <Button
                       key={lang.code}
                       type="button"
                       variant={formData.seekingLanguages.includes(lang.code) ? "default" : "outline"}
-                      className="justify-start"
+                      className={`justify-start ${
+                        formData.seekingLanguages.includes(lang.code)
+                          ? "bg-[#E63946] hover:bg-[#E63946]/90 text-white border-[#E63946]"
+                          : "border-[#CED4DA] text-[#212529] hover:bg-[#E63946] hover:text-white hover:border-[#E63946]"
+                      }`}
                       onClick={() => handleLanguageToggle(lang.code)}
                     >
                       {lang.name}
@@ -739,60 +762,127 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
               </div>
             </div>
           </div>
+        );
 
-          {/* Ajouter cette section après la section des préférences et avant le champ bio */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Heart className="w-5 h-5" />
-              Vos centres d'intérêt
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Sélectionnez vos centres d'intérêt pour nous aider à vous proposer des profils compatibles.
-              Vous pourrez modifier ces choix plus tard dans votre profil.
-            </p>
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2 text-[#212529] flex items-center justify-center gap-2">
+                <Heart className="w-5 h-5 text-[#E63946]" />
+                Vos centres d'intérêt
+              </h3>
+              <p className="text-sm text-[#CED4DA] mb-4">
+                Sélectionnez vos centres d'intérêt pour nous aider à vous proposer des profils compatibles.
+              </p>
+            </div>
             
             <EnhancedInterestsSelector
               selectedInterests={formData.interests}
               onInterestsChange={(interests) => handleInputChange("interests", interests)}
               maxSelections={10}
-              showCategories={true}
+              showCategories={false}  // ← CHANGEMENT: désactive les onglets pour mobile
               className="mb-4"
             />
             
             {formData.interests.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
+              <div className="mt-3 p-3 bg-[#52B788]/10 border border-[#52B788]/20 rounded-lg">
+                <p className="text-sm text-[#52B788] font-medium">
                   ✅ {formData.interests.length} centre{formData.interests.length > 1 ? 's' : ''} d'intérêt sélectionné{formData.interests.length > 1 ? 's' : ''}
                 </p>
               </div>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              {t.bio}
-            </Label>
-            <Textarea
-              id="bio"
-              placeholder={t.bioPlaceholder}
-              value={formData.bio}
-              onChange={(e) => handleInputChange("bio", e.target.value)}
-              rows={3}
-            />
+            {/* Bio */}
+            <div className="space-y-2">
+              <Label htmlFor="bio" className="flex items-center gap-2 text-[#212529]">
+                <FileText className="w-4 h-4 text-[#E63946]" />
+                {t.bio}
+              </Label>
+              <Textarea
+                id="bio"
+                placeholder={t.bioPlaceholder}
+                value={formData.bio}
+                onChange={(e) => handleInputChange("bio", e.target.value)}
+                rows={3}
+                className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946] resize-none"
+              />
+            </div>
           </div>
+        );
+    }
+  };
 
-          <LoadingButton 
-            type="submit" 
-            className="btn-hero w-full" 
-            loading={loading}
-            loadingText="Création en cours..."
-            loadingVariant="heart"
-          >
-            {t.createAccount}
-          </LoadingButton>
-        </form>
-      </CardContent>
-    </Card>
+  return (
+    <div className="w-full max-w-md mx-auto">
+      <Card className="bg-[#F8F9FA] border-[#CED4DA] shadow-lg rounded-xl">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Heart className="w-6 h-6 text-[#E63946]" />
+            <CardTitle className="text-xl md:text-2xl text-[#212529]">{t.title}</CardTitle>
+          </div>
+          <CardDescription className="text-[#CED4DA]">{t.subtitle}</CardDescription>
+          
+          {/* Progress indicator */}
+          <div className="flex justify-center mt-4 space-x-2">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={`w-3 h-3 rounded-full ${
+                  step <= currentStep ? "bg-[#E63946]" : "bg-[#CED4DA]"
+                }`}
+              />
+            ))}
+          </div>
+          <p className="text-sm text-[#CED4DA] mt-2">
+            {currentStep === 1 && t.step1}
+            {currentStep === 2 && t.step2}
+            {currentStep === 3 && t.step3}
+          </p>
+        </CardHeader>
+        
+        <CardContent className="px-4 md:px-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {renderStepContent()}
+
+            {/* Navigation buttons */}
+            <div className="flex justify-between pt-4">
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  className="border-[#CED4DA] text-[#212529] hover:bg-[#CED4DA] hover:text-[#212529]"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  {t.previous}
+                </Button>
+              )}
+              
+              {currentStep < 3 ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 ml-auto"
+                >
+                  {t.continue}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <LoadingButton 
+                  type="submit" 
+                  className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 ml-auto" 
+                  loading={loading}
+                  loadingText="Création en cours..."
+                  loadingVariant="heart"
+                >
+                  {t.createAccount}
+                </LoadingButton>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

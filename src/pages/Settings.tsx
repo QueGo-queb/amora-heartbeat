@@ -12,7 +12,11 @@ import {
   Save,
   Camera,
   Mail,
-  MapPin
+  MapPin,
+  Trash2,
+  AlertTriangle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePremium } from '@/hooks/usePremium';
 import { PremiumUpgradeModal } from '@/components/settings/PremiumUpgradeModal';
+import { AccountDeletionModal } from '@/components/settings/AccountDeletionModal';
 
 const Settings = () => {
   const [user, setUser] = useState<any>(null);
@@ -43,6 +48,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -121,6 +127,10 @@ const Settings = () => {
 
   const handleUpgradeToPremium = () => {
     setShowPremiumModal(true);
+  };
+
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
   };
 
   if (loading || premiumLoading) {
@@ -424,19 +434,30 @@ const Settings = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
+              >
                 <Shield className="w-4 h-4 mr-2" />
                 Changer le mot de passe
               </Button>
               
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
+              >
                 <Mail className="w-4 h-4 mr-2" />
                 Gérer les emails
               </Button>
               
-              <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
-                <User className="w-4 h-4 mr-2" />
-                Supprimer mon compte
+              {/* BOUTON SUPPRIMER COMPTE - FONCTIONNEL */}
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="outline" 
+                className="w-full justify-start border-[#E63946]/30 text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] transition-all duration-300"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Fermer définitivement mon compte
               </Button>
             </CardContent>
           </Card>
@@ -460,6 +481,13 @@ const Settings = () => {
         open={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         userCountry={profile?.country}
+      />
+
+      {/* Modal de suppression de compte */}
+      <AccountDeletionModal 
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        userEmail={user?.email}
       />
     </div>
   );

@@ -14,7 +14,8 @@ import {
   Palette,
   Cpu,
   Save,
-  RefreshCw
+  RefreshCw,
+  Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
@@ -42,6 +44,7 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isVisible: adSpaceVisible, toggleAdSpaceVisibility, loading: adSpaceLoading } = useAdSpaceVisibility();
 
   useEffect(() => {
     checkAdminAccess();
@@ -92,6 +95,22 @@ const AdminSettings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdSpaceToggle = async (checked: boolean) => {
+    const success = await toggleAdSpaceVisibility(checked);
+    if (success) {
+      toast({
+        title: "Espace publicitaire",
+        description: `Espace publicitaire ${checked ? 'activé' : 'désactivé'}`,
+      });
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'espace publicitaire",
+        variant: "destructive",
+      });
     }
   };
 
@@ -296,6 +315,46 @@ const AdminSettings = () => {
                   <Database className="w-4 h-4 mr-2" />
                   Effectuer une sauvegarde
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Nouvelle carte pour l'espace publicitaire */}
+          <Card className="bg-[#F8F9FA] border-[#CED4DA] shadow-lg rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#212529]">
+                <Megaphone className="w-5 h-5 text-[#E63946]" />
+                Espace Publicitaire
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-[#212529] font-medium">Afficher l'espace publicitaire</Label>
+                  <p className="text-sm text-[#CED4DA]">
+                    Contrôle l'affichage de l'espace publicitaire sur la page d'accueil
+                  </p>
+                </div>
+                <Switch
+                  checked={adSpaceVisible}
+                  onCheckedChange={handleAdSpaceToggle}
+                  disabled={adSpaceLoading}
+                  className="data-[state=checked]:bg-[#52B788] data-[state=unchecked]:bg-[#CED4DA]"
+                />
+              </div>
+              
+              {/* Indicateur de statut */}
+              <div className={`p-3 rounded-lg border ${
+                adSpaceVisible 
+                  ? "bg-[#52B788]/10 border-[#52B788]/20 text-[#52B788]" 
+                  : "bg-[#CED4DA]/10 border-[#CED4DA]/20 text-[#CED4DA]"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${adSpaceVisible ? "bg-[#52B788]" : "bg-[#CED4DA]"}`} />
+                  <span className="text-sm font-medium">
+                    {adSpaceVisible ? "Espace publicitaire affiché" : "Espace publicitaire masqué"}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>

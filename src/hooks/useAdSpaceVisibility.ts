@@ -1,34 +1,37 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface AdSpaceVisibility {
-  isVisible: boolean;
-  toggleVisibility: () => void;
-  setVisibility: (visible: boolean) => void;
-}
-
-export function useAdSpaceVisibility(): AdSpaceVisibility {
+export function useAdSpaceVisibility() {
   const [isVisible, setIsVisible] = useState(() => {
-    // Récupérer l'état depuis le localStorage au chargement
-    const saved = localStorage.getItem('adSpaceVisibility');
-    return saved ? JSON.parse(saved) : true; // Par défaut visible
+    // Charger depuis localStorage au démarrage
+    const stored = localStorage.getItem('amora_ad_space_visible');
+    return stored ? JSON.parse(stored) : true;
   });
+  const [loading, setLoading] = useState(false);
 
-  // Sauvegarder l'état dans le localStorage à chaque changement
-  useEffect(() => {
-    localStorage.setItem('adSpaceVisibility', JSON.stringify(isVisible));
-  }, [isVisible]);
-
-  const toggleVisibility = () => {
-    setIsVisible(prev => !prev);
-  };
-
-  const setVisibility = (visible: boolean) => {
-    setIsVisible(visible);
+  const toggleAdSpaceVisibility = async (visible: boolean) => {
+    try {
+      console.log(`🔄 Toggling ad space visibility to: ${visible}`);
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem('amora_ad_space_visible', JSON.stringify(visible));
+      setIsVisible(visible);
+      
+      console.log('✅ Ad space visibility updated successfully');
+      return true;
+    } catch (error) {
+      console.error('💥 Error in toggleAdSpaceVisibility:', error);
+      return false;
+    }
   };
 
   return {
     isVisible,
-    toggleVisibility,
-    setVisibility
+    loading,
+    toggleAdSpaceVisibility,
+    refresh: () => {
+      const stored = localStorage.getItem('amora_ad_space_visible');
+      setIsVisible(stored ? JSON.parse(stored) : true);
+    }
   };
 }

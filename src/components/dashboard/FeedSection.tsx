@@ -84,12 +84,12 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (loading) {
     return (
-      <Card className={`${className}`}>
+      <Card className={`${className} bg-[#F8F9FA] border-[#CED4DA] shadow-lg`}>
         <CardContent className="p-8">
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span>Chargement du feed personnalisé...</span>
+              <div className="w-6 h-6 border-2 border-[#E63946] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[#212529] font-medium">Chargement du feed personnalisé...</span>
             </div>
           </div>
         </CardContent>
@@ -99,11 +99,14 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (error) {
     return (
-      <Card className={`${className}`}>
+      <Card className={`${className} bg-[#F8F9FA] border-[#CED4DA]`}>
         <CardContent className="p-8">
           <div className="text-center">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={refresh} variant="outline">
+            <p className="text-[#E63946] mb-4 font-medium">{error}</p>
+            <Button 
+              onClick={refresh} 
+              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+            >
               Réessayer
             </Button>
           </div>
@@ -115,22 +118,22 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
   if (posts.length === 0) {
     return (
       <div className={`space-y-6 ${className}`}>
-        {/* Bouton Créer une publication - toujours visible */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        {/* Bouton Créer une publication - DESIGN MAINTENU avec nouvelle palette */}
+        <Card className="bg-gradient-to-r from-[#52B788]/10 to-[#52B788]/5 border-[#52B788]/30 shadow-lg rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Edit3 className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-[#52B788] rounded-full flex items-center justify-center">
+                  <Edit3 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">Créer une publication</h3>
-                  <p className="text-sm text-gray-600">Partagez vos pensées avec la communauté</p>
+                  <h3 className="font-medium text-[#212529]">Créer une publication</h3>
+                  <p className="text-sm text-[#CED4DA]">Partagez vos pensées avec la communauté</p>
                 </div>
               </div>
               <Button 
                 onClick={handleCreatePost}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Publier
@@ -139,20 +142,23 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
           </CardContent>
         </Card>
 
-        {/* Message aucun post */}
-        <Card>
+        {/* Message aucun post - DESIGN MAINTENU avec nouvelle palette */}
+        <Card className="bg-[#F8F9FA] border-[#CED4DA] shadow-lg rounded-xl">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[#52B788] rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">💡</span>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Aucun post à afficher</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-lg font-semibold mb-2 text-[#212529]">Aucun post à afficher</h3>
+            <p className="text-[#CED4DA] mb-4">
               {userProfile?.interests.length === 0 
                 ? "Ajoutez des intérêts et préférences à votre profil pour voir des publications personnalisées !"
                 : "Aucune publication ne correspond à vos préférences actuelles. Modifiez vos critères pour voir plus de contenu !"
               }
             </p>
-            <Button onClick={refresh} variant="outline">
+            <Button 
+              onClick={refresh} 
+              className="bg-[#52B788] hover:bg-[#52B788]/90 text-white border-0"
+            >
               Actualiser
             </Button>
           </CardContent>
@@ -170,22 +176,22 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Bouton Créer une publication */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      {/* Bouton Créer une publication - DESIGN MAINTENU avec nouvelle palette */}
+      <Card className="bg-gradient-to-r from-[#52B788]/10 to-[#52B788]/5 border-[#52B788]/30 shadow-lg rounded-xl">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Edit3 className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-[#52B788] rounded-full flex items-center justify-center">
+                <Edit3 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Créer une publication</h3>
-                <p className="text-sm text-gray-600">Partagez vos pensées avec la communauté</p>
+                <h3 className="font-medium text-[#212529]">Créer une publication</h3>
+                <p className="text-sm text-[#CED4DA]">Partagez vos pensées avec la communauté</p>
               </div>
             </div>
             <Button 
               onClick={handleCreatePost}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
             >
               <Plus className="w-4 h-4 mr-2" />
               Publier
@@ -194,15 +200,15 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
         </CardContent>
       </Card>
 
-      {/* Header avec refresh */}
+      {/* Header avec refresh - DESIGN MAINTENU avec nouvelle palette */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Fil d'actualité</h2>
+        <h2 className="text-2xl font-bold text-[#212529]">Fil d'actualité</h2>
         <Button
           variant="outline"
           size="sm"
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Actualiser
@@ -211,24 +217,24 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
       <div className="space-y-6">
         {posts.map((post) => (
-          <Card key={post.id} className="hover:shadow-md transition-shadow">
+          <Card key={post.id} className="hover:shadow-lg transition-shadow bg-[#F8F9FA] border-[#CED4DA] rounded-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={post.author_avatar} alt={post.author_name} />
-                  <AvatarFallback>{post.author_name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-[#E63946] text-white">{post.author_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="font-semibold flex items-center gap-2">
+                  <div className="font-semibold flex items-center gap-2 text-[#212529]">
                     {post.author_name}
                     {post.author_plan === 'premium' && (
-                      <Badge variant="default" className="bg-yellow-600 text-white text-xs">
+                      <Badge className="bg-yellow-600 text-white text-xs border-0">
                         <Crown className="h-3 w-3 mr-1" />
                         Premium
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-[#CED4DA]">
                     <Clock className="h-3 w-3" />
                     {new Date(post.created_at).toLocaleDateString('fr-FR', {
                       day: 'numeric',
@@ -242,11 +248,11 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   {post.commonInterests.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge className="text-xs bg-[#52B788] text-white border-0">
                       {post.commonInterests.length} intérêt{post.commonInterests.length > 1 ? 's' : ''} commun{post.commonInterests.length > 1 ? 's' : ''}
                     </Badge>
                   )}
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="text-xs bg-[#E63946] text-white border-0">
                     Score: {post.compatibilityScore}
                   </Badge>
                 </div>
@@ -254,15 +260,15 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
             </CardHeader>
             
             <CardContent className="pt-0">
-              <p className="text-gray-800 mb-4 leading-relaxed">{post.content}</p>
+              <p className="text-[#212529] mb-4 leading-relaxed">{post.content}</p>
               
-              {/* Intérêts communs */}
+              {/* Intérêts communs - DESIGN MAINTENU avec nouvelle palette */}
               {post.commonInterests.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-2">Intérêts communs :</p>
+                  <p className="text-sm text-[#CED4DA] mb-2">Intérêts communs :</p>
                   <div className="flex flex-wrap gap-2">
                     {post.commonInterests.map((interest, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge key={index} className="text-xs bg-[#52B788] text-white border-0">
                         {interest}
                       </Badge>
                     ))}
@@ -270,8 +276,8 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                 </div>
               )}
 
-              {/* Actions de contact avec logique premium */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              {/* Actions de contact avec logique premium - DESIGN MAINTENU avec nouvelle palette */}
+              <div className="flex items-center justify-between pt-4 border-t border-[#CED4DA]/30">
                 <div className="flex items-center gap-2">
                   {/* Bouton de contact principal - CORRECTION ICI */}
                   <Button
@@ -279,7 +285,11 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                     size="sm"
                     onClick={() => handleContact(post)}
                     disabled={sending}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className={`flex items-center gap-2 cursor-pointer ${
+                      post.canContact 
+                        ? "bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+                        : "border-[#CED4DA] text-[#212529] hover:bg-[#CED4DA]/20"
+                    }`}
                   >
                     {post.canContact ? (
                       <>
@@ -294,7 +304,7 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                     )}
                   </Button>
 
-                  {/* Boutons premium */}
+                  {/* Boutons premium - DESIGN MAINTENU avec nouvelle palette */}
                   {post.canContact && (
                     <>
                       <Button
@@ -302,7 +312,7 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                         size="sm"
                         onClick={() => handleAudioCall(post)}
                         disabled={sending}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 border-[#52B788] text-[#52B788] hover:bg-[#52B788] hover:text-white"
                         title="Appel audio (Premium)"
                       >
                         <Phone className="h-4 w-4" />
@@ -313,7 +323,7 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                         size="sm"
                         onClick={() => handleVideoCall(post)}
                         disabled={sending}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 border-[#52B788] text-[#52B788] hover:bg-[#52B788] hover:text-white"
                         title="Appel vidéo (Premium)"
                       >
                         <Video className="h-4 w-4" />
@@ -322,19 +332,19 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                   )}
                 </div>
                 
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-[#CED4DA]">
                   Compatibilité: {post.compatibilityScore}%
                 </div>
               </div>
 
-              {/* Message d'information pour les utilisateurs gratuits */}
+              {/* Message d'information pour les utilisateurs gratuits - DESIGN MAINTENU avec nouvelle palette */}
               {!post.canContact && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-800">
+                <div className="mt-3 p-3 bg-[#E63946]/10 border border-[#E63946]/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-[#E63946]">
                     <Crown className="w-4 h-4" />
                     <span className="text-sm font-medium">Fonctionnalité premium</span>
                   </div>
-                  <p className="text-blue-700 text-sm mt-1">
+                  <p className="text-[#212529] text-sm mt-1">
                     {post.contactRestriction}
                   </p>
                 </div>
