@@ -1,51 +1,42 @@
-const CACHE_NAME = 'amora-v1.2.0';
-const STATIC_CACHE = 'amora-static-v1.2.0';
-const DYNAMIC_CACHE = 'amora-dynamic-v1.2.0';
-const IMAGE_CACHE = 'amora-images-v1.2.0';
+// Version dynamique basée sur la date pour forcer les mises à jour
+const VERSION = `amora-v${Date.now()}`;
+const STATIC_CACHE = `amora-static-${VERSION}`;
+const DYNAMIC_CACHE = `amora-dynamic-${VERSION}`;
+const IMAGE_CACHE = `amora-images-${VERSION}`;
 
-// Ressources à mettre en cache immédiatement
+// Ressources essentielles à mettre en cache immédiatement
 const STATIC_ASSETS = [
   '/',
-  '/auth',
+  '/index.html',
   '/manifest.json',
+  '/favicon.ico',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/offline.html'
 ];
 
-// Ressources à précharger
-const PRELOAD_ASSETS = [
-  '/assets/amora-logo.svg',
-  '/icons/icon-maskable-512x512.png'
-];
-
-// Installation du Service Worker
+// Installation du Service Worker - Mise à jour automatique
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installation');
+  console.log('🔧 Service Worker: Installation de la version', VERSION);
   
   event.waitUntil(
     Promise.all([
-      // Cache statique
+      // Cache des fichiers essentiels
       caches.open(STATIC_CACHE).then(cache => {
-        console.log('📦 Cache statique créé');
+        console.log('📦 Mise en cache des fichiers essentiels');
         return cache.addAll(STATIC_ASSETS);
-      }),
-      
-      // Préchargement des assets critiques
-      caches.open(IMAGE_CACHE).then(cache => {
-        console.log('🖼️ Préchargement des images');
-        return cache.addAll(PRELOAD_ASSETS);
       })
     ])
   );
   
-  // Force l'activation immédiate
+  // Force l'activation immédiate - MISE À JOUR AUTOMATIQUE
+  console.log('⚡ Activation immédiate de la nouvelle version');
   self.skipWaiting();
 });
 
-// Activation du Service Worker
+// Activation du Service Worker - Nettoyage et prise de contrôle
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker: Activation');
+  console.log('🚀 Service Worker: Activation de la version', VERSION);
   
   event.waitUntil(
     Promise.all([
@@ -53,9 +44,7 @@ self.addEventListener('activate', (event) => {
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cacheName => {
-            if (cacheName !== STATIC_CACHE && 
-                cacheName !== DYNAMIC_CACHE && 
-                cacheName !== IMAGE_CACHE) {
+            if (!cacheName.includes(VERSION)) {
               console.log('🗑️ Suppression ancien cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -63,13 +52,24 @@ self.addEventListener('activate', (event) => {
         );
       }),
       
-      // Prise de contrôle immédiate
+      // Prise de contrôle immédiate de tous les clients
       self.clients.claim()
     ])
   );
+  
+  // Notifier tous les clients de la mise à jour
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ 
+        type: 'SW_UPDATED', 
+        version: VERSION,
+        message: 'Nouvelle version installée automatiquement'
+      });
+    });
+  });
 });
 
-// Stratégies de cache avancées
+// Stratégie de cache : Cache First avec mise à jour en arrière-plan
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -87,139 +87,65 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(request));
 });
 
+// Gestion des requêtes avec stratégie Cache First
 async function handleRequest(request) {
   const url = new URL(request.url);
   
   try {
-    // 1. API Supabase - Cache avec update en arrière-plan
-    if (url.origin.includes('supabase')) {
-      return handleApiRequest(request);
+    // 1. Vérifier d'abord le cache
+    const cache = await caches.open(STATIC_CACHE);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      console.log('📦 Ressource servie depuis le cache:', request.url);
+      
+      // Mise à jour en arrière-plan si c'est une ressource statique
+      if (url.origin === location.origin) {
+        fetch(request).then(response => {
+          if (response.ok) {
+            cache.put(request, response.clone());
+            console.log('🔄 Cache mis à jour en arrière-plan:', request.url);
+          }
+        }).catch(() => {
+          // Ignore les erreurs de mise à jour en arrière-plan
+        });
+      }
+      
+      return cachedResponse;
     }
     
-    // 2. Images - Cache first avec fallback
-    if (request.destination === 'image') {
-      return handleImageRequest(request);
+    // 2. Si pas en cache, aller chercher sur le réseau
+    console.log('🌐 Ressource récupérée depuis le réseau:', request.url);
+    const response = await fetch(request);
+    
+    // 3. Mettre à jour le cache si la réponse est valide
+    if (response.ok) {
+      cache.put(request, response.clone());
+      console.log('💾 Ressource mise en cache:', request.url);
     }
     
-    // 3. Pages HTML - Network first avec cache fallback
-    if (request.destination === 'document') {
-      return handlePageRequest(request);
-    }
-    
-    // 4. Assets statiques - Cache first
-    if (request.destination === 'script' || 
-        request.destination === 'style' ||
-        request.destination === 'font') {
-      return handleStaticRequest(request);
-    }
-    
-    // 5. Autres requêtes - Network first
-    return handleNetworkFirst(request);
+    return response;
     
   } catch (error) {
     console.error('❌ Erreur Service Worker:', error);
-    return handleOffline(request);
-  }
-}
-
-// Gestion des requêtes API (Stale While Revalidate)
-async function handleApiRequest(request) {
-  const cache = await caches.open(DYNAMIC_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  // Requête réseau en parallèle
-  const networkPromise = fetch(request).then(response => {
-    if (response.ok) {
-      cache.put(request, response.clone());
+    
+    // Fallback pour les pages HTML
+    if (request.destination === 'document') {
+      return caches.match('/offline.html');
     }
-    return response;
-  });
-  
-  // Retourne le cache immédiatement si disponible
-  if (cachedResponse) {
-    networkPromise.catch(() => {}); // Ignore les erreurs réseau
-    return cachedResponse;
+    
+    return new Response('Ressource non disponible', { status: 503 });
   }
-  
-  return networkPromise;
-}
-
-// Gestion des images (Cache First)
-async function handleImageRequest(request) {
-  const cache = await caches.open(IMAGE_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    // Retourne une image placeholder
-    return new Response(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#f0f0f0"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#999">Image</text></svg>',
-      { headers: { 'Content-Type': 'image/svg+xml' } }
-    );
-  }
-}
-
-// Gestion des pages (Network First)
-async function handlePageRequest(request) {
-  try {
-    const response = await fetch(request);
-    const cache = await caches.open(DYNAMIC_CACHE);
-    cache.put(request, response.clone());
-    return response;
-  } catch {
-    const cache = await caches.open(DYNAMIC_CACHE);
-    const cachedResponse = await cache.match(request);
-    return cachedResponse || caches.match('/offline.html');
-  }
-}
-
-// Gestion des assets statiques (Cache First)
-async function handleStaticRequest(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  const response = await fetch(request);
-  if (response.ok) {
-    cache.put(request, response.clone());
-  }
-  return response;
-}
-
-// Network First par défaut
-async function handleNetworkFirst(request) {
-  try {
-    const response = await fetch(request);
-    return response;
-  } catch {
-    const cache = await caches.open(DYNAMIC_CACHE);
-    return cache.match(request);
-  }
-}
-
-// Gestion hors ligne
-async function handleOffline(request) {
-  if (request.destination === 'document') {
-    return caches.match('/offline.html');
-  }
-  return new Response('Offline', { status: 503 });
 }
 
 // Messages vers l'application
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('⚡ Demande de mise à jour immédiate reçue');
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: VERSION });
   }
 });
