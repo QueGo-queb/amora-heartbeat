@@ -29,3 +29,15 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+   # Fichiers de cache
+   *.tsbuildinfo
+   bun.lockb
+   
+   # Rapports de test
+   playwright-report/
+   
+   # Fichiers de backup
+   *.backup
+   
+   # Fichiers de test désactivés
+   *.disabled
