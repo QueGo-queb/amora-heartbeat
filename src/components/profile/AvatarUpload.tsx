@@ -77,7 +77,7 @@ export function AvatarUpload({
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ avatar_url: dataUrl })
-            .eq('user_id', user.id);
+            .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
 
           if (updateError) throw updateError;
           
@@ -100,7 +100,7 @@ export function AvatarUpload({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('user_id', user.id);
+        .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
 
       if (updateError) throw updateError;
 
@@ -161,7 +161,7 @@ export function AvatarUpload({
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
-        .eq('user_id', user.id);
+        .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
 
       if (error) throw error;
 

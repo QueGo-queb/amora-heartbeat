@@ -26,7 +26,7 @@ export function useAvatar(userId?: string) {
         const { data, error } = await supabase
           .from('profiles')
           .select('avatar_url, full_name')
-          .eq('user_id', targetUserId)
+          .eq('id', targetUserId) // Utiliser 'id' au lieu de 'user_id'
           .single();
 
         if (error && error.code !== 'PGRST116') {

@@ -7,10 +7,14 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
+        updateViaCache: 'none' // ⚠️ IMPORTANT : Force la vérification de mise à jour
       });
       
       console.log('✅ Service Worker enregistré avec succès:', registration.scope);
+      
+      // Vérifier immédiatement les mises à jour
+      await registration.update();
       
       // Écouter les mises à jour du Service Worker
       registration.addEventListener('updatefound', () => {
@@ -19,17 +23,18 @@ if ('serviceWorker' in navigator) {
           console.log('🔄 Nouvelle version du Service Worker détectée');
           
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('⚡ Nouvelle version installée - Mise à jour automatique en cours...');
-              
-              // MISE À JOUR AUTOMATIQUE - Pas de confirmation utilisateur
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-              
-              // Rechargement automatique après un court délai
-              setTimeout(() => {
-                console.log('🔄 Rechargement automatique de l\'application');
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                console.log('⚡ Nouvelle version installée - Mise à jour automatique en cours...');
+                
+                // MISE À JOUR AUTOMATIQUE - Pas de confirmation utilisateur
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                
+                // Rechargement automatique immédiat
                 window.location.reload();
-              }, 1000);
+              } else {
+                console.log('🎉 Première installation du Service Worker');
+              }
             }
           });
         }
@@ -43,6 +48,11 @@ if ('serviceWorker' in navigator) {
         }
       });
       
+      // Vérifier les mises à jour toutes les 30 secondes
+      setInterval(() => {
+        registration.update();
+      }, 30000);
+      
     } catch (error) {
       console.error('❌ Erreur enregistrement Service Worker:', error);
     }
@@ -50,13 +60,3 @@ if ('serviceWorker' in navigator) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
-
-// Vérifier la version du Service Worker
-navigator.serviceWorker.ready.then(registration => {
-  console.log('Service Worker prêt:', registration);
-});
-
-// Vérifier les caches
-caches.keys().then(cacheNames => {
-  console.log('Caches disponibles:', cacheNames);
-});

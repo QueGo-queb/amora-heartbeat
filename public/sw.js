@@ -1,5 +1,5 @@
-// Version dynamique basée sur la date pour forcer les mises à jour
-const VERSION = `amora-v${Date.now()}`;
+// Version statique basée sur le build - CHANGE SEULEMENT QUAND LE CODE CHANGE
+const VERSION = 'amora-v1.0.0'; // ⚠️ À INCRÉMENTER À CHAQUE DÉPLOIEMENT
 const STATIC_CACHE = `amora-static-${VERSION}`;
 const DYNAMIC_CACHE = `amora-dynamic-${VERSION}`;
 const IMAGE_CACHE = `amora-images-${VERSION}`;
@@ -69,7 +69,7 @@ self.addEventListener('activate', (event) => {
   });
 });
 
-// Stratégie de cache : Cache First avec mise à jour en arrière-plan
+// Stratégie de cache : Network First pour les mises à jour immédiates
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -87,47 +87,44 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(request));
 });
 
-// Gestion des requêtes avec stratégie Cache First
+// Gestion des requêtes avec stratégie Network First pour les mises à jour
 async function handleRequest(request) {
   const url = new URL(request.url);
   
   try {
-    // 1. Vérifier d'abord le cache
+    // 1. Essayer d'abord le réseau pour les mises à jour immédiates
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      // 2. Mettre à jour le cache en arrière-plan
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+      console.log('💾 Cache mis à jour:', request.url);
+      
+      return networkResponse;
+    }
+    
+    // 3. Fallback sur le cache si le réseau échoue
     const cache = await caches.open(STATIC_CACHE);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
       console.log('📦 Ressource servie depuis le cache:', request.url);
-      
-      // Mise à jour en arrière-plan si c'est une ressource statique
-      if (url.origin === location.origin) {
-        fetch(request).then(response => {
-          if (response.ok) {
-            cache.put(request, response.clone());
-            console.log('🔄 Cache mis à jour en arrière-plan:', request.url);
-          }
-        }).catch(() => {
-          // Ignore les erreurs de mise à jour en arrière-plan
-        });
-      }
-      
       return cachedResponse;
     }
     
-    // 2. Si pas en cache, aller chercher sur le réseau
-    console.log('🌐 Ressource récupérée depuis le réseau:', request.url);
-    const response = await fetch(request);
-    
-    // 3. Mettre à jour le cache si la réponse est valide
-    if (response.ok) {
-      cache.put(request, response.clone());
-      console.log('💾 Ressource mise en cache:', request.url);
-    }
-    
-    return response;
+    return networkResponse;
     
   } catch (error) {
     console.error('❌ Erreur Service Worker:', error);
+    
+    // Fallback sur le cache
+    const cache = await caches.open(STATIC_CACHE);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
     
     // Fallback pour les pages HTML
     if (request.destination === 'document') {
