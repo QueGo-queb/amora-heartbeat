@@ -1,6 +1,6 @@
 // src/components/profile/AvatarUpload.tsx
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, X, Loader2 } from 'lucide-react';
+import { Camera, Upload, X, Loader2, Video, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +20,11 @@ export function AvatarUpload({
 }: AvatarUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraVideoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -28,6 +32,164 @@ export function AvatarUpload({
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
     lg: 'w-32 h-32'
+  };
+
+  // Fonction pour compresser une image
+  const compressImage = (file: File, maxSizeKB: number = 500): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculer les nouvelles dimensions (max 800x800)
+        const maxDimension = 800;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxDimension) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Dessiner l'image redimensionnée
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convertir en blob avec compression
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            
+            // Vérifier la taille et recompresser si nécessaire
+            if (compressedFile.size > maxSizeKB * 1024) {
+              // Recompresser avec une qualité plus faible
+              canvas.toBlob((recompressedBlob) => {
+                if (recompressedBlob) {
+                  const finalFile = new File([recompressedBlob], file.name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                  });
+                  resolve(finalFile);
+                }
+              }, 'image/jpeg', 0.7);
+            } else {
+              resolve(compressedFile);
+            }
+          }
+        }, 'image/jpeg', 0.8);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Fonction pour capturer une photo depuis la caméra
+  const capturePhoto = () => {
+    if (!cameraVideoRef.current || !canvasRef.current) return;
+    
+    const video = cameraVideoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Définir la taille du canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dessiner l'image de la vidéo sur le canvas
+    ctx.drawImage(video, 0, 0);
+    
+    // Convertir en blob
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], 'camera-photo.jpg', {
+          type: 'image/jpeg',
+          lastModified: Date.now()
+        });
+        
+        // Compresser et uploader
+        compressAndUpload(file);
+      }
+    }, 'image/jpeg', 0.8);
+    
+    // Fermer la caméra
+    stopCamera();
+    setShowCameraModal(false);
+  };
+
+  // Fonction pour démarrer la caméra
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 800 },
+          height: { ideal: 600 }
+        } 
+      });
+      
+      setCameraStream(stream);
+      setShowCameraModal(true);
+      
+      // Attendre que la vidéo soit prête
+      setTimeout(() => {
+        if (cameraVideoRef.current) {
+          cameraVideoRef.current.srcObject = stream;
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Erreur accès caméra:', error);
+      toast({
+        title: "Erreur caméra",
+        description: "Impossible d'accéder à la caméra. Vérifiez les permissions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Fonction pour arrêter la caméra
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+  };
+
+  // Fonction pour compresser et uploader
+  const compressAndUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      
+      // Compresser l'image
+      const compressedFile = await compressImage(file, 500); // 500KB max
+      
+      console.log(`📊 Compression: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+      
+      // Uploader le fichier compressé
+      await uploadAvatar(compressedFile);
+      
+    } catch (error) {
+      console.error('Erreur compression:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la compression de l'image",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const uploadAvatar = async (file: File) => {
@@ -48,12 +210,8 @@ export function AvatarUpload({
         throw new Error('Le fichier doit être une image');
       }
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        throw new Error('La taille du fichier ne doit pas dépasser 5MB');
-      }
-
       // Créer un nom de fichier unique
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
@@ -77,7 +235,7 @@ export function AvatarUpload({
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ avatar_url: dataUrl })
-            .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
+            .eq('id', user.id);
 
           if (updateError) throw updateError;
           
@@ -100,7 +258,7 @@ export function AvatarUpload({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 
@@ -137,7 +295,7 @@ export function AvatarUpload({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      uploadAvatar(file);
+      compressAndUpload(file);
     }
   };
 
@@ -161,7 +319,7 @@ export function AvatarUpload({
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
-        .eq('id', user.id); // Utiliser 'id' au lieu de 'user_id'
+        .eq('id', user.id);
 
       if (error) throw error;
 
@@ -231,8 +389,18 @@ export function AvatarUpload({
           size="sm"
           variant="outline"
         >
-          <Upload size={16} className="mr-2" />
+          <Image size={16} className="mr-2" />
           {displayUrl ? 'Changer' : 'Ajouter'}
+        </Button>
+        
+        <Button
+          onClick={startCamera}
+          disabled={uploading}
+          size="sm"
+          variant="outline"
+        >
+          <Video size={16} className="mr-2" />
+          Caméra
         </Button>
       </div>
 
@@ -246,6 +414,51 @@ export function AvatarUpload({
 
       {uploading && (
         <p className="text-sm text-gray-500">Téléchargement en cours...</p>
+      )}
+
+      {/* Modal pour la caméra */}
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-center">
+              Prendre une photo
+            </h3>
+            
+            <div className="relative">
+              <video
+                ref={cameraVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-64 bg-gray-200 rounded-lg"
+              />
+              <canvas
+                ref={canvasRef}
+                className="hidden"
+              />
+            </div>
+            
+            <div className="flex gap-3 mt-4">
+              <Button
+                onClick={capturePhoto}
+                className="flex-1"
+              >
+                <Camera size={16} className="mr-2" />
+                Prendre la photo
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  stopCamera();
+                  setShowCameraModal(false);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

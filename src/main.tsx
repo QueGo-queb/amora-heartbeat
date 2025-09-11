@@ -6,6 +6,17 @@ import './index.css'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
+      // Désinscrire tous les anciens service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (let registration of registrations) {
+        console.log('🗑️ Désinscription ancien SW:', registration.scope);
+        await registration.unregister();
+      }
+      
+      // Attendre un peu pour que la désinscription soit effective
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Enregistrer le nouveau service worker
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
         updateViaCache: 'none' // ⚠️ IMPORTANT : Force la vérification de mise à jour
@@ -48,10 +59,10 @@ if ('serviceWorker' in navigator) {
         }
       });
       
-      // Vérifier les mises à jour toutes les 30 secondes
+      // Vérifier les mises à jour toutes les 10 secondes
       setInterval(() => {
         registration.update();
-      }, 30000);
+      }, 10000);
       
     } catch (error) {
       console.error('❌ Erreur enregistrement Service Worker:', error);
