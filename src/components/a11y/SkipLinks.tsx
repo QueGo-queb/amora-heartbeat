@@ -32,7 +32,7 @@ export const SkipLinks = () => {
         </a>
       ))}
       
-      <style jsx>{`
+      <style>{`
         .skip-links {
           position: absolute;
           top: -40px;

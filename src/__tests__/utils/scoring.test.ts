@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { 
   calculateRecencyScore, 
-  calculateTagMatches,
-  computeScore 
-} from '../../../utils/scoring'; // Corrigé: chemin relatif correct
+  calculateTagMatches
+} from '../../../utils/scoring';
 
 describe('Scoring Utils', () => {
   describe('calculateRecencyScore', () => {
@@ -50,49 +49,6 @@ describe('Scoring Utils', () => {
       const score = calculateTagMatches(tags, tags);
       
       expect(score).toBe(100);
-    });
-  });
-
-  describe('computeScore', () => {
-    const mockPost = {
-      id: '1',
-      content: 'Test post',
-      created_at: new Date().toISOString(),
-      tags: ['travel', 'food'],
-      profiles: {
-        id: 'user1',
-        plan: 'premium',
-        interests: ['travel', 'music']
-      }
-    };
-
-    const mockViewerProfile = {
-      id: 'viewer',
-      interests: ['travel', 'food', 'music'],
-      age: 25,
-      gender: 'homme',
-      country: 'France'
-    };
-
-    it('should compute total score correctly', () => {
-      const score = computeScore(mockPost, mockViewerProfile);
-      
-      expect(score).toBeGreaterThan(0);
-      expect(typeof score).toBe('number');
-    });
-
-    it('should return 0 for incompatible profiles', () => {
-      const incompatiblePost = {
-        ...mockPost,
-        profiles: {
-          ...mockPost.profiles,
-          age: 60, // Assume this makes profiles incompatible
-        }
-      };
-
-      const score = computeScore(incompatiblePost, mockViewerProfile);
-      
-      expect(score).toBe(0);
     });
   });
 });

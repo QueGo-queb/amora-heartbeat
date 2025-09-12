@@ -1,15 +1,13 @@
 /**
- * Bouton pour transférer l'argent accumulé vers le compte bancaire
+ * Bouton pour transférer l'argent accumulé vers le compte bancaire (version simplifiée)
  */
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Banknote, ArrowRight, Loader2, DollarSign, CreditCard } from 'lucide-react';
+import { Banknote, ArrowRight, Loader2, CreditCard } from 'lucide-react';
 
 interface PlatformBalance {
   totalRevenue: number;
@@ -25,34 +23,18 @@ export const MoneyTransferButton = () => {
   const [balance, setBalance] = useState<PlatformBalance | null>(null);
   const { toast } = useToast();
 
-  // Charger le solde de la plateforme
+  // Charger le solde de la plateforme (simulation)
   const loadPlatformBalance = async () => {
     setLoading(true);
     try {
-      // Calculer le revenu total depuis les transactions
-      const { data: transactions, error } = await supabase
-        .from('transactions')
-        .select('amount_cents, created_at, status')
-        .eq('status', 'succeeded');
-
-      if (error) throw error;
-
-      const totalRevenue = (transactions?.reduce((sum, t) => sum + (t.amount_cents || 0), 0) || 0) / 100;
+      // Simulation des données
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Calculer les transferts déjà effectués (simulation)
-      const { data: transfers } = await supabase
-        .from('admin_transfers')
-        .select('amount, created_at')
-        .order('created_at', { ascending: false });
-
-      const totalTransferred = (transfers?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0);
-      const availableBalance = totalRevenue - totalTransferred;
-
       setBalance({
-        totalRevenue,
-        availableBalance,
+        totalRevenue: 2500.00,
+        availableBalance: 1200.00,
         pendingTransfers: 0,
-        lastTransferDate: transfers?.[0]?.created_at
+        lastTransferDate: new Date().toISOString()
       });
 
     } catch (error: any) {
@@ -67,7 +49,7 @@ export const MoneyTransferButton = () => {
     }
   };
 
-  // Effectuer le transfert d'argent
+  // Effectuer le transfert d'argent (simulation)
   const handleTransfer = async () => {
     if (!balance || balance.availableBalance <= 0) {
       toast({
@@ -80,45 +62,12 @@ export const MoneyTransferButton = () => {
 
     setTransferLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
-
-      // Simulation d'appel API vers le service de paiement (Stripe, Interac, etc.)
-      // Dans la vraie implémentation, remplacer par l'API réelle
-      
-      const transferAmount = balance.availableBalance;
-
-      // Enregistrer le transfert dans la base
-      const { error: transferError } = await supabase
-        .from('admin_transfers')
-        .insert({
-          amount: transferAmount,
-          status: 'pending',
-          transfer_method: 'bank_transfer',
-          requested_by: user.id,
-          description: `Transfert automatique de ${transferAmount}€ vers le compte bancaire principal`
-        });
-
-      if (transferError) throw transferError;
-
-      // Simuler l'appel API de transfert
+      // Simulation du transfert
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Mettre à jour le statut à "completed"
-      const { error: updateError } = await supabase
-        .from('admin_transfers')
-        .update({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('requested_by', user.id)
-        .eq('status', 'pending');
-
-      if (updateError) throw updateError;
-
       toast({
-        title: "✅ Transfert effectué",
-        description: `${transferAmount.toFixed(2)}€ transférés vers votre compte bancaire`,
+        title: "✅ Transfert simulé",
+        description: `${balance.availableBalance.toFixed(2)}€ seraient transférés vers votre compte bancaire`,
       });
 
       // Recharger le solde
@@ -167,18 +116,18 @@ export const MoneyTransferButton = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Revenu total :</span>
+                  <span className="text-sm text-muted-foreground">Revenu total :</span>
                   <span className="font-semibold">{balance.totalRevenue.toFixed(2)}€</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Montant disponible :</span>
+                  <span className="text-sm text-muted-foreground">Montant disponible :</span>
                   <span className="font-bold text-green-600">
                     {balance.availableBalance.toFixed(2)}€
                   </span>
                 </div>
                 {balance.lastTransferDate && (
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Dernier transfert :</span>
+                    <span className="text-sm text-muted-foreground">Dernier transfert :</span>
                     <span className="text-sm">
                       {new Date(balance.lastTransferDate).toLocaleDateString('fr-FR')}
                     </span>
@@ -202,8 +151,8 @@ export const MoneyTransferButton = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-gray-600">Aucun montant disponible pour le transfert</p>
+              <div className="bg-muted border rounded-lg p-4 text-center">
+                <p className="text-muted-foreground">Aucun montant disponible pour le transfert</p>
               </div>
             )}
 
@@ -231,7 +180,7 @@ export const MoneyTransferButton = () => {
             </div>
           </div>
         ) : (
-          <div className="text-center py-4 text-gray-500">
+          <div className="text-center py-4 text-muted-foreground">
             Erreur lors du chargement des données
           </div>
         )}
