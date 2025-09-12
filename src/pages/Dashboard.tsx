@@ -76,40 +76,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header simplifié - Logo et nom uniquement */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-center">
           <div className="flex items-center gap-3">
             <div className="heart-logo">
               <div className="heart-shape" />
             </div>
             <span className="text-2xl font-bold gradient-text">AMORA</span>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {/* Menu hamburger avec toutes les sections */}
-            <DashboardMenu />
-            
-            {/* Boutons essentiels uniquement */}
-            <Button variant="ghost" size="icon">
-              <Bell className="w-5 h-5" />
-            </Button>
-            
-            {/* CORRECTION : Bouton profil cliquable */}
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleProfileClick}
-              className="hover:bg-slate-100"
-              title="Accéder à mon profil"
-            >
-              <User className="w-5 h-5" />
-            </Button>
-            
-            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut className="w-4 w-4" />
-              Déconnexion
-            </Button>
           </div>
         </div>
       </header>

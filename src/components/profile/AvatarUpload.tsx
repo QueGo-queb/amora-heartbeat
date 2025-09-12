@@ -34,64 +34,111 @@ export function AvatarUpload({
     lg: 'w-32 h-32'
   };
 
-  // Fonction pour compresser une image
+  // ✅ FONCTION DE COMPRESSION SIMPLIFIÉE ET ROBUSTE
   const compressImage = (file: File, maxSizeKB: number = 500): Promise<File> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculer les nouvelles dimensions (max 800x800)
-        const maxDimension = 800;
-        let { width, height } = img;
-        
-        if (width > height) {
-          if (width > maxDimension) {
-            height = (height * maxDimension) / width;
-            width = maxDimension;
-          }
-        } else {
-          if (height > maxDimension) {
-            width = (width * maxDimension) / height;
-            height = maxDimension;
-          }
+    return new Promise((resolve, reject) => {
+      try {
+        // Vérifier que c'est une image
+        if (!file.type.startsWith('image/')) {
+          reject(new Error('Le fichier n\'est pas une image'));
+          return;
         }
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         
-        canvas.width = width;
-        canvas.height = height;
+        if (!ctx) {
+          reject(new Error('Impossible d\'accéder au contexte du canvas'));
+          return;
+        }
+
+        const img = new Image();
         
-        // Dessiner l'image redimensionnée
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convertir en blob avec compression
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
+        img.onload = () => {
+          try {
+            // Dimensions maximales
+            const maxWidth = 800;
+            const maxHeight = 800;
             
-            // Vérifier la taille et recompresser si nécessaire
-            if (compressedFile.size > maxSizeKB * 1024) {
-              // Recompresser avec une qualité plus faible
-              canvas.toBlob((recompressedBlob) => {
-                if (recompressedBlob) {
-                  const finalFile = new File([recompressedBlob], file.name, {
-                    type: 'image/jpeg',
-                    lastModified: Date.now()
-                  });
-                  resolve(finalFile);
-                }
-              }, 'image/jpeg', 0.7);
+            let { width, height } = img;
+            
+            // Calculer les nouvelles dimensions en gardant le ratio
+            if (width > height) {
+              if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+              }
             } else {
-              resolve(compressedFile);
+              if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+              }
             }
+            
+            // Définir les dimensions du canvas
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Dessiner l'image redimensionnée
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convertir en blob avec compression
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Erreur lors de la compression'));
+                  return;
+                }
+                
+                // Créer le fichier compressé
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                
+                // Vérifier la taille et recompresser si nécessaire
+                if (compressedFile.size > maxSizeKB * 1024) {
+                  // Recompresser avec une qualité plus faible
+                  canvas.toBlob(
+                    (recompressedBlob) => {
+                      if (!recompressedBlob) {
+                        reject(new Error('Erreur lors de la recompression'));
+                        return;
+                      }
+                      
+                      const finalFile = new File([recompressedBlob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                      });
+                      
+                      resolve(finalFile);
+                    },
+                    'image/jpeg',
+                    0.6 // Qualité plus faible
+                  );
+                } else {
+                  resolve(compressedFile);
+                }
+              },
+              'image/jpeg',
+              0.8 // Qualité initiale
+            );
+            
+          } catch (error) {
+            reject(new Error('Erreur lors du traitement de l\'image'));
           }
-        }, 'image/jpeg', 0.8);
-      };
-      
-      img.src = URL.createObjectURL(file);
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Erreur lors du chargement de l\'image'));
+        };
+        
+        // Charger l'image
+        img.src = URL.createObjectURL(file);
+        
+      } catch (error) {
+        reject(new Error('Erreur lors de l\'initialisation de la compression'));
+      }
     });
   };
 
@@ -99,33 +146,47 @@ export function AvatarUpload({
   const capturePhoto = () => {
     if (!cameraVideoRef.current || !canvasRef.current) return;
     
-    const video = cameraVideoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d')!;
-    
-    // Définir la taille du canvas
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Dessiner l'image de la vidéo sur le canvas
-    ctx.drawImage(video, 0, 0);
-    
-    // Convertir en blob
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'camera-photo.jpg', {
-          type: 'image/jpeg',
-          lastModified: Date.now()
-        });
-        
-        // Compresser et uploader
-        compressAndUpload(file);
+    try {
+      const video = cameraVideoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('Impossible d\'accéder au contexte du canvas');
       }
-    }, 'image/jpeg', 0.8);
-    
-    // Fermer la caméra
-    stopCamera();
-    setShowCameraModal(false);
+      
+      // Définir la taille du canvas
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Dessiner l'image de la vidéo sur le canvas
+      ctx.drawImage(video, 0, 0);
+      
+      // Convertir en blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'camera-photo.jpg', {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          
+          // Compresser et uploader
+          compressAndUpload(file);
+        }
+      }, 'image/jpeg', 0.8);
+      
+      // Fermer la caméra
+      stopCamera();
+      setShowCameraModal(false);
+      
+    } catch (error) {
+      console.error('Erreur capture photo:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la capture de la photo",
+        variant: "destructive"
+      });
+    }
   };
 
   // Fonction pour démarrer la caméra
@@ -167,32 +228,8 @@ export function AvatarUpload({
     }
   };
 
-  // Fonction pour compresser et uploader
+  // ✅ FONCTION DE COMPRESSION ET UPLOAD SIMPLIFIÉE
   const compressAndUpload = async (file: File) => {
-    try {
-      setUploading(true);
-      
-      // Compresser l'image
-      const compressedFile = await compressImage(file, 500); // 500KB max
-      
-      console.log(`📊 Compression: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
-      
-      // Uploader le fichier compressé
-      await uploadAvatar(compressedFile);
-      
-    } catch (error) {
-      console.error('Erreur compression:', error);
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la compression de l'image",
-        variant: "destructive"
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const uploadAvatar = async (file: File) => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -204,28 +241,102 @@ export function AvatarUpload({
 
     try {
       setUploading(true);
-
-      // Valider le fichier
+      
+      // Vérifications préliminaires
       if (!file.type.startsWith('image/')) {
         throw new Error('Le fichier doit être une image');
       }
 
+      if (file.size > 10 * 1024 * 1024) { // 10MB max
+        throw new Error('Le fichier est trop volumineux (max 10MB)');
+      }
+
+      let processedFile = file;
+
+      // Compresser l'image seulement si elle est trop grande
+      if (file.size > 1024 * 1024) { // 1MB
+        try {
+          processedFile = await compressImage(file, 500); // 500KB max
+          console.log(`📊 Compression: ${(file.size / 1024).toFixed(1)}KB → ${(processedFile.size / 1024).toFixed(1)}KB`);
+        } catch (compressError) {
+          console.warn('Erreur compression, utilisation du fichier original:', compressError);
+          // Continuer avec le fichier original si la compression échoue
+        }
+      }
+
+      // Uploader le fichier
+      await uploadAvatar(processedFile);
+      
+    } catch (error: any) {
+      console.error('Erreur compression/upload:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors du traitement de l'image",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ✅ FONCTION UPLOAD SIMPLIFIÉE
+  const uploadAvatar = async (file: File) => {
+    try {
       // Créer un nom de fichier unique
       const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Upload vers Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('user-content')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      let uploadSuccess = false;
+      let publicUrl = '';
 
-      if (uploadError) {
-        // Si le bucket n'existe pas, créer un fallback avec URL data
-        console.warn('Storage upload failed, using fallback:', uploadError);
+      // Essayer le bucket 'avatars' d'abord
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (!uploadError) {
+          const { data: { publicUrl: avatarUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+          publicUrl = avatarUrl;
+          uploadSuccess = true;
+        }
+      } catch (bucketError) {
+        console.warn('Bucket "avatars" non disponible:', bucketError);
+      }
+
+      // Si le bucket 'avatars' n'existe pas, essayer 'user-content'
+      if (!uploadSuccess) {
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('user-content')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (!uploadError) {
+            const { data: { publicUrl: contentUrl } } = supabase.storage
+              .from('user-content')
+              .getPublicUrl(filePath);
+            publicUrl = contentUrl;
+            uploadSuccess = true;
+          }
+        } catch (contentError) {
+          console.warn('Bucket "user-content" non disponible:', contentError);
+        }
+      }
+
+      // Si aucun bucket n'est disponible, utiliser un fallback avec data URL
+      if (!uploadSuccess) {
+        console.warn('Aucun bucket de stockage disponible, utilisation du fallback');
+        
+        // Créer un aperçu immédiat
         const reader = new FileReader();
         reader.onload = async (e) => {
           const dataUrl = e.target?.result as string;
@@ -235,42 +346,30 @@ export function AvatarUpload({
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ avatar_url: dataUrl })
-            .eq('id', user.id);
+            .eq('id', user!.id);
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('Erreur mise à jour profil:', updateError);
+            throw updateError;
+          }
           
           onAvatarUpdate?.(dataUrl);
           toast({
             title: "Succès",
-            description: "Photo de profil mise à jour avec succès!"
+            description: "Photo de profil mise à jour avec succès! (Mode local)"
           });
         };
         reader.readAsDataURL(file);
         return;
       }
 
-      // Obtenir l'URL publique
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-content')
-        .getPublicUrl(filePath);
-
-      // Mettre à jour le profil avec la nouvelle URL
+      // Si l'upload a réussi, mettre à jour le profil
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+        .eq('id', user!.id);
 
       if (updateError) throw updateError;
-
-      // Supprimer l'ancienne image si elle existe
-      if (currentAvatarUrl && currentAvatarUrl.includes('user-content')) {
-        const oldPath = currentAvatarUrl.split('/').slice(-2).join('/');
-        if (oldPath) {
-          await supabase.storage
-            .from('user-content')
-            .remove([oldPath]);
-        }
-      }
 
       setPreviewUrl(publicUrl);
       onAvatarUpdate?.(publicUrl);
@@ -282,13 +381,7 @@ export function AvatarUpload({
 
     } catch (error: any) {
       console.error('Erreur upload avatar:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors du téléchargement",
-        variant: "destructive"
-      });
-    } finally {
-      setUploading(false);
+      throw error;
     }
   };
 
@@ -304,16 +397,6 @@ export function AvatarUpload({
 
     try {
       setUploading(true);
-
-      // Supprimer de Supabase Storage (si c'est une URL de storage)
-      if (currentAvatarUrl && currentAvatarUrl.includes('user-content')) {
-        const oldPath = currentAvatarUrl.split('/').slice(-2).join('/');
-        if (oldPath) {
-          await supabase.storage
-            .from('user-content')
-            .remove([oldPath]);
-        }
-      }
 
       // Mettre à jour le profil
       const { error } = await supabase

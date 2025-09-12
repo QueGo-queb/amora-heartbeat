@@ -53,6 +53,9 @@ import { useEffect, useState } from 'react';
 import { BadgesPage } from "./pages/BadgesPage";
 import { AIPage } from "./pages/AIPage";
 import { TravelPage } from "./pages/TravelPage";
+import Favorites from "./pages/Favorites";
+import VideoChat from "./pages/VideoChat";
+import UpdateNotification from '@/components/pwa/UpdateNotification';
 
 // **NOUVEAU: Import des composants d'appel**
 // import { CallModal } from "@/components/chat/CallModal";
@@ -108,6 +111,9 @@ function App() {
             <div className="min-h-screen bg-background">
               {/* **NOUVEAU: Gestionnaire d'appels global** */}
               <CallManager />
+              
+              {/* Notification de mise à jour PWA */}
+              <UpdateNotification />
               
               <Routes>
                 {/* Routes publiques */}
@@ -347,6 +353,22 @@ function App() {
                   <ProtectedRoute>
                     <ConditionalLayout>
                       <AdminLegalPages />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/favorites" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <Favorites />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/video-chat" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <VideoChat />
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />

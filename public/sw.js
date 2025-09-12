@@ -1,5 +1,5 @@
 // Version statique basée sur le build - CHANGE SEULEMENT QUAND LE CODE CHANGE
-const VERSION = 'amora-v1.0.1'; // ⚠️ INCRÉMENTER À CHAQUE DÉPLOIEMENT
+const VERSION = 'amora-v1.0.2'; // ⚠️ INCRÉMENTER À CHAQUE DÉPLOIEMENT
 const STATIC_CACHE = `amora-static-${VERSION}`;
 const DYNAMIC_CACHE = `amora-dynamic-${VERSION}`;
 const IMAGE_CACHE = `amora-images-${VERSION}`;

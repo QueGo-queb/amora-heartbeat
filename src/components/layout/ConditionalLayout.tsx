@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import Footer from './Footer';
+import SidebarLayout from './SidebarLayout';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -8,13 +9,41 @@ interface ConditionalLayoutProps {
 const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const location = useLocation();
   
-  // Ne pas afficher le footer sur les pages admin ET sur le dashboard utilisateur
-  const shouldShowFooter = !location.pathname.startsWith('/admin') && 
-                          !location.pathname.startsWith('/dashboard') &&
-                          !location.pathname.startsWith('/matching') &&
-                          !location.pathname.startsWith('/messages') &&
-                          !location.pathname.startsWith('/profile') &&
-                          !location.pathname.startsWith('/feed');
+  // Pages qui utilisent le nouveau layout avec menu latéral (comme l'image de référence)
+  const useDatingLayout = location.pathname.startsWith('/dashboard') ||
+                         location.pathname.startsWith('/matching') ||
+                         location.pathname.startsWith('/messages') ||
+                         location.pathname.startsWith('/profile') ||
+                         location.pathname.startsWith('/feed') ||
+                         location.pathname.startsWith('/events') ||
+                         location.pathname.startsWith('/badges') ||
+                         location.pathname.startsWith('/ai') ||
+                         location.pathname.startsWith('/travel') ||
+                         location.pathname.startsWith('/premium') ||
+                         location.pathname.startsWith('/notifications') ||
+                         location.pathname.startsWith('/profile-views') ||
+                         location.pathname.startsWith('/unread-messages') ||
+                         location.pathname.startsWith('/new-matches') ||
+                         location.pathname.startsWith('/help');
+  
+  // Pages admin gardent leur layout actuel
+  const isAdminPage = location.pathname.startsWith('/admin');
+  
+  // Pages publiques (accueil, auth, etc.)
+  const isPublicPage = location.pathname === '/' || 
+                      location.pathname.startsWith('/auth') ||
+                      location.pathname.startsWith('/legal');
+  
+  // Ne pas afficher le footer sur les pages avec layout spécial
+  const shouldShowFooter = !useDatingLayout && !isAdminPage && !isPublicPage;
+  
+  if (useDatingLayout) {
+    return (
+      <SidebarLayout>
+        {children}
+      </SidebarLayout>
+    );
+  }
   
   return (
     <>

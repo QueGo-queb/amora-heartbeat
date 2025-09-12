@@ -48,28 +48,18 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
   // État pour le scroll horizontal des profils
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
 
-  // ✅ AJOUT DE DEBUG
-  console.log('🔍 FeedSection Debug:', {
-    showCreatePostModal,
-    posts: posts?.length || 0,
-    loading,
-    error
-  });
-
   // Fonction pour gérer la création de post
   const handlePostCreated = () => {
-    console.log('✅ handlePostCreated appelé');
     setShowCreatePostModal(false);
-    refresh(); // Actualiser le feed après création
+    refresh();
     toast({
       title: "Post créé avec succès",
       description: "Votre post a été ajouté au fil d'actualité",
     });
   };
 
-  // ✅ AJOUT DE DEBUG POUR LE BOUTON
+  // Fonction pour ouvrir le modal de création de post
   const handleCreatePostClick = () => {
-    console.log('🖱️ Bouton "Créer le premier post" cliqué');
     setShowCreatePostModal(true);
   };
 
@@ -95,7 +85,6 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
   };
 
   const handleLike = async (post: any) => {
-    // Logique de like - à implémenter selon vos besoins
     toast({
       title: "Like ajouté",
       description: `Vous avez liké le post de ${post.author_name}`,
@@ -114,7 +103,6 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
         console.log('Partage annulé');
       }
     } else {
-      // Fallback pour les navigateurs qui ne supportent pas l'API Share
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Lien copié",
@@ -150,11 +138,11 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (loading) {
     return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="flex items-center justify-center h-64">
+      <div className={`space-y-4 lg:space-y-6 ${className}`}>
+        <div className="flex items-center justify-center h-32 lg:h-64">
           <div className="flex items-center gap-2 text-[#212529]">
-            <RefreshCw className="w-5 h-5 animate-spin" />
-            Chargement du fil d'actualité...
+            <RefreshCw className="w-4 h-4 lg:w-5 lg:h-5 animate-spin" />
+            <span className="text-sm lg:text-base">Chargement du fil d'actualité...</span>
           </div>
         </div>
       </div>
@@ -163,14 +151,14 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (error) {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-4 lg:space-y-6 ${className}`}>
         <Card className="bg-[#F8F9FA] border-[#E63946] border-2">
-          <CardContent className="p-6 text-center">
-            <div className="text-[#E63946] mb-2">⚠️ Erreur de chargement</div>
-            <p className="text-[#212529] mb-4">{error}</p>
+          <CardContent className="p-4 lg:p-6 text-center">
+            <div className="text-[#E63946] mb-2 text-sm lg:text-base">⚠️ Erreur de chargement</div>
+            <p className="text-[#212529] mb-4 text-xs lg:text-base">{error}</p>
             <Button 
               onClick={refresh}
-              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 text-sm lg:text-base"
             >
               Réessayer
             </Button>
@@ -182,14 +170,14 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
   if (!posts || posts.length === 0) {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-4 lg:space-y-6 ${className}`}>
         <Card className="bg-[#F8F9FA] border-[#CED4DA]">
-          <CardContent className="p-6 text-center">
-            <div className="text-[#212529] mb-2">📭 Aucun post disponible</div>
-            <p className="text-[#CED4DA] mb-4">Il n'y a pas encore de posts dans votre fil d'actualité.</p>
+          <CardContent className="p-4 lg:p-6 text-center">
+            <div className="text-[#212529] mb-2 text-sm lg:text-base">📭 Aucun post disponible</div>
+            <p className="text-[#CED4DA] mb-4 text-xs lg:text-sm">Il n'y a pas encore de posts dans votre fil d'actualité.</p>
             <Button 
-              onClick={handleCreatePostClick}  // ✅ UTILISER LA FONCTION DE DEBUG
-              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+              onClick={handleCreatePostClick}
+              className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 text-sm lg:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Créer le premier post
@@ -201,50 +189,48 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 lg:space-y-6 ${className}`}>
       {/* Header avec refresh */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#212529]">Candidates</h2>
+        <h2 className="text-lg lg:text-2xl font-bold text-[#212529]">Candidates</h2>
         <Button
           variant="outline"
           size="sm"
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-2 border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
+          className="flex items-center gap-2 border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788] text-xs lg:text-sm"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Actualiser
+          <RefreshCw className={`w-3 h-3 lg:w-4 lg:h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Actualiser</span>
         </Button>
       </div>
 
-      {/* Section des profils avec scroll horizontal - NOUVEAU DESIGN */}
+      {/* Section des profils avec scroll horizontal - RESPONSIVE */}
       <div className="relative">
-        {/* Bouton de navigation gauche */}
+        {/* Boutons de navigation - masqués sur mobile très petit */}
         <Button
           variant="outline"
           size="icon"
           onClick={prevProfile}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full w-10 h-10"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full w-8 h-8 lg:w-10 lg:h-10 hidden sm:flex"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4 lg:w-5 lg:h-5" />
         </Button>
 
         {/* Container des profils avec scroll horizontal */}
-        <div className="flex overflow-x-auto gap-4 px-12 py-4 scrollbar-hide">
+        <div className="flex overflow-x-auto gap-3 lg:gap-4 px-2 sm:px-12 py-4 scrollbar-hide">
           {posts.map((post, index) => (
             <Card 
               key={post.id} 
-              className="min-w-[280px] max-w-[280px] hover:shadow-lg transition-all duration-300 bg-[#F8F9FA] border-[#CED4DA] rounded-xl flex flex-col"
+              className="min-w-[240px] sm:min-w-[280px] max-w-[240px] sm:max-w-[280px] hover:shadow-lg transition-all duration-300 bg-[#F8F9FA] border-[#CED4DA] rounded-xl flex flex-col"
             >
-              {/* Section image/avatar - NOUVEAU DESIGN */}
-              <div className="relative p-4 pb-2">
-                {/* Image de fond ou collage d'images */}
-                <div className="relative h-32 bg-gradient-to-br from-[#E63946]/20 to-[#52B788]/20 rounded-lg mb-3 overflow-hidden">
-                  {/* Avatar centré et légèrement superposé */}
-                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
-                    <Avatar className="h-16 w-16 border-4 border-[#F8F9FA] shadow-lg">
+              {/* Section image/avatar */}
+              <div className="relative p-3 lg:p-4 pb-2">
+                <div className="relative h-24 lg:h-32 bg-gradient-to-br from-[#E63946]/20 to-[#52B788]/20 rounded-lg mb-2 lg:mb-3 overflow-hidden">
+                  <div className="absolute -bottom-4 lg:-bottom-6 left-1/2 -translate-x-1/2">
+                    <Avatar className="h-12 w-12 lg:h-16 lg:w-16 border-2 lg:border-4 border-[#F8F9FA] shadow-lg">
                       <AvatarImage src={post.author_avatar} alt={post.author_name} />
-                      <AvatarFallback className="bg-[#E63946] text-white text-lg font-semibold">
+                      <AvatarFallback className="bg-[#E63946] text-white text-sm lg:text-lg font-semibold">
                         {post.author_name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -253,17 +239,17 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
               </div>
 
               {/* Informations utilisateur */}
-              <CardContent className="pt-8 pb-4 text-center flex-1">
+              <CardContent className="pt-6 lg:pt-8 pb-3 lg:pb-4 text-center flex-1">
                 <div className="mb-2">
-                  <h3 className="font-semibold text-[#212529] text-lg">{post.author_name}</h3>
-                  <p className="text-sm text-[#CED4DA]">
+                  <h3 className="font-semibold text-[#212529] text-sm lg:text-lg">{post.author_name}</h3>
+                  <p className="text-xs lg:text-sm text-[#CED4DA]">
                     {post.author_age} ans • {post.author_location || 'Localisation'}
                   </p>
                 </div>
 
                 {/* Badges d'intérêts communs */}
                 {post.commonInterests.length > 0 && (
-                  <div className="mb-3">
+                  <div className="mb-2 lg:mb-3">
                     <div className="flex flex-wrap gap-1 justify-center">
                       {post.commonInterests.slice(0, 2).map((interest, idx) => (
                         <Badge key={idx} className="text-xs bg-[#52B788] text-white border-0">
@@ -280,38 +266,36 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
                 )}
 
                 {/* Score de compatibilité */}
-                <Badge className="text-xs bg-[#E63946] text-white border-0 mb-3">
+                <Badge className="text-xs bg-[#E63946] text-white border-0 mb-2 lg:mb-3">
                   Score: {post.compatibilityScore}%
                 </Badge>
 
-                {/* Contenu du post (tronqué) */}
-                <p className="text-sm text-[#212529] line-clamp-2 leading-relaxed">
+                {/* Contenu du post */}
+                <p className="text-xs lg:text-sm text-[#212529] line-clamp-2 leading-relaxed">
                   {post.content}
                 </p>
               </CardContent>
 
-              {/* Boutons d'action repositionnés en bas - NOUVEAU DESIGN */}
-              <div className="p-4 pt-0">
+              {/* Boutons d'action */}
+              <div className="p-3 lg:p-4 pt-0">
                 <div className="flex gap-2 justify-center">
-                  {/* Bouton Like */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleLike(post)}
-                    className="flex-1 bg-[#F8F9FA] border-[#CED4DA] text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] rounded-full"
+                    className="flex-1 bg-[#F8F9FA] border-[#CED4DA] text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] rounded-full h-8 lg:h-10"
                   >
-                    <Heart className="h-4 w-4" />
+                    <Heart className="h-3 w-3 lg:h-4 lg:w-4" />
                   </Button>
 
-                  {/* Bouton Message */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleContact(post)}
                     disabled={sending}
-                    className="flex-1 bg-[#F8F9FA] border-[#CED4DA] text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] rounded-full"
+                    className="flex-1 bg-[#F8F9FA] border-[#CED4DA] text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] rounded-full h-8 lg:h-10"
                   >
-                    <MessageCircle className="h-4 w-4" />
+                    <MessageCircle className="h-3 w-3 lg:h-4 lg:w-4" />
                   </Button>
                 </div>
               </div>
@@ -324,39 +308,39 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
           variant="outline"
           size="icon"
           onClick={nextProfile}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full w-10 h-10"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full w-8 h-8 lg:w-10 lg:h-10 hidden sm:flex"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4 lg:w-5 lg:h-5" />
         </Button>
       </div>
 
-      {/* Section "You may like" - NOUVEAU DESIGN */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Section "You may like" - RESPONSIVE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Section "You may like" */}
         <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-[#212529]">You may like</h3>
+          <CardHeader className="pb-3">
+            <h3 className="text-base lg:text-lg font-semibold text-[#212529]">You may like</h3>
           </CardHeader>
           <CardContent className="space-y-3">
             {posts.slice(0, 3).map((post, index) => (
               <div key={index} className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                   <AvatarImage src={post.author_avatar} alt={post.author_name} />
-                  <AvatarFallback className="bg-[#E63946] text-white">
+                  <AvatarFallback className="bg-[#E63946] text-white text-xs lg:text-sm">
                     {post.author_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-[#212529] text-sm">{post.author_name}</p>
-                  <p className="text-xs text-[#CED4DA]">{post.author_location || 'Localisation'}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[#212529] text-xs lg:text-sm truncate">{post.author_name}</p>
+                  <p className="text-xs text-[#CED4DA] truncate">{post.author_location || 'Localisation'}</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleLike(post)}
-                  className="w-8 h-8 p-0 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full"
+                  className="w-6 h-6 lg:w-8 lg:h-8 p-0 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 rounded-full"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
                 </Button>
               </div>
             ))}
@@ -365,27 +349,27 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
 
         {/* Section "Chat request" */}
         <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-[#212529]">Chat request</h3>
+          <CardHeader className="pb-3">
+            <h3 className="text-base lg:text-lg font-semibold text-[#212529]">Chat request</h3>
           </CardHeader>
           <CardContent className="space-y-3">
             {posts.slice(0, 2).map((post, index) => (
               <div key={index} className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                   <AvatarImage src={post.author_avatar} alt={post.author_name} />
-                  <AvatarFallback className="bg-[#E63946] text-white">
+                  <AvatarFallback className="bg-[#E63946] text-white text-xs lg:text-sm">
                     {post.author_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-[#212529] text-sm">{post.author_name}</p>
-                  <p className="text-xs text-[#CED4DA]">{post.author_location || 'Localisation'}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[#212529] text-xs lg:text-sm truncate">{post.author_name}</p>
+                  <p className="text-xs text-[#CED4DA] truncate">{post.author_location || 'Localisation'}</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleContact(post)}
-                  className="text-xs bg-[#52B788] hover:bg-[#52B788]/90 text-white border-0 rounded-full px-3"
+                  className="text-xs bg-[#52B788] hover:bg-[#52B788]/90 text-white border-0 rounded-full px-2 lg:px-3"
                 >
                   Reply
                 </Button>
@@ -395,18 +379,18 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
         </Card>
 
         {/* Section "My Profile" */}
-        <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-[#212529]">My Profile</h3>
+        <Card className="bg-[#F8F9FA] border-[#CED4DA] rounded-xl sm:col-span-2 lg:col-span-1">
+          <CardHeader className="pb-3">
+            <h3 className="text-base lg:text-lg font-semibold text-[#212529]">My Profile</h3>
           </CardHeader>
           <CardContent className="text-center">
-            <Avatar className="h-16 w-16 mx-auto mb-3">
+            <Avatar className="h-12 w-12 lg:h-16 lg:w-16 mx-auto mb-2 lg:mb-3">
               <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.full_name} />
-              <AvatarFallback className="bg-[#E63946] text-white text-lg">
+              <AvatarFallback className="bg-[#E63946] text-white text-sm lg:text-lg">
                 {userProfile?.full_name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-xs lg:text-sm">
               <div className="flex justify-between">
                 <span className="text-[#212529]">Followers</span>
                 <span className="font-semibold text-[#E63946]">200</span>
@@ -433,7 +417,7 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
       <CreatePostModal 
         open={showCreatePostModal} 
         onClose={() => setShowCreatePostModal(false)}
-        onPostCreated={handlePostCreated}  // ✅ AJOUT DE LA PROP MANQUANTE
+        onPostCreated={handlePostCreated}
       />
     </div>
   );

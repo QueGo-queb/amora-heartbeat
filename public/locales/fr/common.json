@@ -6,13 +6,31 @@
   },
   "navigation": {
     "home": "Accueil",
-    "login": "Se connecter",
-    "signup": "S'inscrire",
-    "profile": "Profil",
+    "search": "Recherche",
     "messages": "Messages",
-    "matches": "Matchs",
+    "visits": "Visites",
+    "likes": "J'aime",
+    "favorites": "Favoris",
+    "video_chat": "Chat vidéo",
+    "matching": "Correspondances",
+    "profile": "Profil",
     "settings": "Paramètres",
+    "help": "Centre d'aide",
+    "email_support": "Support par email",
+    "chat_support": "Chat en ligne",
+    "dedicated_support": "Support dédié",
     "logout": "Déconnexion"
+  },
+  "menu": {
+    "sections": {
+      "main": "Navigation principale",
+      "interactions": "Interactions",
+      "support": "Support et aide"
+    },
+    "vip_members": "Membres VIP",
+    "boost_profile": "Boostez votre profil",
+    "boost_description": "Devenez membre pro et obtenez plus de vues",
+    "upgrade": "Améliorer"
   },
   "buttons": {
     "continue": "Continuer",

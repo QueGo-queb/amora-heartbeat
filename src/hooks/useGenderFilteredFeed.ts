@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { testUsers, filterUsersByInterests, calculateCompatibilityScore } from '@/data/testUsersWithPosts';
 
 interface UserProfile {
   id: string;
@@ -19,6 +18,8 @@ interface FeedPost {
   author_avatar: string;
   author_gender: 'male' | 'female' | 'other';
   author_plan: 'free' | 'premium';
+  author_age?: number;
+  author_location?: string;
   commonInterests: string[];
   compatibilityScore: number;
   canContact: boolean;
@@ -44,7 +45,7 @@ export function useGenderFilteredFeed() {
       // Récupérer le profil complet depuis Supabase
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, gender, seeking_gender, plan, interests')
+        .select('id, gender, seeking_gender, plan, interests, full_name, age, location')
         .eq('id', user.id)
         .single();
 
@@ -73,18 +74,68 @@ export function useGenderFilteredFeed() {
     }
   }, []);
 
+  // ✅ CORRECTION : Requête simplifiée sans jointure complexe
+  const getRealPosts = useCallback(async () => {
+    try {
+      // Récupérer tous les posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (postsError) {
+        console.error('Erreur récupération posts:', postsError);
+        throw postsError;
+      }
+
+      if (!postsData || postsData.length === 0) {
+        return [];
+      }
+
+      // Récupérer les profils des auteurs
+      const userIds = [...new Set(postsData.map(post => post.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, gender, plan, age, location, interests')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Erreur récupération profils:', profilesError);
+        throw profilesError;
+      }
+
+      // Combiner les posts avec les profils
+      const postsWithProfiles = postsData.map(post => {
+        const profile = profilesData?.find(p => p.id === post.user_id);
+        return {
+          ...post,
+          profiles: profile
+        };
+      });
+
+      return postsWithProfiles;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des posts:', error);
+      return [];
+    }
+  }, []);
+
   // Filtrer les utilisateurs par genre et préférences
   const filterUsersByGenderAndPreferences = useCallback((
-    allUsers: any[],
+    allPosts: any[],
     userGender: string,
     seekingGender: string
   ) => {
-    return allUsers.filter(user => {
+    return allPosts.filter(post => {
+      const authorGender = post.profiles?.gender;
+      if (!authorGender) return false;
+      
       // Vérifier la compatibilité des genres
       if (seekingGender === 'both') {
-        return user.gender !== userGender; // Pas de même genre
+        return authorGender !== userGender; // Pas de même genre
       } else {
-        return user.gender === seekingGender;
+        return authorGender === seekingGender;
       }
     });
   }, []);
@@ -104,6 +155,20 @@ export function useGenderFilteredFeed() {
     }
   }, []);
 
+  // ✅ NOUVELLE FONCTION : Calculer les intérêts communs
+  const calculateCommonInterests = useCallback((userInterests: string[], authorInterests: string[]) => {
+    if (!userInterests || !authorInterests) return [];
+    return userInterests.filter(interest => authorInterests.includes(interest));
+  }, []);
+
+  // ✅ NOUVELLE FONCTION : Calculer le score de compatibilité
+  const calculateCompatibilityScore = useCallback((userInterests: string[], authorInterests: string[]) => {
+    if (!userInterests || !authorInterests || userInterests.length === 0) return 0;
+    
+    const commonInterests = calculateCommonInterests(userInterests, authorInterests);
+    return Math.round((commonInterests.length / userInterests.length) * 100);
+  }, [calculateCommonInterests]);
+
   // Charger les posts filtrés
   const loadFilteredPosts = useCallback(async () => {
     try {
@@ -120,58 +185,63 @@ export function useGenderFilteredFeed() {
       setUserProfile(profile);
       setUserInterests(profile.interests);
 
-      // Filtrer les utilisateurs par genre et préférences
-      const compatibleUsers = filterUsersByGenderAndPreferences(
-        testUsers, 
+      // ✅ RÉCUPÉRER LES VRAIS POSTS
+      const allPosts = await getRealPosts();
+      console.log('📝 Posts récupérés:', allPosts.length);
+
+      if (allPosts.length === 0) {
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Filtrer les posts par genre et préférences
+      const compatiblePosts = filterUsersByGenderAndPreferences(
+        allPosts, 
         profile.gender, 
         profile.seeking_gender
       );
 
-      // Filtrer par intérêts communs si l'utilisateur en a
-      let relevantUsers = compatibleUsers;
-      if (profile.interests.length > 0) {
-        relevantUsers = filterUsersByInterests(profile.interests, compatibleUsers, 1);
-      }
+      console.log('🔍 Posts compatibles:', compatiblePosts.length);
 
-      // Créer les posts avec toutes les informations nécessaires
-      const relevantPosts = relevantUsers.flatMap(user => {
-        const commonInterests = profile.interests.length > 0 
-          ? user.interests.filter(interest => profile.interests.includes(interest))
-          : [];
+      // Transformer les posts au format attendu
+      const transformedPosts: FeedPost[] = compatiblePosts.map(post => {
+        const authorProfile = post.profiles;
+        // ✅ CORRECTION : Utiliser les bons paramètres pour les intérêts
+        const commonInterests = calculateCommonInterests(profile.interests, authorProfile?.interests || []);
+        const compatibilityScore = calculateCompatibilityScore(profile.interests, authorProfile?.interests || []);
+        const contactCheck = checkContactAbility(profile.plan, authorProfile?.plan || 'free');
 
-        const compatibilityScore = profile.interests.length > 0
-          ? calculateCompatibilityScore(profile.interests, user)
-          : 0;
-
-        const contactCheck = checkContactAbility(profile.plan, user.plan || 'free');
-
-        return user.posts.map(post => ({
+        return {
           id: post.id,
           content: post.content,
           created_at: post.created_at,
-          author_id: post.author_id,
-          author_name: post.author_name,
-          author_avatar: post.author_avatar,
-          author_gender: user.gender || 'other',
-          author_plan: user.plan || 'free',
+          author_id: post.user_id,
+          author_name: authorProfile?.full_name || 'Utilisateur',
+          author_avatar: authorProfile?.avatar_url || '/placeholder.svg',
+          author_gender: authorProfile?.gender || 'other',
+          author_plan: authorProfile?.plan || 'free',
+          author_age: authorProfile?.age,
+          author_location: authorProfile?.location,
           commonInterests,
           compatibilityScore,
           canContact: contactCheck.canContact,
           contactRestriction: contactCheck.restriction
-        }));
+        };
       });
 
       // Trier par score de compatibilité décroissant
-      relevantPosts.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+      transformedPosts.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
       
-      setPosts(relevantPosts);
+      console.log('✅ Posts transformés:', transformedPosts.length);
+      setPosts(transformedPosts);
     } catch (error) {
       console.error('Erreur chargement posts filtrés:', error);
       setError('Erreur lors du chargement des posts');
     } finally {
       setLoading(false);
     }
-  }, [getUserProfile, filterUsersByGenderAndPreferences, checkContactAbility]);
+  }, [getUserProfile, getRealPosts, filterUsersByGenderAndPreferences, checkContactAbility, calculateCommonInterests, calculateCompatibilityScore]);
 
   // Rafraîchir le feed
   const refresh = useCallback(() => {

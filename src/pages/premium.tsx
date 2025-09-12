@@ -9,12 +9,14 @@ import { useCountryDetection } from "@/hooks/useCountryDetection";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const PremiumPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const navigate = useNavigate();
   const { countryInfo } = useCountryDetection();
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   // Rediriger vers l'authentification si pas connecté
   useEffect(() => {
@@ -23,18 +25,44 @@ const PremiumPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // ✅ LOGS DE DÉBOGAGE
+  useEffect(() => {
+    console.log(' PremiumPage montée');
+    console.log('🔐 isAuthenticated:', isAuthenticated);
+    console.log(' countryInfo:', countryInfo);
+    console.log('📱 isModalOpen:', isModalOpen);
+  }, [isAuthenticated, countryInfo, isModalOpen]);
+
   const handleCloseModal = () => {
+    console.log('❌ Fermeture du modal premium');
     setIsModalOpen(false);
     // Rediriger vers la page précédente ou dashboard
     navigate(-1);
   };
 
   const handleGoBack = () => {
+    console.log('⬅️ Retour depuis la page premium');
     navigate(-1);
   };
 
+  // ✅ FONCTION POUR REOUVRIR LE MODAL SI NÉCESSAIRE
+  const handleReopenModal = () => {
+    console.log('🔄 Réouverture du modal premium');
+    setIsModalOpen(true);
+  };
+
   if (!isAuthenticated) {
-    return null; // ou un loader
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentification requise</h1>
+          <p className="text-gray-600 mb-4">Vous devez être connecté pour accéder à cette page.</p>
+          <Button onClick={() => navigate('/auth')}>
+            Se connecter
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,6 +88,19 @@ const PremiumPage = () => {
             Débloquez toutes les fonctionnalités et connectez-vous avec plus de personnes
           </p>
         </div>
+
+        {/* ✅ BOUTON POUR REOUVRIR LE MODAL SI IL SE FERME */}
+        {!isModalOpen && (
+          <div className="text-center mb-8">
+            <Button 
+              onClick={handleReopenModal}
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+            >
+              Ouvrir les options de paiement
+            </Button>
+          </div>
+        )}
 
         {/* Formulaire de souscription intégré */}
         <PremiumUpgradeModal

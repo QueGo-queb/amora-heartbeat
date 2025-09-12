@@ -1,7 +1,7 @@
 {
   "name": "amora-pwa",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -50,7 +50,9 @@
     "size-check": "npx bundlesize",
     "build:prod": "npm run cleanup:prod && npm run build",
     "cleanup:prod": "node scripts/production-cleanup.js",
-    "preview:prod": "npm run build:prod && npm run preview"
+    "preview:prod": "npm run build:prod && npm run preview",
+    "update-version": "node scripts/update-version.js",
+    "deploy": "npm run update-version && npm run build"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

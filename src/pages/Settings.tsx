@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePremium } from '@/hooks/usePremium';
 import { PremiumUpgradeModal } from '@/components/settings/PremiumUpgradeModal';
 import { AccountDeletionModal } from '@/components/settings/AccountDeletionModal';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 const Settings = () => {
   const [user, setUser] = useState<any>(null);
@@ -99,20 +100,46 @@ const Settings = () => {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          language: settings.language,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      if (error) throw error;
+      // Mettre à jour le profil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          full_name: profile?.full_name,
+          bio: profile?.bio,
+          age: profile?.age,
+          location: profile?.location,
+          language: settings.language,
+          visibility: settings.visibility,
+          show_age: settings.showAge,
+          show_location: settings.showLocation,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileError) throw profileError;
+
+      // Mettre à jour les paramètres de notification
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          notifications: settings.notifications,
+          email_notifications: settings.emailNotifications,
+          match_notifications: settings.matchNotifications,
+          message_notifications: settings.messageNotifications,
+          updated_at: new Date().toISOString()
+        });
+
+      if (settingsError) throw settingsError;
 
       toast({
         title: "Paramètres sauvegardés",
-        description: "Vos préférences ont été mises à jour",
+        description: "Vos modifications ont été enregistrées avec succès",
       });
+
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
       toast({
@@ -133,6 +160,70 @@ const Settings = () => {
     setShowDeleteModal(true);
   };
 
+  const handleCameraClick = () => {
+    // Créer un input file caché
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = handleImageUpload;
+    input.click();
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Vérifier la taille du fichier (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Fichier trop volumineux",
+          description: "L'image doit faire moins de 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Upload vers Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Mettre à jour le profil avec la nouvelle URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user?.id);
+
+      if (updateError) throw updateError;
+
+      // Mettre à jour l'état local
+      setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
+      
+      toast({
+        title: "Photo mise à jour",
+        description: "Votre photo de profil a été modifiée avec succès",
+      });
+
+    } catch (error) {
+      console.error('Erreur upload photo:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour la photo",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading || premiumLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -145,6 +236,14 @@ const Settings = () => {
       </div>
     );
   }
+
+  const availableLanguages = [
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "ht", name: "Kreyòl", flag: "🇭🇹" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "ptBR", name: "Português", flag: "🇧🇷" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -310,21 +409,13 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="language">Langue</Label>
-                <Select 
-                  value={settings.language} 
-                  onValueChange={(value) => setSettings(prev => ({ ...prev, language: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ht">Kreyòl</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="language" className="text-sm font-medium">
+                  Langue préférée
+                </Label>
+                <LanguageSelector
+                  selectedLanguage={settings.language}
+                  onLanguageChange={(lang) => setSettings(prev => ({ ...prev, language: lang }))}
+                />
               </div>
 
               <div className="space-y-2">
