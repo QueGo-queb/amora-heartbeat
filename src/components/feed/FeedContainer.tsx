@@ -9,10 +9,13 @@ import { PostCreator } from './PostCreator';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { usePerformanceOptimization } from '@/hooks/usePerformanceOptimization';
+import { Button } from '@/components/ui/button';
+import { Plus, Edit3 } from 'lucide-react';
 
 const FeedContainer = () => {
   const { user, loading: authLoading } = useAuth();
   const [debugInfo, setDebugInfo] = useState<any>({});
+  const [forceExpandPostCreator, setForceExpandPostCreator] = useState(false);
   const { preloadCriticalData } = usePerformanceOptimization();
   const {
     posts,
@@ -51,19 +54,74 @@ const FeedContainer = () => {
     preloadCriticalData();
   }, [preloadCriticalData]);
 
+  // Fonction pour ouvrir le formulaire de création
+  const openPostCreator = () => {
+    console.log('🎯 Bouton cliqué !');
+    setForceExpandPostCreator(true);
+    // Faire défiler vers le formulaire de création
+    setTimeout(() => {
+      const createForm = document.querySelector('[data-post-creator]');
+      if (createForm) {
+        createForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Focus sur le textarea après un petit délai
+        setTimeout(() => {
+          const textarea = createForm.querySelector('textarea');
+          if (textarea) textarea.focus();
+        }, 800);
+      }
+    }, 100);
+  };
+
+  // Reset du flag après utilisation
+  useEffect(() => {
+    if (forceExpandPostCreator) {
+      const timer = setTimeout(() => {
+        setForceExpandPostCreator(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [forceExpandPostCreator]);
+
   console.log('🎯 FeedContainer DEBUG:', debugInfo);
   console.log('🔍 DEBUG FeedContainer:');
   console.log('- authLoading:', authLoading);
   console.log('- user:', user);
   console.log('- debugInfo:', debugInfo);
   console.log('- Condition PostCreator:', !authLoading && user);
+  console.log('- Condition bouton header:', !authLoading && user);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">📱 Fil d'actualité</h1>
-          <p className="text-gray-600 mt-1">Découvrez les dernières publications</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">📱 Fil d'actualité</h1>
+              <p className="text-gray-600 mt-1">Découvrez les dernières publications</p>
+            </div>
+            
+            {/* DEBUG: Affichage des conditions */}
+            <div className="text-xs text-gray-500 mr-4">
+              <div>authLoading: {authLoading ? 'true' : 'false'}</div>
+              <div>user: {user ? user.email : 'null'}</div>
+              <div>condition: {(!authLoading && user) ? 'true' : 'false'}</div>
+            </div>
+            
+            {/* NOUVEAU : Bouton de création de publication visible en permanence */}
+            {!authLoading && user ? (
+              <Button
+                onClick={openPostCreator}
+                className="bg-gradient-to-r from-[#E63946] to-[#52B788] hover:from-[#D62828] hover:to-[#40916C] text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle publication
+              </Button>
+            ) : (
+              <div className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
+                {authLoading ? 'Chargement...' : 'Non connecté'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -96,7 +154,7 @@ const FeedContainer = () => {
 
             {/* BOUTON DE CRÉATION - TOUJOURS VISIBLE SI CONNECTÉ */}
             {!authLoading && user && (
-              <div className="space-y-4">
+              <div className="space-y-4" data-post-creator>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-green-700 text-sm font-medium">
@@ -110,7 +168,10 @@ const FeedContainer = () => {
                 
                 {/* COMPOSANT DE CRÉATION DE POST */}
                 <div className="bg-white rounded-lg shadow-sm border">
-                  <PostCreator onPostCreated={refresh} />
+                  <PostCreator 
+                    onPostCreated={refresh} 
+                    forceExpanded={forceExpandPostCreator}
+                  />
                 </div>
               </div>
             )}
@@ -170,20 +231,44 @@ const FeedContainer = () => {
               </div>
             )}
 
-            {/* AUCUN POST DISPONIBLE */}
+            {/* AUCUN POST DISPONIBLE - MESSAGE AMÉLIORÉ */}
             {!loading && !error && posts && posts.length === 0 && (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">Soyez le premier à publier !</h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-6">
                   Aucun post pour le moment. 
-                  {user ? ' Utilisez le formulaire ci-dessus pour créer le premier post.' : ' Connectez-vous pour commencer à publier.'}
+                  {user ? ' Partagez vos pensées avec la communauté !' : ' Connectez-vous pour commencer à publier.'}
                 </p>
-                {user && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                      💡 Le bouton "Publier" est disponible ci-dessus pour partager vos pensées avec la communauté.
-                    </p>
+                {user ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-700 mb-3">
+                        💡 Cliquez sur le bouton ci-dessous pour créer votre premier post !
+                      </p>
+                      <Button
+                        onClick={openPostCreator}
+                        className="bg-gradient-to-r from-[#E63946] to-[#52B788] hover:from-[#D62828] hover:to-[#40916C] text-white"
+                      >
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Créer le premier post
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => window.location.href = '/auth'}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Se connecter
+                    </button>
+                    <button
+                      onClick={() => window.location.href = '/auth?mode=signup'}
+                      className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      S'inscrire
+                    </button>
                   </div>
                 )}
               </div>

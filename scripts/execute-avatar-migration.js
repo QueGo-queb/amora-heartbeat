@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+console.log('🚀 === EXÉCUTION MIGRATION AVATAR_URL ===');
+console.log('');
+console.log('📋 Instructions pour exécuter la migration :');
+console.log('');
+console.log('1. Allez sur https://supabase.com/dashboard');
+console.log('2. Sélectionnez votre projet AMORA');
+console.log('3. Allez dans "SQL Editor"');
+console.log('4. Copiez et collez le SQL suivant :');
+console.log('');
+console.log('-- Ajouter le champ avatar_url à la table profiles');
+console.log('ALTER TABLE profiles');
+console.log('ADD COLUMN IF NOT EXISTS avatar_url TEXT,');
+console.log('ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;');
+console.log('');
+console.log('-- Créer un index pour les performances');
+console.log('CREATE INDEX IF NOT EXISTS idx_profiles_avatar_url ON profiles(avatar_url);');
+console.log('CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);');
+console.log('');
+console.log('-- Mettre à jour les politiques RLS');
+console.log('DROP POLICY IF EXISTS "Users can update own profile" ON profiles;');
+console.log('CREATE POLICY "Users can update own profile" ON profiles');
+console.log('  FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = id);');
+console.log('');
+console.log('-- Permettre la lecture des avatars publics');
+console.log('CREATE POLICY "Avatar URLs are viewable by everyone" ON profiles');
+console.log('  FOR SELECT USING (true);');
+console.log('');
+console.log('5. Cliquez sur "Run" pour exécuter');
+console.log('');
+console.log('✅ Après exécution, les utilisateurs pourront ajouter leur photo de profil !');

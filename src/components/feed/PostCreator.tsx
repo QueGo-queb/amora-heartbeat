@@ -1,5 +1,5 @@
 // src/components/feed/PostCreator.tsx - VERSION ULTRA-SIMPLE
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +9,10 @@ import { Send, PenTool } from 'lucide-react';
 
 interface PostCreatorProps {
   onPostCreated?: () => void;
+  forceExpanded?: boolean;
 }
 
-export function PostCreator({ onPostCreated }: PostCreatorProps) {
+export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreatorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [content, setContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
@@ -20,7 +21,7 @@ export function PostCreator({ onPostCreated }: PostCreatorProps) {
   const { toast } = useToast();
 
   // Récupérer l'utilisateur directement
-  React.useEffect(() => {
+  useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -28,6 +29,13 @@ export function PostCreator({ onPostCreated }: PostCreatorProps) {
     };
     getUser();
   }, []);
+
+  // Gérer le forceExpanded
+  useEffect(() => {
+    if (forceExpanded && user) {
+      setIsExpanded(true);
+    }
+  }, [forceExpanded, user]);
 
   const handleSubmit = async () => {
     if (!content.trim() || !user) {
@@ -121,6 +129,7 @@ export function PostCreator({ onPostCreated }: PostCreatorProps) {
               onChange={(e) => setContent(e.target.value)}
               className="min-h-[120px] text-lg"
               maxLength={5000}
+              autoFocus={forceExpanded}
             />
 
             <div className="flex items-center justify-between pt-3 border-t">

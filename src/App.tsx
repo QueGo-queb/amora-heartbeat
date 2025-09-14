@@ -56,6 +56,7 @@ import { TravelPage } from "./pages/TravelPage";
 import Favorites from "./pages/Favorites";
 import VideoChat from "./pages/VideoChat";
 import UpdateNotification from '@/components/pwa/UpdateNotification';
+import Feed from "./pages/Feed";
 
 // **NOUVEAU: Import des composants d'appel**
 // import { CallModal } from "@/components/chat/CallModal";
@@ -132,7 +133,7 @@ function App() {
                 <Route path="/feed" element={
                   <ProtectedRoute>
                     <ConditionalLayout>
-                      <Dashboard />
+                      <Feed />
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />

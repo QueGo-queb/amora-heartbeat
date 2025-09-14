@@ -58,10 +58,23 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
     });
   };
 
-  // Fonction pour ouvrir le modal de création de post
+  // Fonction pour ouvrir le modal de création de post - AVEC DEBUG
   const handleCreatePostClick = () => {
+    console.log(' Bouton "Créer le premier post" cliqué !');
+    console.log('🎯 showCreatePostModal avant:', showCreatePostModal);
     setShowCreatePostModal(true);
+    console.log('🎯 showCreatePostModal après:', true);
+    
+    // Debug supplémentaire après un délai
+    setTimeout(() => {
+      console.log('🎯 showCreatePostModal après timeout:', showCreatePostModal);
+    }, 100);
   };
+
+  // Debug du modal
+  useEffect(() => {
+    console.log('🎯 FeedSection - showCreatePostModal changé:', showCreatePostModal);
+  }, [showCreatePostModal]);
 
   const handleContact = async (post: any) => {
     if (!post.canContact) {
@@ -182,8 +195,25 @@ const FeedSection: React.FC<FeedSectionProps> = ({ className = '' }) => {
               <Plus className="w-4 h-4 mr-2" />
               Créer le premier post
             </Button>
+            
+            {/* DEBUG: État du modal */}
+            <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+              <div>Modal ouvert: {showCreatePostModal ? 'Oui' : 'Non'}</div>
+              <div>Timestamp: {new Date().toLocaleTimeString()}</div>
+            </div>
           </CardContent>
         </Card>
+        
+        {/* DEBUG: Modal visible même si pas ouvert */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="font-semibold text-red-800 mb-2">🔍 DEBUG Modal</h4>
+          <p className="text-red-700 text-sm">
+            showCreatePostModal: {showCreatePostModal ? 'true' : 'false'}
+          </p>
+          <p className="text-red-700 text-sm">
+            Le modal devrait apparaître quand vous cliquez sur le bouton
+          </p>
+        </div>
       </div>
     );
   }
