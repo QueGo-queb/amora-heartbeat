@@ -122,6 +122,19 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
+          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
+          media_types?: string[]
+          publication_language?: string
+          gender_targeting?: string
+          target_countries?: string[]
+          languages?: string[]
+          age_range_min?: number
+          age_range_max?: number
+          phone_number?: string
+          is_premium_post?: boolean
+          is_active?: boolean
+          updated_at?: string
+          views_count?: number
         }
         Insert: {
           content?: string
@@ -133,6 +146,19 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
+          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
+          media_types?: string[]
+          publication_language?: string
+          gender_targeting?: string
+          target_countries?: string[]
+          languages?: string[]
+          age_range_min?: number
+          age_range_max?: number
+          phone_number?: string
+          is_premium_post?: boolean
+          is_active?: boolean
+          updated_at?: string
+          views_count?: number
         }
         Update: {
           content?: string
@@ -144,6 +170,19 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
+          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
+          media_types?: string[]
+          publication_language?: string
+          gender_targeting?: string
+          target_countries?: string[]
+          languages?: string[]
+          age_range_min?: number
+          age_range_max?: number
+          phone_number?: string
+          is_premium_post?: boolean
+          is_active?: boolean
+          updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }

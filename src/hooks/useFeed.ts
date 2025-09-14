@@ -85,11 +85,12 @@ export function useFeed(options: UseFeedOptions = {}) {
         content: post.content,
         media_urls: post.media_urls || [],
         media_types: post.media_types || [],
-        target_group: post.target_group,
+        // ✅ CORRIGÉ - Utiliser les bonnes colonnes
+        target_gender: post.target_gender, // au lieu de target_group
         target_countries: post.target_countries || [],
-        target_languages: post.target_languages || [],
+        publication_language: post.publication_language, // au lieu de target_languages
         phone_number: post.phone_number,
-        external_links: post.external_links || [],
+        // ✅ SUPPRIMÉ - external_links n'existe pas
         created_at: post.created_at,
         
         // Données utilisateur transformées

@@ -68,32 +68,7 @@ export function FeedSection({ className = '' }: FeedSectionProps) {
 
   return (
     <div className={`space-y-4 lg:space-y-6 ${className}`}>
-      {/* Header avec refresh ET BOUTON DE PUBLICATION */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg lg:text-2xl font-bold text-[#212529]">Fil d'actualité</h2>
-        
-        <div className="flex items-center gap-3">
-          {/* NOUVEAU BOUTON DE PUBLICATION */}
-          <Button
-            onClick={handleCreatePostClick}
-            className="bg-[#E91E63] hover:bg-[#C2185B] text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Créer</span>
-          </Button>
-          
-          {/* Bouton de refresh */}
-          <Button
-            onClick={handleRetry}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 text-[#6C757D] hover:text-[#495057]"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Actualiser</span>
-          </Button>
-        </div>
-      </div>
+      {/* HEADER SUPPRIMÉ - Plus de "Fil d'actualité" ni de bouton "Créer" */}
 
       {/* Gestion des erreurs */}
       {error && (
@@ -168,21 +143,15 @@ export function FeedSection({ className = '' }: FeedSectionProps) {
         </div>
       )}
 
-      {/* Message quand il n'y a pas de posts */}
+      {/* Message quand il n'y a pas de posts - BOUTON SUPPRIMÉ */}
       {!loading && !error && (!posts || posts.length === 0) && (
         <Card className="bg-[#F8F9FA] border-[#CED4DA]">
           <CardContent className="p-4 lg:p-6 text-center">
             <div className="text-[#212529] mb-2 text-sm lg:text-base"> Aucun post disponible</div>
-            <p className="text-[#6C757D] text-xs lg:text-sm mb-4">
+            <p className="text-[#6C757D] text-xs lg:text-sm">
               Il n'y a pas encore de posts dans votre fil d'actualité.
             </p>
-            <Button
-              onClick={handleCreatePostClick}
-              className="bg-[#E91E63] hover:bg-[#C2185B] text-white px-6 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Créer le premier post
-            </Button>
+            {/* BOUTON "Créer le premier post" SUPPRIMÉ */}
           </CardContent>
         </Card>
       )}

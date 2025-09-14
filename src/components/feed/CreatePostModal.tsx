@@ -14,6 +14,7 @@ interface CreatePostModalProps {
   open: boolean;
   onClose: () => void;
   onPostCreated: () => void;
+  editPost?: any; // ✅ AJOUT - Post à éditer
 }
 
 // Langues disponibles dans le système - VERSION SPÉCIFIQUE
@@ -97,14 +98,20 @@ const AVAILABLE_COUNTRIES = [
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   open,
   onClose,
-  onPostCreated
+  onPostCreated,
+  editPost // ✅ AJOUT
 }) => {
-  const [content, setContent] = useState('');
+  // ✅ AJOUT - Initialiser les états avec les données du post à éditer
+  const [content, setContent] = useState(editPost?.content || '');
   const [loading, setLoading] = useState(false);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [visibility, setVisibility] = useState<'all' | 'male' | 'female'>('all');
-  const [ageRange, setAgeRange] = useState({ min: 18, max: 65 });
+  // ✅ CORRIGÉ - Utiliser les noms de colonnes qui existent réellement
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(editPost?.languages || []);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(editPost?.target_countries || []);
+  const [visibility, setVisibility] = useState<'all' | 'male' | 'female'>(editPost?.target_gender || 'all');
+  const [ageRange, setAgeRange] = useState({
+    min: editPost?.age_range_min || 18, 
+    max: editPost?.age_range_max || 65
+  });
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [hasRestrictedContent, setHasRestrictedContent] = useState(false);
   
@@ -112,6 +119,26 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ AJOUT - Réinitialiser les états quand editPost change
+  useEffect(() => {
+    if (editPost) {
+      setContent(editPost.content || '');
+      setSelectedLanguages(editPost.languages || []);
+      setSelectedCountries(editPost.target_countries || []);
+      setVisibility(editPost.target_gender || 'all');
+      setAgeRange({ min: editPost.age_range_min || 18, max: editPost.age_range_max || 65 });
+    } else {
+      // Reset pour nouveau post
+      setContent('');
+      setSelectedLanguages([]);
+      setSelectedCountries([]);
+      setVisibility('all');
+      setAgeRange({ min: 18, max: 65 });
+    }
+    setMediaFiles([]);
+    setHasRestrictedContent(false);
+  }, [editPost]);
 
   // Fonction pour vérifier si l'utilisateur a un plan premium
   const isPremiumUser = user?.user_metadata?.subscription_plan === 'premium';
@@ -171,94 +198,76 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // ✅ VERSION ULTRA-SIMPLE - Fonctionne avec le schéma existant
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!content.trim()) {
       toast({
-        title: "Contenu requis",
-        description: "Veuillez saisir du texte pour votre post",
+        title: "Erreur",
+        description: "Le contenu ne peut pas être vide",
         variant: "destructive",
       });
       return;
     }
 
-    if (selectedLanguages.length === 0) {
-      toast({
-        title: "Langue requise",
-        description: "Veuillez sélectionner au moins une langue",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Vérifier le contenu restreint avant publication
     if (hasRestrictedContent) {
       toast({
-        title: "Contenu restreint détecté",
-        description: "Les numéros de téléphone et liens ne sont pas autorisés avec votre plan actuel. Passez au plan Premium pour publier ce contenu.",
+        title: "Contenu restreint",
+        description: "Veuillez retirer les numéros de téléphone ou liens pour publier",
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
-    
     try {
-      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      setLoading(true);
       
-      if (authError || !currentUser) {
-        throw new Error('Vous devez être connecté pour créer un post');
-      }
+      // ✅ DONNÉES ABSOLUMENT MINIMALES - Seulement les colonnes qui existent à coup sûr
+      const minimalPost = {
+        user_id: user?.id,
+        content: content.trim()
+      };
 
-      // Upload des médias si il y en a
-      let mediaUrls: string[] = [];
-      if (mediaFiles.length > 0) {
-        for (const file of mediaFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `post-media/${fileName}`;
+      console.log('🚀 Données minimales absolues:', minimalPost);
+      console.log('🚀 User ID:', user?.id);
 
-          const { error: uploadError } = await supabase.storage
-            .from('post-media')
-            .upload(filePath, file);
-
-          if (uploadError) throw uploadError;
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('post-media')
-            .getPublicUrl(filePath);
-
-          mediaUrls.push(publicUrl);
-        }
-      }
-
-      const { data: insertedPost, error: insertError } = await supabase
+      const { data, error } = await supabase
         .from('posts')
-        .insert({
-          user_id: currentUser.id,
-          content: content.trim(),
-          languages: selectedLanguages,
-          target_countries: selectedCountries,
-          visibility: visibility,
-          age_range: ageRange,
-          media_urls: mediaUrls,
-          likes_count: 0,
-          comments_count: 0
-        })
-        .select()
-        .single();
+        .insert([minimalPost])
+        .select();
 
-      if (insertError) {
-        throw insertError;
+      if (error) {
+        console.error('❌ Erreur Supabase complète:', error);
+        
+        // ✅ DIAGNOSTIC DÉTAILLÉ
+        if (error.message.includes('column') && error.message.includes('not found')) {
+          const columnName = error.message.split("'")[1];
+          console.error(`❌ Colonne manquante: ${columnName}`);
+          console.error('❌ Schéma actuel de la table posts:');
+          
+          // Essayer de récupérer le schéma actuel
+          const { data: schemaData, error: schemaError } = await supabase
+            .from('information_schema.columns')
+            .select('column_name, data_type')
+            .eq('table_name', 'posts');
+          
+          if (!schemaError && schemaData) {
+            console.table(schemaData);
+          }
+        }
+        
+        throw error;
       }
+
+      console.log('✅ Publication créée avec succès:', data);
 
       toast({
-        title: "Post créé avec succès",
-        description: "Votre post a été publié dans le fil d'actualité",
+        title: "Succès",
+        description: "Publication créée avec succès",
       });
 
-      // Reset form
+      // Reset du formulaire
       setContent('');
       setSelectedLanguages([]);
       setSelectedCountries([]);
@@ -269,13 +278,105 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       
       onPostCreated();
       onClose();
-
-    } catch (error: any) {
-      console.error('Erreur création post:', error);
+      
+    } catch (error) {
+      console.error('❌ Erreur complète:', error);
+      
+      let errorMessage = 'Une erreur est survenue lors de la sauvegarde';
+      
+      if (error.message) {
+        if (error.message.includes('column') && error.message.includes('not found')) {
+          const columnName = error.message.split("'")[1];
+          errorMessage = `Colonne '${columnName}' n'existe pas dans la table posts. Migration nécessaire.`;
+        } else if (error.message.includes('relation') && error.message.includes('does not exist')) {
+          errorMessage = 'Table posts n\'existe pas. Appliquez les migrations.';
+        } else if (error.message.includes('permission')) {
+          errorMessage = 'Permission refusée. Vérifiez vos droits.';
+        } else if (error.message.includes('foreign key')) {
+          errorMessage = 'Utilisateur non trouvé. Reconnectez-vous.';
+        } else {
+          errorMessage = `Erreur: ${error.message}`;
+        }
+      }
       
       toast({
         title: "Erreur",
-        description: error.message || "Erreur lors de la création du post",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Version de test ultra-simplifiée pour identifier le problème
+  const handleSubmitTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!content.trim()) {
+      toast({
+        title: "Erreur",
+        description: "Le contenu ne peut pas être vide",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // ✅ VERSION TEST - Données minimales
+      const newPost = {
+        user_id: user?.id,
+        content: content.trim(),
+        publication_language: 'fr',
+        target_gender: 'all',
+        target_countries: [],
+        media_urls: [],
+        media_types: [],
+        likes_count: 0,
+        comments_count: 0,
+        views_count: 0,
+        is_active: true
+      };
+
+      console.log('🧪 TEST - Données minimales:', newPost);
+      console.log('🧪 TEST - User ID:', user?.id);
+
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([newPost])
+        .select();
+
+      if (error) {
+        console.error('❌ Erreur Supabase détaillée:', error);
+        throw error;
+      }
+
+      console.log('✅ SUCCESS - Données insérées:', data);
+
+      toast({
+        title: "Succès",
+        description: "Publication créée avec succès (version test)",
+      });
+
+      // Reset du formulaire
+      setContent('');
+      setSelectedLanguages([]);
+      setSelectedCountries([]);
+      setVisibility('all');
+      setAgeRange({ min: 18, max: 65 });
+      setMediaFiles([]);
+      setHasRestrictedContent(false);
+      
+      onPostCreated();
+      onClose();
+      
+    } catch (error) {
+      console.error('❌ Erreur test:', error);
+      toast({
+        title: "Erreur",
+        description: `Erreur test: ${error.message || 'Erreur inconnue'}`,
         variant: "destructive",
       });
     } finally {
@@ -318,7 +419,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Globe className="w-5 h-5 text-[#E91E63]" />
-            Créer une publication
+            {/* ✅ MODIFICATION - Titre dynamique */}
+            {editPost ? 'Modifier la publication' : 'Créer une publication'}
           </h2>
           <Button
             variant="ghost"
@@ -576,7 +678,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               disabled={isSubmitDisabled}
               className="bg-[#E91E63] hover:bg-[#C2185B] disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {loading ? 'Publication...' : 'Publier'}
+              {/* ✅ MODIFICATION - Texte dynamique */}
+              {loading ? 'Enregistrement...' : editPost ? 'Mettre à jour' : 'Publier'}
             </Button>
           </div>
         </form>

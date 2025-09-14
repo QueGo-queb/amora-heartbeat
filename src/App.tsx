@@ -13,6 +13,8 @@ import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Feed from "./pages/Feed";
+import MyPosts from "./pages/MyPosts"; // ✅ AJOUT
 
 // Admin pages
 import AdminDashboard from "./pages/admin/dashboard";
@@ -56,7 +58,6 @@ import { TravelPage } from "./pages/TravelPage";
 import Favorites from "./pages/Favorites";
 import VideoChat from "./pages/VideoChat";
 import UpdateNotification from '@/components/pwa/UpdateNotification';
-import Feed from "./pages/Feed";
 
 // **NOUVEAU: Import des composants d'appel**
 // import { CallModal } from "@/components/chat/CallModal";
@@ -81,6 +82,10 @@ const CallManager: React.FC = () => {
   
   // Le reste du composant CallManager...
 };
+
+// ✅ AJOUT - Import des pages manquantes
+import Likes from "./pages/Likes";
+import ChatLive from "./pages/ChatLive";
 
 function App() {
   // Initialiser les services avancés
@@ -134,6 +139,15 @@ function App() {
                   <ProtectedRoute>
                     <ConditionalLayout>
                       <Feed />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+
+                {/* ✅ AJOUT - Route pour Mes Publications */}
+                <Route path="/my-posts" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <MyPosts />
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />
@@ -260,7 +274,25 @@ function App() {
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />
-
+                
+                {/* ✅ AJOUT - Route pour la page J'aime */}
+                <Route path="/likes" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <Likes />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+                
+                {/* ✅ AJOUT - Route pour Chat en ligne */}
+                <Route path="/chat-live" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <ChatLive />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+                
                 <Route path="/help" element={
                   <ProtectedRoute>
                     <ConditionalLayout>

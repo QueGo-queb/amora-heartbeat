@@ -21,7 +21,8 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
           event: 'INSERT',
           schema: 'public',
           table: 'posts',
-          filter: 'visibility=eq.public'
+          // ✅ CORRIGÉ - Utiliser is_active au lieu de visibility
+          filter: 'is_active=eq.true'
         },
         async (payload) => {
           try {

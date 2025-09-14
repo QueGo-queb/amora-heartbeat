@@ -22,7 +22,8 @@ import {
   Mail,
   Phone,
   MessageSquare,
-  BookOpen
+  BookOpen,
+  Edit3 // ✅ AJOUT pour l'icône des publications
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -146,6 +147,13 @@ const DashboardMenu = ({ className = '' }: DashboardMenuProps) => {
       label: 'Profil',
       icon: User,
       action: () => handleNavigation('/profile')
+    },
+    // ✅ AJOUT - Mes Publications
+    {
+      id: 'my-posts',
+      label: 'Mes Publications',
+      icon: Edit3,
+      action: () => handleNavigation('/my-posts')
     },
     {
       id: 'settings',

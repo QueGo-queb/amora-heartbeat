@@ -65,6 +65,7 @@ const Dashboard = () => {
     getUser();
   }, [navigate]);
 
+  // FONCTION GARDÉE pour que le menu de gauche fonctionne
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -87,29 +88,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-pink-100 sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="heart-logo">
-              <div className="heart-shape" />
-            </div>
-            <span className="text-2xl font-bold gradient-text">AMORA</span>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <DashboardMenu />
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Dashboard Content */}
       <main className="container mx-auto py-8 px-4">
-        {/* Welcome Section avec BOUTON DE CRÉATION */}
+        {/* Welcome Section */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">
             Bienvenue, {user?.user_metadata?.full_name || user?.email} ! 👋
@@ -118,7 +99,7 @@ const Dashboard = () => {
             Découvrez votre communauté multiculturelle et trouvez l'amour sans frontières.
           </p>
           
-          {/* NOUVEAU BOUTON DE CRÉATION DE POST */}
+          {/* BOUTON DE CRÉATION */}
           <Button
             onClick={handleCreatePostClick}
             className="bg-[#E91E63] hover:bg-[#C2185B] text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto transition-colors shadow-lg hover:shadow-xl"

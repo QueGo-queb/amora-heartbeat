@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Eye, Heart, MessageCircle, Share2, Clock, MapPin, Globe, Phone } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, Heart, MessageCircle, Share2, Clock, MapPin, Globe, Phone, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS, es, ptBR } from 'date-fns/locale';
+import { CreatePostModal } from '@/components/feed/CreatePostModal';
 
 const MyPosts = () => {
   const navigate = useNavigate();
@@ -28,6 +29,10 @@ const MyPosts = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [postToDelete, setPostToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // ✅ AJOUT - États pour l'édition
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<any>(null);
 
   useEffect(() => {
     loadMyPosts();
@@ -42,9 +47,8 @@ const MyPosts = () => {
         return;
       }
 
-      console.log(' Chargement des publications pour user:', user.id);
+      console.log('📝 Chargement des publications pour user:', user.id);
 
-      // ✅ CORRECTION : Requête simplifiée sans jointure problématique
       const { data, error } = await supabase
         .from('posts')
         .select('*')
@@ -76,6 +80,30 @@ const MyPosts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Fonction pour ouvrir le modal d'édition
+  const handleEditPost = (post: any) => {
+    setPostToEdit(post);
+    setShowEditModal(true);
+  };
+
+  // ✅ Fonction appelée après édition d'un post
+  const handlePostUpdated = () => {
+    console.log(' Post mis à jour avec succès');
+    setShowEditModal(false);
+    setPostToEdit(null);
+    loadMyPosts(); // Recharger la liste
+    toast({
+      title: "Publication mise à jour !",
+      description: "Votre publication a été modifiée avec succès.",
+    });
+  };
+
+  // ✅ Fonction pour fermer le modal d'édition
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setPostToEdit(null);
   };
 
   // ✅ Supprimer une publication
@@ -222,8 +250,18 @@ const MyPosts = () => {
                       </div>
                     </div>
                     
-                    {/* Menu actions */}
+                    {/* Menu actions - AJOUT du bouton Modifier */}
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditPost(post)}
+                        className="text-blue-600 hover:text-blue-700"
+                        title="Modifier cette publication"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
+                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -246,6 +284,7 @@ const MyPosts = () => {
                           setShowDeleteDialog(true);
                         }}
                         className="text-red-600 hover:text-red-700"
+                        title="Supprimer cette publication"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -257,12 +296,12 @@ const MyPosts = () => {
                   <p className="text-gray-800 mb-4">{post.content}</p>
                   
                   {/* Informations de ciblage */}
-                  {(post.target_languages || post.target_countries || post.phone_number) && (
+                  {(post.languages || post.target_countries || post.visibility) && (
                     <div className="space-y-2 text-sm text-gray-600">
-                      {post.target_languages && (
+                      {post.languages && post.languages.length > 0 && (
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4" />
-                          <span>Langues: {post.target_languages.join(', ')}</span>
+                          <span>Langues: {post.languages.join(', ')}</span>
                         </div>
                       )}
                       {post.target_countries && post.target_countries.length > 0 && (
@@ -271,10 +310,14 @@ const MyPosts = () => {
                           <span>Pays: {post.target_countries.join(', ')}</span>
                         </div>
                       )}
-                      {post.phone_number && (
+                      {post.visibility && (
                         <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
-                          <span>{post.phone_number}</span>
+                          <Eye className="w-4 h-4" />
+                          <span>Visibilité: {
+                            post.visibility === 'all' ? 'Tous' :
+                            post.visibility === 'male' ? 'Hommes' :
+                            post.visibility === 'female' ? 'Femmes' : post.visibility
+                          }</span>
                         </div>
                       )}
                     </div>
@@ -321,6 +364,16 @@ const MyPosts = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* ✅ AJOUT - Modal d'édition */}
+        {postToEdit && (
+          <CreatePostModal
+            open={showEditModal}
+            onClose={handleCloseEditModal}
+            onPostCreated={handlePostUpdated}
+            editPost={postToEdit} // ✅ Passer les données du post à éditer
+          />
+        )}
       </div>
     </div>
   );

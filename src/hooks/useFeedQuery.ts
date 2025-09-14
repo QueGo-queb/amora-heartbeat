@@ -51,11 +51,11 @@ export function useFeedQuery(options: UseFeedQueryOptions = {}) {
       content: post.content,
       media_urls: post.media_urls || [],
       media_types: post.media_types || [],
-      target_group: post.target_group,
+      target_gender: post.target_gender, // ✅ CORRIGÉ - au lieu de target_group
       target_countries: post.target_countries || [],
-      target_languages: post.target_languages || [],
+      publication_language: post.publication_language, // ✅ CORRIGÉ - au lieu de target_languages
       phone_number: post.phone_number,
-      external_links: post.external_links || [],
+      // ✅ SUPPRIMÉ - external_links n'existe pas
       created_at: post.created_at,
       
       user: {

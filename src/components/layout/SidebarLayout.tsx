@@ -19,7 +19,8 @@ import {
   Bell,
   CreditCard,
   Menu,
-  X
+  X,
+  Edit3 // ✅ AJOUT pour l'icône des publications
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -159,17 +160,18 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { name: 'Visites', icon: Eye, path: '/profile-views' },
     { name: 'J\'aime', icon: Heart, path: '/likes' },
     { name: 'Favoris', icon: Star, path: '/favorites' },
-    { name: 'Chat vidéo', icon: Camera, path: '/video-chat' },
+    { name: 'Chat vidéo', icon: Camera, path: '/chat-live' }, // ✅ CORRIGÉ - /chat-live au lieu de /video-chat
     { name: 'Correspondances', icon: Users, path: '/new-matches' },
     { name: 'Profil', icon: User, path: '/profile' },
+    { name: 'Mes Publications', icon: Edit3, path: '/my-posts' },
     { name: 'Paramètres', icon: Settings, path: '/settings' }
   ];
 
   const supportItems = [
     { name: 'Centre d\'aide', icon: HelpCircle, path: '/help' },
     { name: 'Support par email', icon: Mail, path: 'mailto:support@amora.com' },
-    { name: 'Chat en ligne', icon: MessageSquare, path: '/support' },
-    { name: 'Support dédié', icon: Phone, path: '/support-dedicated' }
+    { name: 'Chat en ligne', icon: MessageSquare, path: '/support' }
+    // ✅ SUPPRIMÉ - Support dédié
   ];
 
   // Fonctions helper
@@ -338,28 +340,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
       </nav>
 
-      {/* Section Premium */}
-      <div className="p-4 lg:p-6 border-t border-gray-200">
-        <Card className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-          <CardContent className="p-3 lg:p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1 lg:mb-2">
-              <CreditCard className="w-4 h-4 lg:w-5 lg:h-5" />
-              <span className="font-semibold text-sm lg:text-base">Boostez votre profil</span>
-            </div>
-            <p className="text-xs lg:text-sm mb-2 lg:mb-3 opacity-90">
-              Devenez membre pro et obtenez plus de vues
-            </p>
-            <Button 
-              size="sm" 
-              variant="secondary"
-              onClick={handlePremiumUpgrade}
-              className="w-full bg-white hover:bg-gray-100 text-yellow-600 font-semibold text-xs lg:text-sm"
-            >
-              Améliorer
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* ✅ SUPPRIMÉ - Section Premium entière */}
     </div>
   );
 

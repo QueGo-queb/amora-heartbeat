@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Users,
   Globe,
-  Camera
+  Camera,
+  Edit3 // ✅ AJOUT pour l'icône des publications
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -38,7 +39,7 @@ interface MenuItem {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  href: string;
+  href?: string;
   badge?: number;
   premium?: boolean;
   admin?: boolean;
@@ -77,6 +78,13 @@ const MenuHamburger = () => {
       label: 'Mon Profil',
       icon: User,
       href: '/profile'
+    },
+    // ✅ AJOUT - Mes Publications
+    {
+      id: 'my-posts',
+      label: 'Mes Publications',
+      icon: Edit3,
+      href: '/my-posts'
     },
     {
       id: 'favorites',
@@ -125,84 +133,99 @@ const MenuHamburger = () => {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès.",
-      });
-      navigate('/');
-      setOpen(false);
+      navigate('/login');
     } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
       toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur est survenue lors de la déconnexion.",
-        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de se déconnecter",
+        variant: "destructive"
       });
     }
   };
 
-  const handleNavigation = (href: string) => {
-    console.log('🔍 Navigation vers:', href); // DEBUG temporaire
-    navigate(href);
-    setOpen(false);
+  // Récupérer les données utilisateur au chargement
+  useState(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  });
+
+  const handleItemClick = (item: MenuItem) => {
+    if (item.href) {
+      navigate(item.href);
+      setOpen(false);
+    }
   };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="w-5 h-5" />
+        <Button variant="ghost" size="sm" className="p-2">
+          <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <div className="heart-logo">
-              <div className="heart-shape" />
+      <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center">
+                <Heart className="w-4 h-4 text-white" />
+              </div>
+              <span>AMORA</span>
             </div>
-            <span className="text-xl font-bold gradient-text">AMORA</span>
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-2">
-          {filteredItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Menu items */}
+          <div className="space-y-2">
+            {filteredItems.map((item) => (
               <Button
                 key={item.id}
-                variant={isActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-12"
-                onClick={() => {
-                  console.log('🔍 Clic sur item:', item.id, item.href); // DEBUG
-                  handleNavigation(item.href);
-                }}
+                variant="ghost"
+                className="w-full justify-start h-auto p-4 text-left"
+                onClick={() => handleItemClick(item)}
               >
-                <Icon className="w-5 h-5 mr-3" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <Badge variant="destructive" className="ml-2">
-                    {item.badge}
-                  </Badge>
-                )}
-                {item.premium && (
-                  <Badge variant="default" className="ml-2 bg-gradient-to-r from-yellow-400 to-orange-500">
-                    PREMIUM
-                  </Badge>
-                )}
-                <ChevronRight className="w-4 h-4 ml-2" />
+                <div className="flex items-center gap-3 w-full">
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{item.label}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {item.badge}
+                        </Badge>
+                      )}
+                      {item.premium && (
+                        <Badge variant="default" className="ml-auto bg-yellow-500">
+                          Premium
+                        </Badge>
+                      )}
+                      {item.admin && (
+                        <Badge variant="destructive" className="ml-auto">
+                          Admin
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                </div>
               </Button>
-            );
-          })}
+            ))}
+          </div>
 
-          <div className="pt-4 border-t">
+          {/* Logout button */}
+          <div className="mt-8 pt-6 border-t">
             <Button
               variant="ghost"
-              className="w-full justify-start h-12 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={handleLogout}
             >
               <LogOut className="w-5 h-5 mr-3" />
-              <span className="flex-1 text-left">Déconnexion</span>
+              Se déconnecter
             </Button>
           </div>
         </div>

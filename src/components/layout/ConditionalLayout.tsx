@@ -9,7 +9,7 @@ interface ConditionalLayoutProps {
 const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const location = useLocation();
   
-  // Pages qui utilisent le nouveau layout avec menu latéral (comme l'image de référence)
+  // Pages qui utilisent le nouveau layout avec menu latéral
   const useDatingLayout = location.pathname.startsWith('/dashboard') ||
                          location.pathname.startsWith('/matching') ||
                          location.pathname.startsWith('/messages') ||
@@ -24,7 +24,14 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
                          location.pathname.startsWith('/profile-views') ||
                          location.pathname.startsWith('/unread-messages') ||
                          location.pathname.startsWith('/new-matches') ||
-                         location.pathname.startsWith('/help');
+                         location.pathname.startsWith('/help') ||
+                         // ✅ AJOUT - Toutes les pages manquantes
+                         location.pathname.startsWith('/likes') ||
+                         location.pathname.startsWith('/chat-live') ||
+                         location.pathname.startsWith('/favorites') ||
+                         location.pathname.startsWith('/video-chat') ||
+                         location.pathname.startsWith('/my-posts') ||
+                         location.pathname.startsWith('/settings');
   
   // Pages admin gardent leur layout actuel
   const isAdminPage = location.pathname.startsWith('/admin');
