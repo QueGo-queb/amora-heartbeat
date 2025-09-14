@@ -1,11 +1,11 @@
 /**
- * Page Feed - Fil d'actualité personnalisé
+ * Page Feed - Fil d'actualité dédié
  */
 
 import React from "react";
 import FeedContainer from "@/components/feed/FeedContainer";
 
-const FeedPage = () => {
+const Feed = () => {
   return (
     <div className="min-h-screen bg-background">
       <FeedContainer />
@@ -13,4 +13,4 @@ const FeedPage = () => {
   );
 };
 
-export default FeedPage;
+export default Feed;
