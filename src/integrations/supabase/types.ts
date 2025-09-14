@@ -1568,3 +1568,232 @@ export const Constants = {
     },
   },
 } as const
+
+      // ✅ AJOUT - Tables manquantes
+      locals_available_for_travelers: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string;
+          age: number | null;
+          destination_city: string | null;
+          destination_country: string | null;
+          travel_type: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          full_name: string;
+          age?: number | null;
+          destination_city?: string | null;
+          destination_country?: string | null;
+          travel_type?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          full_name?: string;
+          age?: number | null;
+          destination_city?: string | null;
+          destination_country?: string | null;
+          travel_type?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      video_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_profile_url: string | null;
+          storage_path: string | null;
+          thumbnail_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_profile_url?: string | null;
+          storage_path?: string | null;
+          thumbnail_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_profile_url?: string | null;
+          storage_path?: string | null;
+          thumbnail_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      live_chat_messages: {
+        Row: {
+          id: string;
+          user_id: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          message?: string;
+          created_at?: string;
+        };
+      };
+
+      favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          favorite_user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          favorite_user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          favorite_user_id?: string;
+          created_at?: string;
+        };
+      };
+
+      matches: {
+        Row: {
+          id: string;
+          user_id: string;
+          matched_user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          matched_user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          matched_user_id?: string;
+          created_at?: string;
+        };
+      };
+
+      user_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          notifications_enabled: boolean;
+          email_notifications: boolean;
+          push_notifications: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          notifications_enabled?: boolean;
+          email_notifications?: boolean;
+          push_notifications?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          notifications_enabled?: boolean;
+          email_notifications?: boolean;
+          push_notifications?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      legal_pages: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          content: string;
+          meta_description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          content: string;
+          meta_description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          content?: string;
+          meta_description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_user_id: string | null;
+          reported_post_id: string | null;
+          report_type: string;
+          reason: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_user_id?: string | null;
+          reported_post_id?: string | null;
+          report_type: string;
+          reason: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          reported_user_id?: string | null;
+          reported_post_id?: string | null;
+          report_type?: string;
+          reason?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };

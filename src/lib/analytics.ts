@@ -53,3 +53,28 @@ declare global {
     gtag?: (...args: any[]) => void;
   }
 }
+
+// ✅ CORRIGÉ - Fonction trackEvent avec signature correcte
+export const trackEvent = (eventName: string, metadata?: Record<string, any>) => {
+  try {
+    console.log('📊 Analytics Event:', eventName, metadata);
+    
+    // Implémentation basique - peut être étendue avec un service d'analytics
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', eventName, metadata);
+    }
+  } catch (error) {
+    console.error('Analytics error:', error);
+  }
+};
+
+// ✅ CORRIGÉ - Fonction trackError avec signature correcte
+export const trackError = (error: Error, context?: Record<string, any>) => {
+  try {
+    console.error('❌ Error tracked:', error.message, context);
+    
+    // Implémentation basique - peut être étendue avec Sentry ou autre service
+  } catch (trackingError) {
+    console.error('Error tracking failed:', trackingError);
+  }
+};
