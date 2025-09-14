@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Bell, User } from "lucide-react";
+import { LogOut, Bell, User, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import DashboardMenu from '@/components/dashboard/DashboardMenu';
-import FeedSection from '@/components/dashboard/FeedSection';
+import { FeedSection } from '@/components/dashboard/FeedSection';
 import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
+import { CreatePostModal } from '@/components/feed/CreatePostModal';
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -16,91 +17,119 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // SUPPRESSION de la ligne problématique : const { config: adConfig, loading: adLoading } = useAdSpace();
-  
   // UTILISATION UNIQUEMENT du hook qui fonctionne
   const { isVisible: isAdSpaceVisible } = useAdSpaceVisibility();
+
+  // État pour le modal de création de post
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+
+  // Fonction pour ouvrir le modal de création de post
+  const handleCreatePostClick = () => {
+    console.log('🎯 BOUTON DASHBOARD - Ouverture du modal');
+    setShowCreatePostModal(true);
+  };
+
+  // Fonction pour fermer le modal
+  const handleCloseModal = () => {
+    setShowCreatePostModal(false);
+  };
+
+  // Fonction appelée après création d'un post
+  const handlePostCreated = () => {
+    console.log('🎯 Post créé avec succès depuis Dashboard');
+    setShowCreatePostModal(false);
+    toast({
+      title: "Publication créée !",
+      description: "Votre post a été publié avec succès.",
+    });
+  };
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate('/auth');
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+          navigate('/login');
           return;
         }
         setUser(user);
       } catch (error) {
-        console.error('Error fetching user:', error);
-        navigate('/auth');
+        console.error('Erreur:', error);
+        navigate('/login');
       } finally {
         setLoading(false);
       }
     };
+
     getUser();
   }, [navigate]);
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès.",
-      });
-      navigate('/');
+      navigate('/login');
     } catch (error) {
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur est survenue lors de la déconnexion.",
-        variant: "destructive",
-      });
+      console.error('Erreur lors de la déconnexion:', error);
     }
-  };
-
-  const handleProfileClick = () => {
-    navigate('/profile');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <div className="heart-logo">
-            <div className="heart-shape animate-pulse" />
-          </div>
-          <span className="text-lg">Chargement...</span>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header simplifié - Logo et nom uniquement */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-pink-100 sticky top-0 z-50">
+        <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <div className="heart-logo">
               <div className="heart-shape" />
             </div>
             <span className="text-2xl font-bold gradient-text">AMORA</span>
           </div>
+          
+          <div className="flex items-center gap-4">
+            <DashboardMenu />
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Dashboard Content - Version simplifiée */}
+      {/* Dashboard Content */}
       <main className="container mx-auto py-8 px-4">
-        {/* Welcome Section */}
+        {/* Welcome Section avec BOUTON DE CRÉATION */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">
             Bienvenue, {user?.user_metadata?.full_name || user?.email} ! 👋
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-lg mb-6">
             Découvrez votre communauté multiculturelle et trouvez l'amour sans frontières.
           </p>
+          
+          {/* NOUVEAU BOUTON DE CRÉATION DE POST */}
+          <Button
+            onClick={handleCreatePostClick}
+            className="bg-[#E91E63] hover:bg-[#C2185B] text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto transition-colors shadow-lg hover:shadow-xl"
+            size="lg"
+          >
+            <Plus className="w-5 h-5" />
+            Créer une publication
+          </Button>
         </div>
 
-        {/* NOUVEAU : Fil d'actualité intégré */}
+        {/* Fil d'actualité */}
         <FeedSection className="mb-8" />
 
         {/* Espace publicitaire - Conditionnel */}
@@ -108,20 +137,27 @@ const Dashboard = () => {
           <div className="mb-8">
             <Card className="culture-card bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-dashed border-purple-200 hover:border-purple-300 transition-colors">
               <CardHeader className="text-center">
-                <CardTitle className="text-xl text-purple-700">📢 Espace Publicitaire</CardTitle>
+                <CardTitle className="text-purple-700">🎭 Espace Culturel</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-purple-600 mb-4">
-                  Les administrateurs peuvent configurer et gérer les publicités depuis l'interface admin.
+                  Découvrez les événements culturels près de chez vous
                 </p>
-                <Badge variant="outline" className="border-purple-300 text-purple-700">
-                  Espace réservé aux publicités
-                </Badge>
+                <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                  Explorer les événements
+                </Button>
               </CardContent>
             </Card>
           </div>
         )}
       </main>
+
+      {/* MODAL DE CRÉATION DE POST */}
+      <CreatePostModal
+        open={showCreatePostModal}
+        onClose={handleCloseModal}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 };
