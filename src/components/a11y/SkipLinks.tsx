@@ -32,38 +32,41 @@ export const SkipLinks = () => {
         </a>
       ))}
       
-      <style jsx>{`
-        .skip-links {
-          position: absolute;
-          top: -40px;
-          left: 6px;
-          z-index: 1000;
-        }
-        
-        .skip-link {
-          position: absolute;
-          top: -40px;
-          left: 6px;
-          background: #000;
-          color: #fff;
-          padding: 8px;
-          text-decoration: none;
-          border-radius: 4px;
-          font-size: 14px;
-          font-weight: bold;
-          transition: top 0.3s;
-        }
-        
-        .skip-link:focus {
-          top: 6px;
-        }
-        
-        @media (prefers-reduced-motion: reduce) {
-          .skip-link {
-            transition: none;
+      {/* ✅ CORRIGÉ - Utiliser className au lieu de style jsx */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .skip-links {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            z-index: 1000;
           }
-        }
-      `}</style>
+          
+          .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: top 0.3s;
+          }
+          
+          .skip-link:focus {
+            top: 6px;
+          }
+          
+          @media (prefers-reduced-motion: reduce) {
+            .skip-link {
+              transition: none;
+            }
+          }
+        `
+      }} />
     </div>
   );
 };

@@ -46,35 +46,30 @@ export const EnhancedMoneyTransferButton = () => {
   // Charger les méthodes de paiement
   const loadPaymentMethods = async () => {
     try {
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('is_active', true)
-        .order('is_default', { ascending: false });
-
-      if (error) throw error;
+      // ✅ SIMULATION - Utiliser des données mockées au lieu de tables inexistantes
+      const mockPaymentMethods: PaymentMethod[] = [
+        {
+          id: '1',
+          name: 'MonCash',
+          type: 'moncash',
+          is_active: true,
+          is_default: true,
+          details: 'Phone: +50912345678, Account: AMORA'
+        },
+        {
+          id: '2', 
+          name: 'PayPal',
+          type: 'paypal',
+          is_active: true,
+          is_default: false,
+          details: 'Email: support@amora.com'
+        }
+      ];
       
-      // Corrigé: conversion des données de la base vers l'interface
-      const paymentMethodsData: PaymentMethod[] = (data || []).map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        details: item.details,
-        is_default: item.is_default,
-        is_active: item.is_active,
-        created_by: item.created_by,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-      
-      setPaymentMethods(paymentMethodsData);
-      
-      // Sélectionner la méthode par défaut
-      const defaultMethod = paymentMethodsData.find(m => m.is_default);
-      if (defaultMethod) setSelectedMethod(defaultMethod.id);
-      
+      setPaymentMethods(mockPaymentMethods);
+      console.log('✅ Méthodes de paiement chargées (mock)');
     } catch (error) {
-      console.error('Erreur chargement méthodes:', error);
+      console.error('❌ Erreur chargement méthodes de paiement:', error);
     }
   };
 

@@ -13,7 +13,7 @@ import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import Feed from "./pages/Feed";
+import Feed from "./pages/feed"; // ✅ CORRIGÉ - Utilise feed.tsx (minuscule)
 import MyPosts from "./pages/MyPosts"; // ✅ AJOUT
 
 // Admin pages
