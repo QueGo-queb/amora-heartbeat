@@ -23,6 +23,7 @@ import { usePremium } from '@/hooks/usePremium';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ContactButton } from './ContactButton';
+import { LazyImage } from '@/components/ui/LazyImage';
 
 interface PostCardProps {
   post: FeedPost;
@@ -96,7 +97,11 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
-              <AvatarImage src={post.profiles.avatar_url} />
+              <LazyImage 
+                src={post.profiles.avatar_url} 
+                alt="Avatar utilisateur"
+                className="w-12 h-12 rounded-full"
+              />
               <AvatarFallback>
                 {post.profiles.full_name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
