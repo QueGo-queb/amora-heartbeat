@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock, ChevronRight, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLoader } from "@/hooks/use-loader";
@@ -15,44 +16,72 @@ import { Loader, LoaderOverlay } from "@/components/ui/loader";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { analytics } from '@/lib/analytics';
+import { RegionAutocomplete } from '@/components/ui/region-autocomplete';
 
 interface SignupFormProps {
   language: string;
   onClose?: () => void;
 }
 
+// ✅ NOUVELLE STRUCTURE: Traductions améliorées
 const translations = {
   fr: {
     title: "Créer votre compte Amora",
     subtitle: "Rejoignez la communauté multiculturelle de l'amour",
+    welcome: "Bienvenue sur Amora !",
+    welcomeSubtitle: "Créez votre profil en quelques étapes simples",
+    
+    // Étapes
+    steps: {
+      personal: "Informations personnelles",
+      preferences: "Préférences de recherche", 
+      interests: "Centres d'intérêt",
+      review: "Vérification finale"
+    },
+    
+    // Champs
     fullName: "Nom complet",
     email: "Adresse email",
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
     country: "Pays",
-    region: "Région",
+    region: "Région/Province",
     city: "Ville",
     language: "Langue principale",
     bio: "Biographie courte",
     gender: "Genre",
     seekingGender: "Genre recherché",
     age: "Âge",
-    ageRange: "Tranche d'âge préférée",
-    ageRangeMin: "Âge minimum recherché",
-    ageRangeMax: "Âge maximum recherché",
-    targetCountry: "Pays cible",
-    seekingLanguages: "Langues recherchées",
-    createAccount: "Créer mon compte",
+    targetCountry: "Pays cible(s)",
+    
+    // Placeholders
+    fullNamePlaceholder: "Votre nom complet",
+    emailPlaceholder: "votre@email.com",
+    passwordPlaceholder: "Minimum 6 caractères",
+    bioPlaceholder: "Parlez-nous un peu de vous...",
+    cityPlaceholder: "Votre ville",
+    
+    // Options
     male: "Homme",
     female: "Femme",
     any: "Peu importe",
-    bioPlaceholder: "Parlez-nous un peu de vous...",
-    preferences: "Préférences de recherche",
-    step1: "Informations personnelles",
-    step2: "Préférences de recherche",
-    step3: "Centres d'intérêt",
+    
+    // Boutons
+    createAccount: "Créer mon compte",
     continue: "Continuer",
     previous: "Précédent",
+    finish: "Terminer l'inscription",
+    
+    // Messages de validation
+    validation: {
+      required: "Ce champ est requis",
+      emailInvalid: "Format d'email invalide",
+      passwordWeak: "Le mot de passe doit contenir au moins 6 caractères",
+      passwordMismatch: "Les mots de passe ne correspondent pas",
+      ageInvalid: "L'âge doit être entre 18 et 100 ans",
+      bioTooLong: "La biographie ne peut pas dépasser 500 caractères"
+    },
+    
     // Messages d'erreur
     errors: {
       emailAlreadyExists: "Cette adresse email est déjà utilisée.",
@@ -62,176 +91,87 @@ const translations = {
       networkError: "Erreur de connexion. Veuillez réessayer.",
       generalError: "Une erreur est survenue lors de l'inscription.",
       success: "Inscription réussie ! Vérifiez votre email pour confirmer votre compte."
+    },
+    
+    // Messages de succès
+    success: {
+      step1: "✅ Informations personnelles validées",
+      step2: "✅ Préférences enregistrées", 
+      step3: "✅ Centres d'intérêt sélectionnés",
+      final: "🎉 Votre compte a été créé avec succès !"
     }
   },
   en: {
     title: "Create your Amora account",
     subtitle: "Join the multicultural love community",
+    welcome: "Welcome to Amora!",
+    welcomeSubtitle: "Create your profile in a few simple steps",
+    
+    steps: {
+      personal: "Personal information",
+      preferences: "Search preferences",
+      interests: "Interests",
+      review: "Final review"
+    },
+    
     fullName: "Full name",
     email: "Email address",
     password: "Password",
     confirmPassword: "Confirm password",
     country: "Country",
-    region: "Region",
+    region: "Region/Province",
     city: "City",
     language: "Primary language",
     bio: "Short biography",
     gender: "Gender",
     seekingGender: "Seeking gender",
     age: "Age",
-    ageRange: "Preferred age range",
-    ageRangeMin: "Minimum age sought",
-    ageRangeMax: "Maximum age sought",
-    targetCountry: "Target country",
-    seekingLanguages: "Seeking languages",
-    createAccount: "Create my account",
+    targetCountry: "Target country(ies)",
+    
+    fullNamePlaceholder: "Your full name",
+    emailPlaceholder: "your@email.com",
+    passwordPlaceholder: "Minimum 6 characters",
+    bioPlaceholder: "Tell us a bit about yourself...",
+    cityPlaceholder: "Your city",
+    
     male: "Male",
     female: "Female",
     any: "Any",
-    bioPlaceholder: "Tell us a bit about yourself...",
-    preferences: "Search preferences",
-    step1: "Personal information",
-    step2: "Search preferences",
-    step3: "Interests",
+    
+    createAccount: "Create my account",
     continue: "Continue",
     previous: "Previous",
-    // Error messages
+    finish: "Complete registration",
+    
+    validation: {
+      required: "This field is required",
+      emailInvalid: "Invalid email format",
+      passwordWeak: "Password must be at least 6 characters",
+      passwordMismatch: "Passwords do not match",
+      ageInvalid: "Age must be between 18 and 100",
+      bioTooLong: "Biography cannot exceed 500 characters"
+    },
+    
     errors: {
       emailAlreadyExists: "This email address is already in use.",
-      weakPassword: "Password must contain at least 6 characters.",
+      weakPassword: "Password must be at least 6 characters.",
       invalidEmail: "Please enter a valid email address.",
       passwordMismatch: "Passwords do not match.",
       networkError: "Connection error. Please try again.",
       generalError: "An error occurred during registration.",
       success: "Registration successful! Check your email to confirm your account."
-    }
-  },
-  ht: {
-    title: "Kreye kont Amora ou",
-    subtitle: "Rantre nan kominote miltikiltirèl lanmou an",
-    fullName: "Non konplè",
-    email: "Adrès imel",
-    password: "Mo de pase",
-    confirmPassword: "Konfime mo de pase",
-    country: "Peyi",
-    region: "Rejyon",
-    city: "Vil",
-    language: "Lang prensipal",
-    bio: "Kout byografi",
-    gender: "Sèks",
-    seekingGender: "Sèks w ap chèche",
-    age: "Laj",
-    ageRange: "Tranche laj ou pi renmen",
-    ageRangeMin: "Laj minimòm w ap chèche",
-    ageRangeMax: "Laj maksimòm w ap chèche",
-    targetCountry: "Peyi sib",
-    seekingLanguages: "Lang w ap chèche",
-    createAccount: "Kreye kont mwen",
-    male: "Gason",
-    female: "Fi",
-    any: "Nenpòt",
-    bioPlaceholder: "Di nou yon ti jan sou ou...",
-    preferences: "Preferans rechèch",
-    step1: "Enfòmasyon pèsonèl",
-    step2: "Preferans rechèch",
-    step3: "Entegè",
-    continue: "Kontinye",
-    previous: "Anvan",
-    errors: {
-      emailAlreadyExists: "Adrès imel sa a deja ap itilize.",
-      weakPassword: "Mo de pase a dwe gen omwen 6 karaktè.",
-      invalidEmail: "Tanpri antre yon adrès imel valid.",
-      passwordMismatch: "Mo de pase yo pa koreye.",
-      networkError: "Erè konneksyon. Tanpri eseye ankò.",
-      generalError: "Yon erè te rive pandan enskripsyon an.",
-      success: "Enskripsyon reyisi ! Verifye imel ou pou konfime kont ou."
-    }
-  },
-  es: {
-    title: "Crear tu cuenta Amora",
-    subtitle: "Únete a la comunidad multicultural del amor",
-    fullName: "Nombre completo",
-    email: "Dirección de correo",
-    password: "Contraseña",
-    confirmPassword: "Confirmar contraseña",
-    country: "País",
-    region: "Región",
-    city: "Ciudad",
-    language: "Idioma principal",
-    bio: "Biografía corta",
-    gender: "Género",
-    seekingGender: "Género buscado",
-    age: "Edad",
-    ageRange: "Rango de edad preferido",
-    ageRangeMin: "Edad mínima buscada",
-    ageRangeMax: "Edad máxima buscada",
-    targetCountry: "País objetivo",
-    seekingLanguages: "Idiomas buscados",
-    createAccount: "Crear mi cuenta",
-    male: "Hombre",
-    female: "Mujer",
-    any: "Cualquiera",
-    bioPlaceholder: "Cuéntanos un poco sobre ti...",
-    preferences: "Preferencias de búsqueda",
-    step1: "Información personal",
-    step2: "Preferencias de búsqueda",
-    step3: "Intereses",
-    continue: "Continuar",
-    previous: "Anterior",
-    errors: {
-      emailAlreadyExists: "Esta dirección de correo ya está en uso.",
-      weakPassword: "La contraseña debe contener al menos 6 caracteres.",
-      invalidEmail: "Por favor ingresa una dirección de correo válida.",
-      passwordMismatch: "Las contraseñas no coinciden.",
-      networkError: "Error de conexión. Por favor intenta de nuevo.",
-      generalError: "Ocurrió un error durante el registro.",
-      success: "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta."
-    }
-  },
-  ptBR: {
-    title: "Criar sua conta Amora",
-    subtitle: "Junte-se à comunidade multicultural do amor",
-    fullName: "Nome completo",
-    email: "Endereço de email",
-    password: "Senha",
-    confirmPassword: "Confirmar senha",
-    country: "País",
-    region: "Região",
-    city: "Cidade",
-    language: "Idioma principal",
-    bio: "Biografia breve",
-    gender: "Gênero",
-    seekingGender: "Gênero procurado",
-    age: "Idade",
-    ageRange: "Faixa etária preferida",
-    ageRangeMin: "Idade mínima procurada",
-    ageRangeMax: "Idade máxima procurada",
-    targetCountry: "País objetivo",
-    seekingLanguages: "Idiomas procurados",
-    createAccount: "Criar minha conta",
-    male: "Masculino",
-    female: "Feminino",
-    any: "Qualquer",
-    bioPlaceholder: "Conte-nos um pouco sobre você...",
-    preferences: "Preferências de busca",
-    step1: "Informações pessoais",
-    step2: "Preferências de busca",
-    step3: "Interesses",
-    continue: "Continuar",
-    previous: "Anterior",
-    // Mensagens de erro
-    errors: {
-      emailAlreadyExists: "Este endereço de email já está em uso.",
-      weakPassword: "A senha deve conter pelo menos 6 caracteres.",
-      invalidEmail: "Por favor, insira um endereço de email válido.",
-      passwordMismatch: "As senhas não coincidem.",
-      networkError: "Erro de conexão. Por favor, tente novamente.",
-      generalError: "Ocorreu um erro durante o registro.",
-      success: "Registro bem-sucedido! Verifique seu email para confirmar sua conta."
+    },
+    
+    success: {
+      step1: "✅ Personal information validated",
+      step2: "✅ Preferences saved",
+      step3: "✅ Interests selected",
+      final: "🎉 Your account has been created successfully!"
     }
   }
 };
 
+// ✅ NOUVELLE STRUCTURE: Données organisées
 const countries = [
   "États-Unis", "Canada", "Haïti", "Chili", "Brésil", "Mexique", 
   "République Dominicaine", "Congo (RDC)", "Congo (Brazzaville)", 
@@ -248,97 +188,152 @@ const languages = [
   { code: "ptBR", name: "Português (BR)" }
 ];
 
+// ✅ NOUVELLE STRUCTURE: Validation en temps réel
+const validateField = (field: string, value: any, formData: any): string | null => {
+  switch (field) {
+    case 'fullName':
+      return !value || value.trim().length < 2 ? 'required' : null;
+    case 'email':
+      if (!value) return 'required';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return !emailRegex.test(value) ? 'emailInvalid' : null;
+    case 'password':
+      return !value || value.length < 6 ? 'passwordWeak' : null;
+    case 'confirmPassword':
+      return !value || value !== formData.password ? 'passwordMismatch' : null;
+    case 'age':
+      const age = parseInt(value);
+      return !value || isNaN(age) || age < 18 || age > 100 ? 'ageInvalid' : null;
+    case 'bio':
+      return value && value.length > 500 ? 'bioTooLong' : null;
+    default:
+      return !value ? 'required' : null;
+  }
+};
+
+// ✅ NOUVELLE STRUCTURE: Gestion d'erreur améliorée
 const getErrorMessage = (error: any, t: any): string => {
-  if (!error) return t.errors.generalError;
+  if (!error) {
+    console.error('❌ No error object provided');
+    return t.errors.generalError;
+  }
   
   const errorMessage = error.message?.toLowerCase() || '';
+  const errorCode = error.code || error.error_code || '';
   
-  // Email déjà utilisé
-  if (errorMessage.includes('email') && errorMessage.includes('already')) {
+  console.log('🔍 Error details:', { error, errorMessage, errorCode });
+  
+  if (errorCode === 'user_already_exists' || 
+      errorMessage.includes('email') && (errorMessage.includes('already') || errorMessage.includes('exists'))) {
     return t.errors.emailAlreadyExists;
   }
   
-  // Mot de passe trop faible
-  if (errorMessage.includes('password') && (errorMessage.includes('weak') || errorMessage.includes('short'))) {
+  if (errorCode === 'password_too_weak' || 
+      errorMessage.includes('password') && errorMessage.includes('weak')) {
     return t.errors.weakPassword;
   }
   
-  // Email invalide
-  if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
+  if (errorCode === 'invalid_email' || 
+      errorMessage.includes('email') && errorMessage.includes('invalid')) {
     return t.errors.invalidEmail;
   }
   
-  // Problème de réseau
-  if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('connection')) {
+  if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
     return t.errors.networkError;
   }
   
-  // Erreurs spécifiques Supabase
-  if (errorMessage.includes('user_already_exists')) {
-    return t.errors.emailAlreadyExists;
-  }
-  
-  if (errorMessage.includes('signup_disabled')) {
-    return "Les inscriptions sont temporairement désactivées.";
-  }
-  
-  if (errorMessage.includes('rate_limit')) {
-    return "Trop de tentatives. Veuillez attendre avant de réessayer.";
-  }
-
-  
-  // Erreur par défaut
-  return t.errors.generalError;
+  const finalCode = errorCode || 'UNKNOWN';
+  return `${t.errors.generalError} (Code: ${finalCode})`;
 };
 
 export function SignupForm({ language, onClose }: SignupFormProps) {
+  // ✅ NOUVELLE STRUCTURE: État du formulaire
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    country: "",
-    region: "",
-    city: "",
-    primaryLanguage: language,
-    bio: "",
-    gender: "",
-    seekingGender: "",
-    age: "",
-    seekingAgeMin: "",
-    seekingAgeMax: "",
-    seekingCountry: "",
-    seekingLanguages: [] as string[],
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    country: '',
+    region: '',
+    city: '',
+    primaryLanguage: 'fr',
+    bio: '',
+    gender: '',
+    seekingGender: 'any',
+    age: '',
+    seekingCountry: [] as string[],
     interests: [] as string[]
   });
+  
+  // ✅ NOUVELLE STRUCTURE: État de validation
+  const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [stepCompleted, setStepCompleted] = useState<Record<number, boolean>>({});
+  
   const { showLoader, hideLoader } = useLoader();
+  const { toast } = useToast();
   const navigate = useNavigate();
-
   const t = translations[language as keyof typeof translations] || translations.fr;
 
+  // ✅ NOUVELLE STRUCTURE: Validation en temps réel
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Validation en temps réel
+    const error = validateField(field, value, { ...formData, [field]: value });
+    setValidationErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  // ✅ NOUVELLE STRUCTURE: Validation d'étape
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string | null> = {};
+    
+    switch (step) {
+      case 1: // Informations personnelles
+        errors.fullName = validateField('fullName', formData.fullName, formData);
+        errors.email = validateField('email', formData.email, formData);
+        errors.password = validateField('password', formData.password, formData);
+        errors.confirmPassword = validateField('confirmPassword', formData.confirmPassword, formData);
+        errors.age = validateField('age', formData.age, formData);
+        errors.gender = validateField('gender', formData.gender, formData);
+        break;
+      case 2: // Préférences
+        errors.country = validateField('country', formData.country, formData);
+        break;
+      case 3: // Centres d'intérêt
+        // Optionnel, pas de validation stricte
+        break;
+    }
+    
+    setValidationErrors(errors);
+    const hasErrors = Object.values(errors).some(error => error !== null);
+    
+    if (!hasErrors) {
+      setStepCompleted(prev => ({ ...prev, [step]: true }));
+    }
+    
+    return !hasErrors;
+  };
+
+  // ✅ NOUVELLE STRUCTURE: Navigation entre étapes
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 4));
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  // ✅ NOUVELLE STRUCTURE: Soumission finale
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation du mot de passe
-    if (formData.password.length < 6) {
-      toast({
-        title: "Erreur",
-        description: t.errors.weakPassword,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validation de la correspondance des mots de passe
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Erreur",
-        description: t.errors.passwordMismatch,
-        variant: "destructive",
-      });
+    if (!validateStep(currentStep)) {
       return;
     }
 
@@ -346,69 +341,87 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     showLoader("Création de votre compte...", "heart");
 
     try {
-      // Analyser les événements d'inscription
-      analytics.userSignup('email', {
-        country: formData.country,
-        language: formData.primaryLanguage,
-        gender: formData.gender,
-        hasInterests: formData.interests.length > 0
-      });
+      console.log('🚀 Starting signup process...');
+      
+      // Analytics avec vérification
+      try {
+        if (analytics && typeof analytics.userSignup === 'function') {
+          analytics.userSignup('email', {
+            country: formData.country,
+            language: formData.primaryLanguage,
+            gender: formData.gender,
+            hasInterests: formData.interests.length > 0
+          });
+        }
+      } catch (analyticsError) {
+        console.log('⚠️ Analytics error, continuing without analytics:', analyticsError);
+      }
 
+      // Créer l'utilisateur auth
+      console.log('🚀 Creating auth user...');
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
-            primary_language: formData.primaryLanguage
+            age: parseInt(formData.age),
+            gender: formData.gender
           }
         }
       });
 
       if (authError) {
+        console.error('❌ Auth error:', authError);
         throw authError;
       }
 
-      if (authData.user) {
-        // Créer le profil utilisateur
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            full_name: formData.fullName,
-            bio: formData.bio,
-            country: formData.country,
-            region: formData.region,
-            city: formData.city,
-            primary_language: formData.primaryLanguage,
-            gender: formData.gender,
-            age: parseInt(formData.age),
-            seeking_gender: formData.seekingGender,
-            seeking_age_min: formData.seekingAgeMin ? parseInt(formData.seekingAgeMin) : null,
-            seeking_age_max: formData.seekingAgeMax ? parseInt(formData.seekingAgeMax) : null,
-            seeking_country: formData.seekingCountry,
-            seeking_languages: formData.seekingLanguages,
-            interests: formData.interests,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          // Ne pas bloquer l'inscription si le profil échoue
-        }
-
-        toast({
-          title: "Inscription réussie !",
-          description: t.errors.success,
-        });
-
-        // Tentative de connexion automatique
-        await handleAutoLogin(formData.email, formData.password);
+      if (!authData.user) {
+        throw new Error('No user data returned');
       }
 
+      // Créer le profil directement
+      console.log('🚀 Creating profile directly...');
+      const profileData = {
+        user_id: authData.user.id,
+        email: formData.email,
+        full_name: formData.fullName,
+        gender: formData.gender,
+        age: parseInt(formData.age),
+        bio: formData.bio || null,
+        country: formData.country || null,
+        region: formData.region || null,
+        city: formData.city || null,
+        language: formData.primaryLanguage || 'fr',
+        seeking_gender: formData.seekingGender || 'any',
+        interests: formData.interests || [],
+        plan: 'free',
+        is_active: true
+      };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'user_id' });
+
+      if (profileError) {
+        console.error('❌ Profile error:', profileError);
+        throw profileError;
+      }
+
+      console.log('✅ Profile created successfully');
+
+      toast({
+        title: "✅ Inscription réussie !",
+        description: t.success.final,
+      });
+
+      // Redirection vers le dashboard
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('❌ Complete signup error:', error);
       
       const errorMessage = getErrorMessage(error, t);
       
@@ -423,249 +436,260 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     }
   };
 
-  // Fonction pour la connexion automatique
-  const handleAutoLogin = async (email: string, password: string) => {
-    try {
-      showLoader("Connexion automatique...", "heart");
-      
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (signInError) {
-        // Si la connexion automatique échoue, afficher un message
-        toast({
-          title: "Inscription réussie",
-          description: "Votre compte a été créé. Veuillez vous connecter manuellement.",
-        });
-        
-        if (onClose) {
-          onClose();
-        } else {
-          navigate('/auth');
-        }
-        return;
-      }
-
-      // Connexion réussie - rediriger vers le dashboard
-      if (signInData.user) {
-        toast({
-          title: "Inscription réussie",
-          description: "Votre compte a été créé et vous êtes maintenant connecté !",
-        });
-
-        // Rediriger vers le dashboard
-        navigate('/dashboard');
-      }
-
-    } catch (error) {
-      console.error('Erreur lors de la connexion automatique:', error);
-      
-      // Fallback: afficher un message de succès et rediriger vers la page de connexion
-      toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé. Veuillez vous connecter manuellement.",
-      });
-      
-      if (onClose) {
-        onClose();
-      } else {
-        navigate('/auth');
-      }
-    }
-  };
-
-  const handleInputChange = (field: string, value: string | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleLanguageToggle = (languageCode: string) => {
-    const currentLanguages = formData.seekingLanguages;
-    if (currentLanguages.includes(languageCode)) {
-      handleInputChange("seekingLanguages", currentLanguages.filter(lang => lang !== languageCode));
-    } else {
-      handleInputChange("seekingLanguages", [...currentLanguages, languageCode]);
-    }
-  };
-
-  const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const renderStepContent = () => {
+  // ✅ NOUVELLE STRUCTURE: Rendu des étapes
+  const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            {/* Nom et Email */}
-            <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.personal}</h2>
+              <p className="text-gray-600">Commençons par vos informations de base</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="flex items-center gap-2 text-[#212529]">
-                  <User className="w-4 h-4 text-[#E63946]" />
-                  {t.fullName}
+                <Label htmlFor="fullName" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  {t.fullName} *
                 </Label>
                 <Input
                   id="fullName"
+                  type="text"
+                  placeholder={t.fullNamePlaceholder}
                   value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  required
-                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                  onChange={(e) => handleFieldChange('fullName', e.target.value)}
+                  className={validationErrors.fullName ? 'border-red-500' : ''}
                 />
+                {validationErrors.fullName && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.fullName as keyof typeof t.validation]}</p>
+                )}
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
-                  <Mail className="w-4 h-4 text-[#E63946]" />
-                  {t.email}
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {t.email} *
                 </Label>
                 <Input
                   id="email"
                   type="email"
+                  placeholder={t.emailPlaceholder}
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  required
-                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                  onChange={(e) => handleFieldChange('email', e.target.value)}
+                  className={validationErrors.email ? 'border-red-500' : ''}
                 />
+                {validationErrors.email && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.email as keyof typeof t.validation]}</p>
+                )}
               </div>
-            </div>
 
-            {/* Mots de passe */}
-            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
-                  <Lock className="w-4 h-4 text-[#E63946]" />
-                  {t.password}
+                <Label htmlFor="password" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t.password} *
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  required
-                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-[#212529]">
-                  <Lock className="w-4 h-4 text-[#E63946]" />
-                  {t.confirmPassword}
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                  required
-                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                />
-              </div>
-            </div>
-
-            {/* Localisation */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-[#212529]">
-                  <MapPin className="w-4 h-4 text-[#E63946]" />
-                  {t.country}
-                </Label>
-                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
-                    <SelectValue placeholder={t.country} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="region" className="text-[#212529]">{t.region}</Label>
+                <div className="relative">
                   <Input
-                    id="region"
-                    value={formData.region}
-                    onChange={(e) => handleInputChange("region", e.target.value)}
-                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder={t.passwordPlaceholder}
+                    value={formData.password}
+                    onChange={(e) => handleFieldChange('password', e.target.value)}
+                    className={validationErrors.password ? 'border-red-500' : ''}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-[#212529]">{t.city}</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                  />
-                </div>
+                {validationErrors.password && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.password as keyof typeof t.validation]}</p>
+                )}
               </div>
-            </div>
 
-            {/* Langue et âge */}
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#212529]">{t.language}</Label>
-                <Select value={formData.primaryLanguage} onValueChange={(value) => handleInputChange("primaryLanguage", value)}>
-                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>{lang.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="confirmPassword" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t.confirmPassword} *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder={t.passwordPlaceholder}
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+                    className={validationErrors.confirmPassword ? 'border-red-500' : ''}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {validationErrors.confirmPassword && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.confirmPassword as keyof typeof t.validation]}</p>
+                )}
               </div>
-              
+
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-[#212529]">
-                  <Calendar className="w-4 h-4 text-[#E63946]" />
-                  {t.age}
+                <Label htmlFor="age" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  {t.age} *
                 </Label>
                 <Input
+                  id="age"
                   type="number"
                   min="18"
                   max="100"
+                  placeholder="25"
                   value={formData.age}
-                  onChange={(e) => handleInputChange("age", e.target.value)}
-                  required
-                  className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                  onChange={(e) => handleFieldChange('age', e.target.value)}
+                  className={validationErrors.age ? 'border-red-500' : ''}
                 />
+                {validationErrors.age && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.age as keyof typeof t.validation]}</p>
+                )}
               </div>
-            </div>
 
-            {/* Genre */}
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#212529]">{t.gender}</Label>
-                <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
-                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
-                    <SelectValue placeholder={t.gender} />
+                <Label htmlFor="gender" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  {t.gender} *
+                </Label>
+                <Select value={formData.gender} onValueChange={(value) => handleFieldChange('gender', value)}>
+                  <SelectTrigger className={validationErrors.gender ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Sélectionnez votre genre" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">{t.male}</SelectItem>
                     <SelectItem value="female">{t.female}</SelectItem>
                   </SelectContent>
                 </Select>
+                {validationErrors.gender && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.gender as keyof typeof t.validation]}</p>
+                )}
               </div>
-              
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                {t.bio}
+              </Label>
+              <Textarea
+                id="bio"
+                placeholder={t.bioPlaceholder}
+                value={formData.bio}
+                onChange={(e) => handleFieldChange('bio', e.target.value)}
+                maxLength={500}
+                className={validationErrors.bio ? 'border-red-500' : ''}
+              />
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>{formData.bio.length}/500 caractères</span>
+                {validationErrors.bio && (
+                  <span className="text-red-500">{t.validation[validationErrors.bio as keyof typeof t.validation]}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.preferences}</h2>
+              <p className="text-gray-600">Dites-nous ce que vous recherchez</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#212529]">{t.seekingGender}</Label>
-                <Select value={formData.seekingGender} onValueChange={(value) => handleInputChange("seekingGender", value)}>
-                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
-                    <SelectValue placeholder={t.seekingGender} />
+                <Label htmlFor="country" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t.country} *
+                </Label>
+                <Select value={formData.country} onValueChange={(value) => handleFieldChange('country', value)}>
+                  <SelectTrigger className={validationErrors.country ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Sélectionnez votre pays" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {validationErrors.country && (
+                  <p className="text-sm text-red-500">{t.validation[validationErrors.country as keyof typeof t.validation]}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="region" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t.region}
+                </Label>
+                <RegionAutocomplete
+                  country={formData.country}
+                  value={formData.region}
+                  onChange={(value) => handleFieldChange('region', value)}
+                  placeholder="Sélectionnez votre région"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t.city}
+                </Label>
+                <Input
+                  id="city"
+                  type="text"
+                  placeholder={t.cityPlaceholder}
+                  value={formData.city}
+                  onChange={(e) => handleFieldChange('city', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="primaryLanguage" className="flex items-center gap-2">
+                  <Languages className="w-4 h-4" />
+                  {t.language}
+                </Label>
+                <Select value={formData.primaryLanguage} onValueChange={(value) => handleFieldChange('primaryLanguage', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seekingGender" className="flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  {t.seekingGender}
+                </Label>
+                <Select value={formData.seekingGender} onValueChange={(value) => handleFieldChange('seekingGender', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">{t.male}</SelectItem>
@@ -675,91 +699,35 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </Select>
               </div>
             </div>
-          </div>
-        );
 
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2 text-[#212529] flex items-center justify-center gap-2">
-                <Users className="w-5 h-5 text-[#E63946]" />
-                {t.preferences}
-              </h3>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Tranche d'âge */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="seekingAgeMin" className="text-[#212529]">{t.ageRangeMin}</Label>
-                  <Input
-                    id="seekingAgeMin"
-                    type="number"
-                    min="18"
-                    max="99"
-                    value={formData.seekingAgeMin}
-                    onChange={(e) => handleInputChange("seekingAgeMin", e.target.value)}
-                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="seekingAgeMax" className="text-[#212529]">{t.ageRangeMax}</Label>
-                  <Input
-                    id="seekingAgeMax"
-                    type="number"
-                    min="18"
-                    max="99"
-                    value={formData.seekingAgeMax}
-                    onChange={(e) => handleInputChange("seekingAgeMax", e.target.value)}
-                    className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {t.targetCountry}
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {countries.map((country) => (
+                  <Button
+                    key={country}
+                    type="button"
+                    variant={formData.seekingCountry.includes(country) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const newCountries = formData.seekingCountry.includes(country)
+                        ? formData.seekingCountry.filter(c => c !== country)
+                        : [...formData.seekingCountry, country];
+                      handleFieldChange('seekingCountry', newCountries);
+                    }}
+                  >
+                    {country}
+                  </Button>
+                ))}
               </div>
-
-              {/* Pays cible */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-[#212529]">
-                  <Globe className="w-4 h-4 text-[#E63946]" />
-                  {t.targetCountry}
-                </Label>
-                <Select value={formData.seekingCountry} onValueChange={(value) => handleInputChange("seekingCountry", value)}>
-                  <SelectTrigger className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]">
-                    <SelectValue placeholder={t.targetCountry} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Langues recherchées */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-[#212529]">
-                  <Languages className="w-4 h-4 text-[#E63946]" />
-                  {t.seekingLanguages}
-                </Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {languages.map((lang) => (
-                    <Button
-                      key={lang.code}
-                      type="button"
-                      variant={formData.seekingLanguages.includes(lang.code) ? "default" : "outline"}
-                      className={`justify-start ${
-                        formData.seekingLanguages.includes(lang.code)
-                          ? "bg-[#E63946] hover:bg-[#E63946]/90 text-white border-[#E63946]"
-                          : "border-[#CED4DA] text-[#212529] hover:bg-[#E63946] hover:text-white hover:border-[#E63946]"
-                      }`}
-                      onClick={() => handleLanguageToggle(lang.code)}
-                    >
-                      {lang.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              {formData.seekingCountry.length > 0 && (
+                <p className="text-sm text-gray-600">
+                  {formData.seekingCountry.length} pays sélectionné(s)
+                </p>
+              )}
             </div>
           </div>
         );
@@ -767,122 +735,150 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2 text-[#212529] flex items-center justify-center gap-2">
-                <Heart className="w-5 h-5 text-[#E63946]" />
-                Vos centres d'intérêt
-              </h3>
-              <p className="text-sm text-[#CED4DA] mb-4">
-                Sélectionnez vos centres d'intérêt pour nous aider à vous proposer des profils compatibles.
-              </p>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.interests}</h2>
+              <p className="text-gray-600">Sélectionnez vos centres d'intérêt</p>
             </div>
-            
+
             <EnhancedInterestsSelector
               selectedInterests={formData.interests}
-              onInterestsChange={(interests) => handleInputChange("interests", interests)}
-              maxSelections={10}
-              showCategories={false}  // ← CHANGEMENT: désactive les onglets pour mobile
-              className="mb-4"
+              onInterestsChange={(interests) => handleFieldChange('interests', interests)}
             />
-            
-            {formData.interests.length > 0 && (
-              <div className="mt-3 p-3 bg-[#52B788]/10 border border-[#52B788]/20 rounded-lg">
-                <p className="text-sm text-[#52B788] font-medium">
-                  ✅ {formData.interests.length} centre{formData.interests.length > 1 ? 's' : ''} d'intérêt sélectionné{formData.interests.length > 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
+          </div>
+        );
 
-            {/* Bio */}
-            <div className="space-y-2">
-              <Label htmlFor="bio" className="flex items-center gap-2 text-[#212529]">
-                <FileText className="w-4 h-4 text-[#E63946]" />
-                {t.bio}
-              </Label>
-              <Textarea
-                id="bio"
-                placeholder={t.bioPlaceholder}
-                value={formData.bio}
-                onChange={(e) => handleInputChange("bio", e.target.value)}
-                rows={3}
-                className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946] resize-none"
-              />
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Vérification finale</h2>
+              <p className="text-gray-600">Vérifiez vos informations avant de créer votre compte</p>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Informations personnelles</h3>
+                  <p><strong>Nom:</strong> {formData.fullName}</p>
+                  <p><strong>Email:</strong> {formData.email}</p>
+                  <p><strong>Âge:</strong> {formData.age} ans</p>
+                  <p><strong>Genre:</strong> {formData.gender === 'male' ? t.male : t.female}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Localisation</h3>
+                  <p><strong>Pays:</strong> {formData.country}</p>
+                  {formData.region && <p><strong>Région:</strong> {formData.region}</p>}
+                  {formData.city && <p><strong>Ville:</strong> {formData.city}</p>}
+                </div>
+              </div>
+              
+              {formData.bio && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Biographie</h3>
+                  <p className="text-gray-700">{formData.bio}</p>
+                </div>
+              )}
+
+              {formData.interests.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Centres d'intérêt</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.interests.map((interest) => (
+                      <Badge key={interest} variant="secondary">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="bg-[#F8F9FA] border-[#CED4DA] shadow-lg rounded-xl">
-        <CardHeader className="text-center pb-4">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Heart className="w-6 h-6 text-[#E63946]" />
-            <CardTitle className="text-xl md:text-2xl text-[#212529]">{t.title}</CardTitle>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Heart className="w-8 h-8 text-pink-500 mr-2" />
+            <CardTitle className="text-3xl font-bold text-gray-900">{t.title}</CardTitle>
           </div>
-          <CardDescription className="text-[#CED4DA]">{t.subtitle}</CardDescription>
-          
-          {/* Progress indicator */}
-          <div className="flex justify-center mt-4 space-x-2">
-            {[1, 2, 3].map((step) => (
-              <div
-                key={step}
-                className={`w-3 h-3 rounded-full ${
-                  step <= currentStep ? "bg-[#E63946]" : "bg-[#CED4DA]"
-                }`}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-[#CED4DA] mt-2">
-            {currentStep === 1 && t.step1}
-            {currentStep === 2 && t.step2}
-            {currentStep === 3 && t.step3}
-          </p>
+          <CardDescription className="text-lg text-gray-600">
+            {t.subtitle}
+          </CardDescription>
         </CardHeader>
-        
-        <CardContent className="px-4 md:px-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {renderStepContent()}
 
-            {/* Navigation buttons */}
-            <div className="flex justify-between pt-4">
-              {currentStep > 1 && (
+        <CardContent>
+          {/* ✅ NOUVELLE STRUCTURE: Barre de progression */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              {[1, 2, 3, 4].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    step <= currentStep 
+                      ? 'bg-pink-500 text-white' 
+                      : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {stepCompleted[step] ? <CheckCircle className="w-5 h-5" /> : step}
+                  </div>
+                  {step < 4 && (
+                    <div className={`w-16 h-1 mx-2 ${
+                      step < currentStep ? 'bg-pink-500' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <Progress value={(currentStep / 4) * 100} className="h-2" />
+          </div>
+
+          {/* ✅ NOUVELLE STRUCTURE: Contenu de l'étape */}
+          <form onSubmit={handleSubmit}>
+            {renderStep()}
+
+            {/* ✅ NOUVELLE STRUCTURE: Navigation */}
+            <div className="flex justify-between mt-8">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {t.previous}
+              </Button>
+
+              {currentStep < 4 ? (
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="border-[#CED4DA] text-[#212529] hover:bg-[#CED4DA] hover:text-[#212529]"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  {t.previous}
-                </Button>
-              )}
-              
-              {currentStep < 3 ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 ml-auto"
+                  onClick={handleNext}
+                  className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600"
                 >
                   {t.continue}
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <LoadingButton 
-                  type="submit" 
-                  className="bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0 ml-auto" 
+                <LoadingButton
+                  type="submit"
                   loading={loading}
-                  loadingText="Création en cours..."
-                  loadingVariant="heart"
+                  className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600"
                 >
-                  {t.createAccount}
+                  <Heart className="w-4 h-4" />
+                  {t.finish}
                 </LoadingButton>
               )}
             </div>
           </form>
         </CardContent>
       </Card>
+
+      {loading && <LoaderOverlay />}
     </div>
   );
 }

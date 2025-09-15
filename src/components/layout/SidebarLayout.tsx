@@ -170,7 +170,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const supportItems = [
     { name: 'Centre d\'aide', icon: HelpCircle, path: '/help' },
     { name: 'Support par email', icon: Mail, path: 'mailto:support@amora.com' },
-    { name: 'Chat en ligne', icon: MessageSquare, path: '/support' }
+    { name: 'Chat en ligne', icon: MessageSquare, path: '/chat-live' }
     // ✅ SUPPRIMÉ - Support dédié
   ];
 

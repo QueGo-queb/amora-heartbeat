@@ -83,3 +83,48 @@ export interface Comment {
     email: string;
   };
 }
+
+export interface PostContactRequest {
+  id: string;
+  post_id: string;
+  requester_id: string;
+  recipient_id: string;
+  message?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'ignored';
+  created_at: string;
+  updated_at: string;
+  requester_profile?: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
+  recipient_profile?: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
+  post?: {
+    id: string;
+    content: string;
+    created_at: string;
+  };
+}
+
+export interface PostInitiatedConversation {
+  id: string;
+  contact_request_id: string;
+  conversation_id?: string;
+  created_at: string;
+}
+
+export interface ContactRequestResponse {
+  success: boolean;
+  contact_request_id?: string;
+  message?: string;
+}
+
+// Étendre FeedPost pour inclure les informations de contact
+export interface FeedPostWithContact extends FeedPost {
+  contact_request_status?: 'none' | 'pending' | 'accepted' | 'declined';
+  can_contact?: boolean;
+}

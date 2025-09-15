@@ -4,18 +4,39 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ProfileData {
   id: string;
+  user_id?: string;
+  email: string;
   full_name: string;
   interests: string[];
   avatar_url?: string;
   bio?: string;
-  location?: string;
+  country?: string;
+  region?: string;
+  city?: string;
   age?: number;
   gender?: string;
   seeking_gender?: string;
+  language?: string;
   plan?: 'free' | 'premium';
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
+
+// ✅ FONCTION UTILITAIRE: Générer un UUID compatible
+const generateUUID = (): string => {
+  // Essayer crypto.randomUUID d'abord
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback: générer un UUID simple
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export function useProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -26,108 +47,183 @@ export function useProfile() {
   // Charger le profil de l'utilisateur connecté
   const loadProfile = useCallback(async () => {
     try {
-      // Debug
       setLoading(true);
       setError(null);
 
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
-        console.error('❌ Erreur authentification:', authError); // Debug
+        console.error('❌ Erreur authentification:', authError);
         throw new Error("Utilisateur non authentifié");
       }
 
-      // Debug
+      console.log(' Chargement du profil pour user:', user.id);
 
-      // Récupérer le profil depuis Supabase
-      const { data, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // ✅ STRATÉGIE SIMPLIFIÉE: Essayer d'abord avec user_id, puis avec id
+      let profileData: ProfileData | null = null;
+      let lastError: any = null;
 
-      if (profileError) {
-        console.error('❌ Erreur récupération profil:', profileError); // Debug
-        
-        // Créer un profil par défaut si il n'existe pas
-        if (profileError.code === 'PGRST116') { // No rows returned
-          // Debug
-          
-          const defaultProfile: ProfileData = {
-            id: user.id,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
-            interests: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
+      // Tentative 1: Recherche par user_id
+      try {
+        console.log('🔄 Tentative 1: Recherche par user_id...');
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
 
-          try {
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert([defaultProfile]);
-
-            if (insertError) {
-              console.error('❌ Erreur insertion profil par défaut:', insertError); // Debug
-              // Utiliser le profil en mémoire
-              setProfile(defaultProfile);
-              return;
-            }
-
-            // Debug
-            setProfile(defaultProfile);
-            return;
-          } catch (insertErr) {
-            console.error('❌ Exception lors de l\'insertion:', insertErr); // Debug
-            // Utiliser le profil en mémoire
-            setProfile(defaultProfile);
-            return;
-          }
+        if (!error && data) {
+          console.log('✅ Profil trouvé avec user_id');
+          profileData = data;
         } else {
-          throw profileError;
+          lastError = error;
+          console.log('❌ Profil non trouvé avec user_id:', error?.message);
+        }
+      } catch (err) {
+        lastError = err;
+        console.log('❌ Erreur recherche par user_id:', err);
+      }
+
+      // Tentative 2: Recherche par id (si user_id a échoué)
+      if (!profileData) {
+        try {
+          console.log('🔄 Tentative 2: Recherche par id...');
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (!error && data) {
+            console.log('✅ Profil trouvé avec id');
+            profileData = data;
+            
+            // Mettre à jour le profil pour ajouter user_id
+            if (!data.user_id) {
+              console.log(' Ajout de user_id au profil...');
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ user_id: user.id })
+                .eq('id', user.id);
+              
+              if (!updateError) {
+                profileData.user_id = user.id;
+                console.log('✅ user_id ajouté au profil');
+              }
+            }
+          } else {
+            lastError = error;
+            console.log('❌ Profil non trouvé avec id:', error?.message);
+          }
+        } catch (err) {
+          lastError = err;
+          console.log('❌ Erreur recherche par id:', err);
         }
       }
 
-      if (data) {
-        // Debug
+      // Tentative 3: Recherche par email (si les autres ont échoué)
+      if (!profileData) {
+        try {
+          console.log('🔄 Tentative 3: Recherche par email...');
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+
+          if (!error && data) {
+            console.log('✅ Profil trouvé avec email');
+            profileData = data;
+            
+            // Mettre à jour le profil pour ajouter user_id
+            if (!data.user_id) {
+              console.log(' Ajout de user_id au profil...');
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ user_id: user.id })
+                .eq('id', data.id);
+              
+              if (!updateError) {
+                profileData.user_id = user.id;
+                console.log('✅ user_id ajouté au profil');
+              }
+            }
+          } else {
+            lastError = error;
+            console.log('❌ Profil non trouvé avec email:', error?.message);
+          }
+        } catch (err) {
+          lastError = err;
+          console.log('❌ Erreur recherche par email:', err);
+        }
+      }
+
+      // Si aucun profil trouvé, créer un profil par défaut
+      if (!profileData) {
+        console.log('📝 Création d\'un profil par défaut...');
         
-        const profileData: ProfileData = {
-          id: data.id,
-          full_name: data.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
-          interests: data.interests || [],
-          avatar_url: data.avatar_url,
-          bio: data.bio,
-          location: data.location,
-          age: data.age,
-          gender: data.gender,
-          seeking_gender: data.seeking_gender,
-          plan: data.plan || 'free',
-          created_at: data.created_at,
-          updated_at: data.updated_at
+        const defaultProfile: ProfileData = {
+          id: generateUUID(), // ✅ CORRIGÉ: utiliser la fonction utilitaire
+          user_id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
+          interests: [],
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
 
+        try {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([defaultProfile]);
+
+          if (insertError) {
+            console.error('❌ Erreur insertion profil par défaut:', insertError);
+            // Utiliser le profil en mémoire même si l'insertion échoue
+            setProfile(defaultProfile);
+            return;
+          }
+
+          console.log('✅ Profil par défaut créé');
+          setProfile(defaultProfile);
+        } catch (insertError) {
+          console.error('❌ Exception lors de l\'insertion:', insertError);
+          // Utiliser le profil en mémoire
+          setProfile(defaultProfile);
+          return;
+        }
+      } else {
+        console.log('✅ Profil récupéré:', profileData);
         setProfile(profileData);
       }
 
     } catch (err) {
-      console.error('❌ Erreur chargement profil:', err); // Debug
+      console.error('❌ Erreur chargement profil:', err);
       
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du profil';
       setError(errorMessage);
+      
+      // Ne pas afficher de toast d'erreur pour éviter le spam
     } finally {
       setLoading(false);
-      // Debug
     }
-  }, []);
+  }, [toast]);
 
   // Mettre à jour le profil
   const updateProfile = useCallback(async (updatedData: Partial<ProfileData>) => {
     if (!profile) {
-      console.error('❌ Aucun profil à mettre à jour'); // Debug
+      console.error('❌ Aucun profil à mettre à jour');
       return { success: false, error: 'Aucun profil à mettre à jour' };
     }
 
     try {
-      // Debug
+      console.log('🔄 Mise à jour du profil...');
+
+      // Utiliser user_id si disponible, sinon id
+      const whereClause = profile.user_id 
+        ? { user_id: profile.user_id }
+        : { id: profile.id };
 
       const { error } = await supabase
         .from('profiles')
@@ -135,21 +231,21 @@ export function useProfile() {
           ...updatedData,
           updated_at: new Date().toISOString()
         })
-        .eq('id', profile.id);
+        .match(whereClause);
 
       if (error) {
-        console.error('❌ Erreur mise à jour Supabase:', error); // Debug
+        console.error('❌ Erreur mise à jour Supabase:', error);
         throw error;
       }
 
-      // Debug
+      console.log('✅ Profil mis à jour avec succès');
 
       // Mettre à jour le profil local
       setProfile(prev => prev ? { ...prev, ...updatedData, updated_at: new Date().toISOString() } : null);
 
       return { success: true };
     } catch (err) {
-      console.error('❌ Erreur mise à jour profil:', err); // Debug
+      console.error('❌ Erreur mise à jour profil:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour';
       return { success: false, error: errorMessage };
     }
@@ -157,7 +253,7 @@ export function useProfile() {
 
   // Rafraîchir le profil
   const refreshProfile = useCallback(async () => {
-    // Debug
+    console.log('🔄 Rafraîchissement du profil...');
     await loadProfile();
   }, [loadProfile]);
 

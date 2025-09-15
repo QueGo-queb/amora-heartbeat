@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePremium } from '@/hooks/usePremium';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { ContactButton } from './ContactButton';
 
 interface PostCardProps {
   post: FeedPost;
@@ -127,18 +128,29 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
             </div>
           </div>
 
-          {/* Menu des options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Signaler</DropdownMenuItem>
-              {isAuthor && <DropdownMenuItem>Modifier</DropdownMenuItem>}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            {/* Bouton de contact ajouté ici */}
+            <ContactButton
+              postId={post.id}
+              authorId={post.user_id}
+              authorName={post.profiles.full_name || 'Utilisateur'}
+              currentUserId={currentUserId}
+            />
+            
+            {!isAuthor && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Signaler</DropdownMenuItem>
+                  <DropdownMenuItem>Partager</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* Intérêts communs */}

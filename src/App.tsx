@@ -58,34 +58,19 @@ import { TravelPage } from "./pages/TravelPage";
 import Favorites from "./pages/Favorites";
 import VideoChat from "./pages/VideoChat";
 import UpdateNotification from '@/components/pwa/UpdateNotification';
+import ConversationDetail from "./pages/ConversationDetail";
 
-// **NOUVEAU: Import des composants d'appel**
+// ✅ AJOUT - Import des pages manquantes
+import Likes from "./pages/Likes";
+import ChatLive from "./pages/ChatLive";
+
+// **NOUVEAU: Import des composants d'appel - DÉSACTIVÉ TEMPORAIREMENT**
 // import { CallModal } from "@/components/chat/CallModal";
 // import { useCall } from "@/hooks/useCall";
 // import { callNotificationService } from "@/lib/callNotifications";
 
 // Initialiser Sentry au démarrage
 initSentry();
-
-// **Composant pour gérer les appels globalement**
-const CallManager: React.FC = () => {
-  // TEMPORAIREMENT DÉSACTIVÉ
-  // const { 
-  //   currentCall, 
-  //   incomingCall, 
-  //   answerCall, 
-  //   rejectCall 
-  // } = useCall();
-  
-  // Pour l'instant, retourner null
-  return null;
-  
-  // Le reste du composant CallManager...
-};
-
-// ✅ AJOUT - Import des pages manquantes
-import Likes from "./pages/Likes";
-import ChatLive from "./pages/ChatLive";
 
 function App() {
   // Initialiser les services avancés
@@ -97,17 +82,19 @@ function App() {
     const pushService = PushNotificationService.getInstance();
     pushService.initialize();
     
-    // **NOUVEAU: Initialiser les notifications d'appel**
-    // callNotificationService.requestPermission().then(granted => {
-    //   if (granted) {
-    //     console.log('✅ Notifications d\'appel autorisées');
-    //   } else {
-    //     console.warn('⚠️ Notifications d\'appel refusées');
-    //   }
-    // });
-    
-    console.log('🚀 Services avancés initialisés - Système d\'appels inclus !');
+    console.log('🚀 Services avancés initialisés');
   }, []);
+
+  // **DÉSACTIVÉ TEMPORAIREMENT** - Hook useCall
+  // const { currentCall, incomingCall } = useCall();
+  // const [showCallModal, setShowCallModal] = useState(false);
+
+  // **DÉSACTIVÉ TEMPORAIREMENT** - Modal d'appel
+  // useEffect(() => {
+  //   if (currentCall || incomingCall) {
+  //     setShowCallModal(true);
+  //   }
+  // }, [currentCall, incomingCall]);
 
   return (
     <ErrorBoundary>
@@ -115,8 +102,6 @@ function App() {
         <LoaderProvider>
           <Router>
             <div className="min-h-screen bg-background">
-              {/* **NOUVEAU: Gestionnaire d'appels global** */}
-              <CallManager />
               
               {/* Notification de mise à jour PWA */}
               <UpdateNotification />
@@ -160,10 +145,20 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                {/* Route pour les messages */}
                 <Route path="/messages" element={
                   <ProtectedRoute>
                     <ConditionalLayout>
                       <Messages />
+                    </ConditionalLayout>
+                  </ProtectedRoute>
+                } />
+                
+                {/* Route pour les conversations individuelles */}
+                <Route path="/messages/:id" element={
+                  <ProtectedRoute>
+                    <ConditionalLayout>
+                      <ConversationDetail />
                     </ConditionalLayout>
                   </ProtectedRoute>
                 } />
@@ -418,6 +413,12 @@ function App() {
               
               {/* Toast notifications */}
               <Toaster />
+
+              {/* **DÉSACTIVÉ TEMPORAIREMENT** - Modal d'appel global */}
+              {/* <CallModal 
+                open={showCallModal} 
+                onOpenChange={setShowCallModal} 
+              /> */}
             </div>
           </Router>
         </LoaderProvider>

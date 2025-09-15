@@ -66,56 +66,28 @@ const countries = [
   { code: 'BI', name: 'Burundi' },
 ];
 
-const regions = {
-  CA: ['Alberta', 'Colombie-Britannique', 'Manitoba', 'Nouveau-Brunswick', 'Terre-Neuve-et-Labrador', 'Territoires du Nord-Ouest', 'Nouvelle-Écosse', 'Nunavut', 'Ontario', 'Île-du-Prince-Édouard', 'Québec', 'Saskatchewan', 'Yukon'],
-  US: ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'Californie', 'Colorado', 'Connecticut', 'Delaware', 'Floride', 'Géorgie', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiane', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'Nouveau-Mexique', 'New York', 'Caroline du Nord', 'Dakota du Nord', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvanie', 'Rhode Island', 'Caroline du Sud', 'Dakota du Sud', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginie', 'Washington', 'Virginie-Occidentale', 'Wisconsin', 'Wyoming'],
-  FR: ['Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Bretagne', 'Centre-Val de Loire', 'Corse', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandie', 'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', 'Provence-Alpes-Côte d\'Azur'],
-  DE: ['Bade-Wurtemberg', 'Bavière', 'Berlin', 'Brandebourg', 'Brême', 'Hambourg', 'Hesse', 'Mecklembourg-Poméranie-Occidentale', 'Basse-Saxe', 'Rhénanie-du-Nord-Westphalie', 'Rhénanie-Palatinat', 'Sarre', 'Saxe', 'Saxe-Anhalt', 'Schleswig-Holstein', 'Thuringe'],
-  ES: ['Andalousie', 'Aragon', 'Asturies', 'Îles Baléares', 'Pays basque', 'Îles Canaries', 'Cantabrie', 'Castille-La Manche', 'Castille-et-León', 'Catalogne', 'Estrémadure', 'Galice', 'La Rioja', 'Madrid', 'Murcie', 'Navarre', 'Communauté valencienne'],
-  IT: ['Abruzzes', 'Basilicate', 'Calabre', 'Campanie', 'Émilie-Romagne', 'Frioul-Vénétie Julienne', 'Latium', 'Ligurie', 'Lombardie', 'Marches', 'Molise', 'Piémont', 'Pouilles', 'Sardaigne', 'Sicile', 'Toscane', 'Trentin-Haut-Adige', 'Ombrie', 'Vallée d\'Aoste', 'Vénétie'],
-  GB: ['Angleterre', 'Écosse', 'Pays de Galles', 'Irlande du Nord'],
-  CH: ['Zurich', 'Berne', 'Lucerne', 'Uri', 'Schwyz', 'Obwald', 'Nidwald', 'Glaris', 'Zoug', 'Fribourg', 'Soleure', 'Bâle-Ville', 'Bâle-Campagne', 'Schaffhouse', 'Appenzell Rhodes-Extérieures', 'Appenzell Rhodes-Intérieures', 'Saint-Gall', 'Grisons', 'Argovie', 'Thurgovie', 'Tessin', 'Vaud', 'Valais', 'Neuchâtel', 'Genève', 'Jura'],
-  BE: ['Bruxelles-Capitale', 'Flandre', 'Wallonie'],
-  NL: ['Drenthe', 'Flevoland', 'Frise', 'Gueldre', 'Groningue', 'Limbourg', 'Brabant-Septentrional', 'Hollande-Septentrionale', 'Overijssel', 'Utrecht', 'Zélande', 'Hollande-Méridionale'],
-  AU: ['Nouvelle-Galles du Sud', 'Victoria', 'Queensland', 'Australie-Occidentale', 'Australie-Méridionale', 'Tasmanie', 'Territoire de la capitale australienne', 'Territoire du Nord'],
-  NZ: ['Auckland', 'Bay of Plenty', 'Canterbury', 'Gisborne', 'Hawke\'s Bay', 'Manawatu-Wanganui', 'Marlborough', 'Nelson', 'Northland', 'Otago', 'Southland', 'Taranaki', 'Tasman', 'Waikato', 'Wellington', 'West Coast'],
-  HT: ['Artibonite', 'Centre', 'Grand\'Anse', 'Nippes', 'Nord', 'Nord-Est', 'Nord-Ouest', 'Ouest', 'Sud', 'Sud-Est'],
-  CL: ['Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso', 'Región Metropolitana', 'O\'Higgins', 'Maule', 'Ñuble', 'Biobío', 'Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes'],
-  BR: ['Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'],
-  MX: ['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'],
-  JP: ['Hokkaido', 'Tohoku', 'Kanto', 'Chubu', 'Kansai', 'Chugoku', 'Shikoku', 'Kyushu'],
-  KR: ['Séoul', 'Busan', 'Daegu', 'Incheon', 'Gwangju', 'Daejeon', 'Ulsan', 'Gyeonggi', 'Gangwon', 'Chungbuk', 'Chungnam', 'Jeonbuk', 'Jeonnam', 'Gyeongbuk', 'Gyeongnam', 'Jeju'],
-  // Pays ajoutés depuis la liste "Pays ciblés"
-  DO: ['Azua', 'Baoruco', 'Barahona', 'Dajabón', 'Duarte', 'El Seibo', 'Espaillat', 'Hato Mayor', 'Hermanas Mirabal', 'Independencia', 'La Altagracia', 'La Romana', 'La Vega', 'María Trinidad Sánchez', 'Monseñor Nouel', 'Monte Cristi', 'Monte Plata', 'Pedernales', 'Peravia', 'Puerto Plata', 'Samaná', 'San Cristóbal', 'San José de Ocoa', 'San Juan', 'San Pedro de Macorís', 'Santiago', 'Santiago Rodríguez', 'Santo Domingo', 'Valverde'],
-  CD: ['Bas-Uele', 'Équateur', 'Haut-Katanga', 'Haut-Lomami', 'Haut-Uele', 'Ituri', 'Kasaï', 'Kasaï-Central', 'Kasaï-Oriental', 'Kinshasa', 'Kongo-Central', 'Kwango', 'Kwilu', 'Lomami', 'Lualaba', 'Mai-Ndombe', 'Maniema', 'Mongala', 'Nord-Kivu', 'Nord-Ubangi', 'Sankuru', 'Sud-Kivu', 'Sud-Ubangi', 'Tanganyika', 'Tshopo', 'Tshuapa'],
-  CG: ['Bouenza', 'Brazzaville', 'Cuvette', 'Cuvette-Ouest', 'Kouilou', 'Lékoumou', 'Likouala', 'Niari', 'Plateaux', 'Pointe-Noire', 'Pool', 'Sangha'],
-  CM: ['Adamaoua', 'Centre', 'Est', 'Extrême-Nord', 'Littoral', 'Nord', 'Nord-Ouest', 'Ouest', 'Sud', 'Sud-Ouest'],
-  DZ: ['Adrar', 'Chlef', 'Laghouat', 'Oum El Bouaghi', 'Batna', 'Béjaïa', 'Biskra', 'Béchar', 'Blida', 'Bouira', 'Tamanrasset', 'Tébessa', 'Tlemcen', 'Tiaret', 'Tizi Ouzou', 'Alger', 'Djelfa', 'Jijel', 'Sétif', 'Saïda', 'Skikda', 'Sidi Bel Abbès', 'Annaba', 'Guelma', 'Constantine', 'Médéa', 'Mostaganem', 'M\'Sila', 'Mascara', 'Ouargla', 'Oran', 'El Bayadh', 'Illizi', 'Bordj Bou Arreridj', 'Boumerdès', 'El Tarf', 'Tindouf', 'Tissemsilt', 'El Oued', 'Khenchela', 'Souk Ahras', 'Tipaza', 'Mila', 'Aïn Defla', 'Naâma', 'Aïn Témouchent', 'Ghardaïa', 'Relizane'],
-  UG: ['Central', 'Eastern', 'Northern', 'Western'],
-  CI: ['Bafing', 'Bas-Sassandra', 'Comoé', 'Denguélé', 'Gôh-Djiboua', 'Lacs', 'Lagunes', 'Montagnes', 'Sassandra-Marahoué', 'Savanes', 'Vallée du Bandama', 'Woroba', 'Yamoussoukro', 'Zanzan'],
-  SN: ['Dakar', 'Diourbel', 'Fatick', 'Kaffrine', 'Kaolack', 'Kédougou', 'Kolda', 'Louga', 'Matam', 'Saint-Louis', 'Sédhiou', 'Tambacounda', 'Thiès', 'Ziguinchor'],
-  ML: ['Bamako', 'Gao', 'Kayes', 'Kidal', 'Koulikoro', 'Ménaka', 'Mopti', 'Ségou', 'Sikasso', 'Taoudénit', 'Tombouctou'],
-  BF: ['Boucle du Mouhoun', 'Cascades', 'Centre', 'Centre-Est', 'Centre-Nord', 'Centre-Ouest', 'Centre-Sud', 'Est', 'Hauts-Bassins', 'Nord', 'Plateau-Central', 'Sahel', 'Sud-Ouest'],
-  NE: ['Agadez', 'Diffa', 'Dosso', 'Maradi', 'Niamey', 'Tahoua', 'Tillabéri', 'Zinder'],
-  GN: ['Boké', 'Conakry', 'Faranah', 'Kankan', 'Kindia', 'Labé', 'Mamou', 'Nzérékoré'],
-  BJ: ['Alibori', 'Atacora', 'Atlantique', 'Borgou', 'Collines', 'Couffo', 'Donga', 'Littoral', 'Mono', 'Ouémé', 'Plateau', 'Zou'],
-  TG: ['Centrale', 'Kara', 'Maritime', 'Plateaux', 'Savanes'],
-  RW: ['Est', 'Kigali', 'Nord', 'Ouest', 'Sud'],
-  BI: ['Bubanza', 'Bujumbura Mairie', 'Bujumbura Rural', 'Bururi', 'Cankuzo', 'Cibitoke', 'Gitega', 'Karuzi', 'Kayanza', 'Kirundo', 'Makamba', 'Muramvya', 'Muyinga', 'Mwaro', 'Ngozi', 'Rumonge', 'Rutana', 'Ruyigi']
-};
-
+// ✅ CORRIGÉ: Interface qui correspond à la structure réelle de la table
 interface ProfileData {
   id: string;
+  user_id: string; // ✅ AJOUT: user_id est la clé de référence
+  email?: string;
   full_name: string;
   interests: string[];
   avatar_url?: string;
   bio?: string;
   location?: string;
   age?: number;
-  // Nouveaux champs de localisation
+  gender?: string;
+  seeking_gender?: string;
+  language?: string;
+  plan?: string;
+  is_active?: boolean;
+  // Champs de localisation
   country?: string;
   region?: string;
   city?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProfileEditorProps {
@@ -137,11 +109,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     country: profile.country || '',
     region: profile.region || '',
     city: profile.city || '',
-    interests: Array.isArray(profile.interests) ? profile.interests : [] // ✅ Protection renforcée
+    interests: Array.isArray(profile.interests) ? profile.interests : []
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [userEmail, setUserEmail] = useState<string>(''); // Email séparé depuis auth
+  const [userEmail, setUserEmail] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -169,7 +141,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
       country: profile.country || '',
       region: profile.region || '',
       city: profile.city || '',
-      interests: Array.isArray(profile.interests) ? profile.interests : [] // ✅ Protection renforcée
+      interests: Array.isArray(profile.interests) ? profile.interests : []
     });
   }, [profile]);
 
@@ -179,8 +151,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     if (!formData.full_name.trim()) {
       newErrors.full_name = "Le nom est requis";
     }
-
-    // SUPPRESSION de la validation email car il n'est pas modifiable
 
     if (formData.interests.length === 0) {
       newErrors.interests = "Sélectionnez au moins un intérêt";
@@ -210,62 +180,49 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
         throw new Error("Utilisateur non authentifié");
       }
 
-      // Vérifier que l'utilisateur modifie son propre profil
-      if (user.id !== profile.id) {
+      // ✅ CORRIGÉ: Vérifier que l'utilisateur modifie son propre profil
+      if (user.id !== profile.user_id) {
         throw new Error("Vous ne pouvez modifier que votre propre profil");
       }
 
-      // CORRECTION : Mise à jour du profil dans Supabase (sans email)
+      // ✅ CORRIGÉ: Structure de données qui correspond à la table
       const profileData = {
         full_name: formData.full_name,
         interests: formData.interests,
         bio: formData.bio || null,
         age: formData.age || null,
+        gender: formData.gender || null,
+        seeking_gender: formData.seeking_gender || null,
+        language: formData.language || 'fr',
         // Champs de localisation
         country: formData.country || null,
         region: formData.region || null,
         city: formData.city || null,
-        // Construire la localisation complète (cette colonne existe !)
+        // Construire la localisation complète
         location: [formData.city, formData.region, countries.find(c => c.code === formData.country)?.name]
           .filter(Boolean)
-          .join(', ') || null
-        // SUPPRIMER : updated_at (cette colonne n'existe pas)
+          .join(', ') || null,
+        updated_at: new Date().toISOString()
       };
 
-      // 🔧 LOGS TEMPORAIRES 
       console.log('🔧 ProfileData à sauvegarder:', profileData);
-      console.log('🔧 Intérêts:', profileData.interests);
-      console.log('🔧 Longueur intérêts:', profileData.interests?.length);
+      console.log('🔧 User ID:', user.id);
+      console.log('🔧 Profile user_id:', profile.user_id);
 
-      // Essayer d'abord la mise à jour
-      let { error: updateError } = await supabase
+      // ✅ CORRIGÉ: Utiliser user_id pour la mise à jour
+      const { error: updateError } = await supabase
         .from('profiles')
         .update(profileData)
-        .eq('id', profile.id);
+        .eq('user_id', user.id); // ✅ CORRIGÉ: utiliser user_id au lieu de id
 
       console.log('🔧 Résultat mise à jour:', { updateError });
+
       if (updateError) {
-        console.log('🔧 Erreur mise à jour:', updateError.message);
-      } else {
-        console.log('🔧 Mise à jour réussie !');
+        console.error('🔧 Erreur mise à jour:', updateError);
+        throw new Error(`Impossible de sauvegarder le profil: ${updateError.message}`);
       }
 
-      // Si la mise à jour échoue, essayer l'insertion
-      if (updateError) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([{
-            id: profile.id,
-            ...profileData,
-            created_at: new Date().toISOString()
-          }]);
-
-        if (insertError) {
-          throw new Error(`Impossible de sauvegarder le profil: ${insertError.message}`);
-        }
-      }
-
-      // SUPPRESSION de la mise à jour de l'email dans auth
+      console.log('🔧 Mise à jour réussie !');
 
       // Notification de succès
       toast({
@@ -274,7 +231,12 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
       });
 
       // Mettre à jour le profil local
-      onProfileUpdate(formData);
+      const updatedProfile = {
+        ...formData,
+        ...profileData,
+        updated_at: new Date().toISOString()
+      };
+      onProfileUpdate(updatedProfile);
       setIsEditing(false);
 
     } catch (error) {
@@ -290,238 +252,268 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     }
   };
 
-  const handleCancel = () => {
-    setFormData(profile); // Restaurer les données originales
-    setErrors({});
-    setIsEditing(false);
-    onCancel();
-  };
-
-  const handleInputChange = (field: keyof ProfileData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
     
     // Effacer l'erreur pour ce champ
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
 
-  const handleInterestsChange = (interests: string[]) => {
+  const handleInterestChange = (interests: string[]) => {
     handleInputChange('interests', interests);
   };
 
   const handleCountryChange = (countryCode: string) => {
-    setFormData(prev => ({
-      ...prev,
-      country: countryCode,
-      region: '', // Reset region when country changes
-      city: '' // Reset city when country changes
-    }));
+    handleInputChange('country', countryCode);
+    // Réinitialiser la région quand le pays change
+    handleInputChange('region', '');
   };
 
-  const handleRegionChange = (region: string) => {
-    setFormData(prev => ({
-      ...prev,
-      region,
-      city: '' // Reset city when region changes
-    }));
+  const getRegionsForCountry = (countryCode: string) => {
+    const regionsMap: Record<string, string[]> = {
+      CA: ['Alberta', 'Colombie-Britannique', 'Manitoba', 'Nouveau-Brunswick', 'Terre-Neuve-et-Labrador', 'Nouvelle-Écosse', 'Ontario', 'Île-du-Prince-Édouard', 'Québec', 'Saskatchewan', 'Territoires du Nord-Ouest', 'Nunavut', 'Yukon'],
+      US: ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'Californie', 'Colorado', 'Connecticut', 'Delaware', 'Floride', 'Géorgie', 'Hawaï', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiane', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvanie', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
+      FR: ['Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Bretagne', 'Centre-Val de Loire', 'Corse', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandie', 'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', 'Provence-Alpes-Côte d\'Azur'],
+      DE: ['Bade-Wurtemberg', 'Bavière', 'Berlin', 'Brandebourg', 'Brême', 'Hambourg', 'Hesse', 'Mecklembourg-Poméranie-Occidentale', 'Basse-Saxe', 'Rhénanie-du-Nord-Westphalie', 'Rhénanie-Palatinat', 'Sarre', 'Saxe', 'Saxe-Anhalt', 'Schleswig-Holstein', 'Thuringe'],
+      ES: ['Andalousie', 'Aragon', 'Asturies', 'Îles Baléares', 'Pays basque', 'Îles Canaries', 'Cantabrie', 'Castille-La Manche', 'Castille-et-León', 'Catalogne', 'Estrémadure', 'Galice', 'La Rioja', 'Madrid', 'Murcie', 'Navarre', 'Communauté valencienne'],
+      IT: ['Abruzzes', 'Basilicate', 'Calabre', 'Campanie', 'Émilie-Romagne', 'Frioul-Vénétie Julienne', 'Lazio', 'Ligurie', 'Lombardie', 'Marches', 'Molise', 'Piémont', 'Pouilles', 'Sardaigne', 'Sicile', 'Toscane', 'Trentin-Haut-Adige', 'Ombrie', 'Vallée d\'Aoste', 'Vénétie'],
+      GB: ['Angleterre', 'Écosse', 'Pays de Galles', 'Irlande du Nord'],
+      CH: ['Appenzell Rhodes-Extérieures', 'Appenzell Rhodes-Intérieures', 'Argovie', 'Bâle-Campagne', 'Bâle-Ville', 'Berne', 'Fribourg', 'Genève', 'Glaris', 'Grisons', 'Jura', 'Lucerne', 'Neuchâtel', 'Nidwald', 'Obwald', 'Saint-Gall', 'Schaffhouse', 'Schwytz', 'Soleure', 'Tessin', 'Thurgovie', 'Uri', 'Valais', 'Vaud', 'Zoug', 'Zurich'],
+      BE: ['Anvers', 'Brabant flamand', 'Brabant wallon', 'Bruxelles-Capitale', 'Flandre occidentale', 'Flandre orientale', 'Hainaut', 'Liège', 'Limbourg', 'Luxembourg', 'Namur'],
+      NL: ['Drenthe', 'Flevoland', 'Frise', 'Gueldre', 'Groningue', 'Limbourg', 'Brabant-Septentrional', 'Hollande-Septentrionale', 'Overijssel', 'Utrecht', 'Zélande', 'Hollande-Méridionale'],
+      AU: ['Nouvelle-Galles du Sud', 'Victoria', 'Queensland', 'Australie-Occidentale', 'Australie-Méridionale', 'Tasmanie', 'Territoire de la capitale australienne', 'Territoire du Nord'],
+      NZ: ['Auckland', 'Bay of Plenty', 'Canterbury', 'Gisborne', 'Hawke\'s Bay', 'Manawatu-Wanganui', 'Marlborough', 'Nelson', 'Northland', 'Otago', 'Southland', 'Taranaki', 'Tasman', 'Waikato', 'Wellington', 'West Coast'],
+      HT: ['Artibonite', 'Centre', 'Grand\'Anse', 'Nippes', 'Nord', 'Nord-Est', 'Nord-Ouest', 'Ouest', 'Sud', 'Sud-Est'],
+      CL: ['Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso', 'Región Metropolitana', 'O\'Higgins', 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes'],
+      BR: ['Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'],
+      MX: ['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'],
+      JP: ['Hokkaido', 'Tohoku', 'Kanto', 'Chubu', 'Kansai', 'Chugoku', 'Shikoku', 'Kyushu'],
+      KR: ['Séoul', 'Busan', 'Daegu', 'Incheon', 'Gwangju', 'Daejeon', 'Ulsan', 'Gyeonggi', 'Gangwon', 'Chungbuk', 'Chungnam', 'Jeonbuk', 'Jeonnam', 'Gyeongbuk', 'Gyeongnam', 'Jeju'],
+      DO: ['Azua', 'Baoruco', 'Barahona', 'Dajabón', 'Distrito Nacional', 'Duarte', 'El Seibo', 'Espaillat', 'Hato Mayor', 'Hermanas Mirabal', 'Independencia', 'La Altagracia', 'La Romana', 'La Vega', 'María Trinidad Sánchez', 'Monseñor Nouel', 'Monte Cristi', 'Monte Plata', 'Pedernales', 'Peravia', 'Puerto Plata', 'Samaná', 'San Cristóbal', 'San José de Ocoa', 'San Juan', 'San Pedro de Macorís', 'Sánchez Ramírez', 'Santiago', 'Santiago Rodríguez', 'Santo Domingo', 'Valverde'],
+      CD: ['Bas-Uele', 'Équateur', 'Haut-Katanga', 'Haut-Lomami', 'Haut-Uele', 'Ituri', 'Kasaï', 'Kasaï-Central', 'Kasaï-Oriental', 'Kinshasa', 'Kongo-Central', 'Kwango', 'Kwilu', 'Lomami', 'Lualaba', 'Mai-Ndombe', 'Maniema', 'Mongala', 'Nord-Kivu', 'Nord-Ubangi', 'Sankuru', 'Sud-Kivu', 'Sud-Ubangi', 'Tanganyika', 'Tshopo', 'Tshuapa'],
+      CG: ['Bouenza', 'Brazzaville', 'Cuvette', 'Cuvette-Ouest', 'Kouilou', 'Lékoumou', 'Likouala', 'Niari', 'Plateaux', 'Pointe-Noire', 'Pool', 'Sangha'],
+      CM: ['Adamaoua', 'Centre', 'Est', 'Extrême-Nord', 'Littoral', 'Nord', 'Nord-Ouest', 'Ouest', 'Sud', 'Sud-Ouest'],
+      DZ: ['Adrar', 'Chlef', 'Laghouat', 'Oum El Bouaghi', 'Batna', 'Béjaïa', 'Biskra', 'Béchar', 'Blida', 'Bouira', 'Tamanrasset', 'Tébessa', 'Tlemcen', 'Tiaret', 'Tizi Ouzou', 'Alger', 'Djelfa', 'Jijel', 'Sétif', 'Saïda', 'Skikda', 'Sidi Bel Abbès', 'Annaba', 'Guelma', 'Constantine', 'Médéa', 'Mostaganem', 'M\'Sila', 'Mascara', 'Ouargla', 'Oran', 'El Bayadh', 'Illizi', 'Bordj Bou Arréridj', 'Boumerdès', 'El Tarf', 'Tindouf', 'Tissemsilt', 'El Oued', 'Khenchela', 'Souk Ahras', 'Tipaza', 'Mila', 'Aïn Defla', 'Naâma', 'Aïn Témouchent', 'Ghardaïa', 'Relizane'],
+      UG: ['Central', 'Eastern', 'Northern', 'Western'],
+      CI: ['Bas-Sassandra', 'Comoé', 'Denguélé', 'Gôh-Djiboua', 'Lacs', 'Lagunes', 'Montagnes', 'Sassandra-Marahoué', 'Savanes', 'Vallée du Bandama', 'Woroba', 'Yamoussoukro', 'Zanzan'],
+      SN: ['Dakar', 'Diourbel', 'Fatick', 'Kaffrine', 'Kaolack', 'Kédougou', 'Kolda', 'Louga', 'Matam', 'Saint-Louis', 'Sédhiou', 'Tambacounda', 'Thiès', 'Ziguinchor'],
+      ML: ['Bamako', 'Gao', 'Kayes', 'Kidal', 'Koulikoro', 'Ménaka', 'Mopti', 'Ségou', 'Sikasso', 'Taoudéni', 'Tombouctou'],
+      BF: ['Boucle du Mouhoun', 'Cascades', 'Centre', 'Centre-Est', 'Centre-Nord', 'Centre-Ouest', 'Centre-Sud', 'Est', 'Hauts-Bassins', 'Nord', 'Plateau-Central', 'Sahel', 'Sud-Ouest'],
+      NE: ['Agadez', 'Diffa', 'Dosso', 'Maradi', 'Niamey', 'Tahoua', 'Tillabéri', 'Zinder'],
+      GN: ['Boké', 'Conakry', 'Faranah', 'Kankan', 'Kindia', 'Labé', 'Mamou', 'Nzérékoré'],
+      BJ: ['Alibori', 'Atacora', 'Atlantique', 'Borgou', 'Collines', 'Couffo', 'Donga', 'Littoral', 'Mono', 'Ouémé', 'Plateau', 'Zou'],
+      TG: ['Centrale', 'Kara', 'Maritime', 'Plateaux', 'Savanes'],
+      RW: ['Est', 'Kigali', 'Nord', 'Ouest', 'Sud'],
+      BI: ['Bubanza', 'Bujumbura Mairie', 'Bujumbura Rural', 'Bururi', 'Cankuzo', 'Cibitoke', 'Gitega', 'Karuzi', 'Kayanza', 'Kirundo', 'Makamba', 'Muramvya', 'Muyinga', 'Mwaro', 'Ngozi', 'Rumonge', 'Rutana', 'Ruyigi']
+    };
+    
+    return regionsMap[countryCode] || [];
   };
 
-  if (!isEditing) {
     return (
-      <Card className={`culture-card ${className}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Mon Profil
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Informations du profil */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Nom complet</Label>
-              <p className="text-gray-900">{profile.full_name}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Email</Label>
-              <p className="text-gray-900">{profile.email}</p>
-            </div>
-            {profile.bio && (
-              <div className="md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">Bio</Label>
-                <p className="text-gray-900">{profile.bio}</p>
-              </div>
-            )}
-            {/* Localisation */}
-            {(profile.country || profile.region || profile.city) && (
-              <div className="md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">Localisation</Label>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span>
-                    {[profile.city, profile.region, countries.find(c => c.code === profile.country)?.name]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </span>
-                </div>
-              </div>
-            )}
-            {profile.age && (
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Âge</Label>
-                <p className="text-gray-900">{profile.age} ans</p>
-              </div>
-            )}
-          </div>
-
-          {/* Intérêts actuels */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Centres d'intérêt</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {profile.interests.length > 0 ? (
-                profile.interests.map((interest) => (
-                  <Badge key={interest} variant="secondary">
-                    {interest}
-                  </Badge>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm">Aucun intérêt défini</p>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-4 border-t border-gray-200">
-            <Button 
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2"
-            >
-              <Edit3 className="w-4 h-4" />
-              Modifier mon profil
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Retour au Dashboard
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
     <div className={`space-y-6 ${className}`}>
-      {/* En-tête d'édition */}
-      <Card className="culture-card bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <Edit3 className="w-6 h-6 text-blue-600" />
-            <div>
-              <h3 className="text-lg font-semibold text-blue-800">
-                Modification du profil
-              </h3>
-              <p className="text-blue-600 text-sm">
-                Modifiez vos informations personnelles et centres d'intérêt
-              </p>
+      {/* Header avec boutons */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="p-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h2 className="text-xl font-semibold text-gray-900">Modifier le profil</h2>
+          </div>
+
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+                disabled={loading}
+              >
+                <X className="w-4 h-4 mr-1" />
+                Annuler
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-pink-500 hover:bg-pink-600"
+              >
+                <Save className="w-4 h-4 mr-1" />
+                {loading ? 'Sauvegarde...' : 'Sauvegarder'}
+              </Button>
+            </>
+          ) : (
+            <Button 
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="bg-pink-500 hover:bg-pink-600"
+            >
+              <Edit3 className="w-4 h-4 mr-1" />
+              Modifier
+            </Button>
+          )}
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Formulaire d'édition */}
-      {isEditing && (
-        <Card className="culture-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Edit3 className="w-5 h-5" />
-              Modifier le Profil
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Section Photo de Profil */}
-            <Card className="mb-6">
+      {/* Contenu du formulaire */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Colonne gauche - Avatar et infos de base */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Avatar */}
+          <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Camera className="w-5 h-5" />
                   Photo de profil
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <AvatarUpload 
-                  currentAvatarUrl={avatarUrl}
-                  onAvatarUpdate={updateAvatar}
-                  size="lg"
+            <CardContent className="text-center">
+              <div className="flex flex-col items-center space-y-4">
+                <UserAvatar
+                  user={profile}
+                  size="xl"
+                  className="w-24 h-24"
                 />
-                <p className="text-sm text-gray-500 mt-4 text-center">
-                  Formats acceptés : JPG, PNG, GIF (max 5MB)
-                </p>
+                {isEditing && (
+                  <AvatarUpload
+                    onUpload={updateAvatar}
+                    currentAvatar={avatarUrl}
+                  />
+                )}
+              </div>
               </CardContent>
             </Card>
 
+          {/* Informations de base */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Informations de base
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Email (lecture seule) */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  value={userEmail}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+
             {/* Nom complet */}
-            <div>
-              <Label htmlFor="full_name" className="text-sm font-medium">
-                Nom complet *
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Nom complet
               </Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => handleInputChange('full_name', e.target.value)}
+                  disabled={!isEditing}
                 className={errors.full_name ? 'border-red-500' : ''}
-                placeholder="Votre nom complet"
               />
               {errors.full_name && (
-                <p className="text-red-500 text-sm mt-1">{errors.full_name}</p>
+                  <p className="text-sm text-red-500">{errors.full_name}</p>
               )}
             </div>
 
-            {/* Email en lecture seule */}
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email
-              </Label>
+              {/* Âge */}
+              <div className="space-y-2">
+                <Label htmlFor="age">Âge</Label>
               <Input
-                id="email"
-                value={userEmail}
-                disabled
-                className="bg-gray-50 text-gray-600 cursor-not-allowed"
-                placeholder="votre@email.com"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                L'email ne peut pas être modifié depuis cette interface
-              </p>
+                  id="age"
+                  type="number"
+                  min="18"
+                  max="100"
+                  value={formData.age || ''}
+                  onChange={(e) => handleInputChange('age', parseInt(e.target.value) || null)}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              {/* Genre */}
+              <div className="space-y-2">
+                <Label>Genre</Label>
+                <Select
+                  value={formData.gender || ''}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez votre genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Homme</SelectItem>
+                    <SelectItem value="female">Femme</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
 
-            {/* Bio */}
-            <div>
-              <Label htmlFor="bio" className="text-sm font-medium">
-                Bio
-              </Label>
-              <Input
-                id="bio"
-                value={formData.bio || ''}
-                onChange={(e) => handleInputChange('bio', e.target.value)}
-                placeholder="Parlez-nous de vous..."
-              />
+              {/* Genre recherché */}
+              <div className="space-y-2">
+                <Label>Genre recherché</Label>
+                <Select
+                  value={formData.seeking_gender || ''}
+                  onValueChange={(value) => handleInputChange('seeking_gender', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le genre recherché" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Homme</SelectItem>
+                    <SelectItem value="female">Femme</SelectItem>
+                    <SelectItem value="any">Peu importe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
             </div>
 
-            {/* Localisation détaillée - SECTION REMPLACÉE */}
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+        {/* Colonne droite - Localisation et intérêts */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Localisation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
                 Localisation
-              </h4>
-              
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Pays */}
-                <div>
-                  <Label htmlFor="country">Pays *</Label>
-                  <Select value={formData.country} onValueChange={handleCountryChange}>
+                <div className="space-y-2">
+                  <Label>Pays</Label>
+                  <Select
+                    value={formData.country || ''}
+                    onValueChange={handleCountryChange}
+                    disabled={!isEditing}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez un pays" />
                     </SelectTrigger>
@@ -535,19 +527,19 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
                   </Select>
                 </div>
 
-                {/* Région/Province */}
-                <div>
-                  <Label htmlFor="region">Région/Province</Label>
+                {/* Région */}
+                <div className="space-y-2">
+                  <Label>Région/Province</Label>
                   <Select 
-                    value={formData.region} 
-                    onValueChange={handleRegionChange}
-                    disabled={!formData.country || !regions[formData.country as keyof typeof regions]}
+                    value={formData.region || ''}
+                    onValueChange={(value) => handleInputChange('region', value)}
+                    disabled={!isEditing || !formData.country}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez une région" />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.country && regions[formData.country as keyof typeof regions]?.map((region) => (
+                      {getRegionsForCountry(formData.country || '').map((region) => (
                         <SelectItem key={region} value={region}>
                           {region}
                         </SelectItem>
@@ -557,91 +549,64 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
                 </div>
 
                 {/* Ville */}
-                <div>
-                  <Label htmlFor="city">Ville</Label>
+                <div className="space-y-2">
+                  <Label>Ville</Label>
                   <Input
-                    id="city"
                     value={formData.city || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Nom de votre ville"
-                    disabled={!formData.region}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Saisissez votre ville"
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Message d'information sur la confidentialité */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 text-blue-800 mb-1">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-sm font-medium">Protection de la vie privée</span>
-                </div>
-                <p className="text-blue-700 text-xs">
-                  Seules votre ville et région seront visibles par les autres utilisateurs. 
-                  Votre adresse exacte ne sera jamais demandée ni partagée.
-                </p>
-              </div>
-            </div>
+          {/* Biographie */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Biographie</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <textarea
+                value={formData.bio || ''}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                disabled={!isEditing}
+                placeholder="Parlez-nous un peu de vous..."
+                className="w-full p-3 border border-gray-300 rounded-md resize-none h-24 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 disabled:bg-gray-50"
+              />
+            </CardContent>
+          </Card>
 
-            {/* Section Centres d'intérêt - VERSION CORRIGÉE */}
+          {/* Centres d'intérêt */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Centres d'intérêt</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
             <EnhancedInterestsSelector
-              selectedInterests={formData.interests || []} // ✅ Déjà correct !
-              onInterestsChange={(interests) => {
-                console.log('🔧 Intérêts sélectionnés:', interests);
-                handleInputChange('interests', interests); // ✅ Déjà correct !
-              }}
-              maxSelections={15}
-              className="mb-6"
-            />
-
-            {/* Actions */}
-            <Card className="culture-card">
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="flex items-center gap-2 flex-1"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Sauvegarde...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        Enregistrer les modifications
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={loading}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Annuler
-                  </Button>
+                  selectedInterests={formData.interests}
+                  onInterestsChange={handleInterestChange}
+                  maxSelections={10}
+                  showCategories={false}
+                />
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {formData.interests.map((interest) => (
+                    <Badge key={interest} variant="secondary">
+                      {interest}
+                    </Badge>
+                  ))}
                 </div>
-
-                {/* Avertissement */}
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-yellow-800">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Important</span>
-                  </div>
-                  <p className="text-yellow-700 text-sm mt-1">
-                    La modification de vos centres d'intérêt mettra à jour automatiquement 
-                    le contenu de votre fil d'actualité pour afficher des publications plus pertinentes.
-                  </p>
-                </div>
+              )}
+              {errors.interests && (
+                <p className="text-sm text-red-500 mt-2">{errors.interests}</p>
+              )}
               </CardContent>
             </Card>
-          </CardContent>
-        </Card>
-      )}
+        </div>
+      </div>
     </div>
   );
 };
