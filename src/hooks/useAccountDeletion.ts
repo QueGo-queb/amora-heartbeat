@@ -1,99 +1,74 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from './useAuth';
 
-export function useAccountDeletion() {
+export const useAccountDeletion = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const deleteAccount = async (password: string, reason?: string) => {
+  const deleteAccount = async (password: string) => {
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      console.log('🗑️ Starting account deletion process...');
+      // 1. Vérifier le mot de passe
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Utilisateur non connecté');
 
-      // 1. Vérifier le mot de passe avant suppression
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('Utilisateur non authentifié');
-      }
-
-      // 2. Tentative de reconnexion pour vérifier le mot de passe
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // 2. Re-authentifier avec le mot de passe
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
         email: user.email!,
         password: password
       });
 
-      if (signInError) {
+      if (reAuthError) {
         throw new Error('Mot de passe incorrect');
       }
 
-      // 3. Marquer le compte comme supprimé (soft delete)
-      const { error: profileError } = await supabase
+      // 3. Supprimer les fichiers du storage (avatars, etc.)
+      const { data: profile } = await supabase
         .from('profiles')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deletion_reason: reason || 'Non spécifiée',
-          is_active: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        .select('avatar_url')
+        .eq('user_id', user.id)
+        .single();
 
-      if (profileError) {
-        console.error('❌ Error marking profile as deleted:', profileError);
-        throw new Error('Impossible de supprimer le profil');
+      if (profile?.avatar_url) {
+        const fileName = profile.avatar_url.split('/').pop();
+        if (fileName) {
+          await supabase.storage
+            .from('avatars')
+            .remove([fileName]);
+        }
       }
 
-      // 4. Anonymiser les données sensibles
-      const { error: anonymizeError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: 'Utilisateur supprimé',
-          bio: null,
-          avatar_url: null,
-          interests: [],
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+      // 4. Supprimer l'utilisateur (le trigger s'occupera du reste)
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
 
-      if (anonymizeError) {
-        console.error('⚠️ Warning: Could not anonymize profile data:', anonymizeError);
+      if (deleteError) {
+        throw deleteError;
       }
 
-      // 5. Supprimer les posts de l'utilisateur (optionnel - selon politique)
-      const { error: postsError } = await supabase
-        .from('posts')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (postsError) {
-        console.error('⚠️ Warning: Could not delete posts:', postsError);
-      }
-
-      // 6. Déconnecter l'utilisateur
-      await supabase.auth.signOut();
-
-      console.log('✅ Account deletion completed successfully');
+      // 5. Déconnexion
+      await signOut();
 
       toast({
-        title: "✅ Compte supprimé",
-        description: "Votre compte a été supprimé définitivement. Nous sommes désolés de vous voir partir.",
+        title: "Compte supprimé",
+        description: "Votre compte et toutes vos données ont été supprimés avec succès.",
+        variant: "default",
       });
 
-      // 7. Rediriger vers la page d'accueil
-      navigate('/');
-      
       return true;
+
     } catch (error: any) {
-      console.error('💥 Error during account deletion:', error);
+      console.error('Erreur lors de la suppression du compte:', error);
       
       toast({
-        title: "❌ Erreur",
-        description: error.message || "Impossible de supprimer le compte",
+        title: "Erreur de suppression",
+        description: error.message || "Une erreur est survenue lors de la suppression de votre compte.",
         variant: "destructive",
       });
-      
+
       return false;
     } finally {
       setLoading(false);
@@ -104,4 +79,4 @@ export function useAccountDeletion() {
     deleteAccount,
     loading
   };
-}
+};

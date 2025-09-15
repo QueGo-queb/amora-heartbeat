@@ -1,6 +1,6 @@
 /**
- * Hook ULTRA-ROBUSTE pour le footer - VERSION FINALE
- * Avec les vraies tables et gestion d'erreurs complète
+ * Hook CORRIGÉ pour le footer - VERSION FINALE
+ * Avec toutes les fonctions implémentées correctement
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -56,30 +56,14 @@ export const useFooter = () => {
   // Vérifier les permissions admin
   const checkAdminPermissions = useCallback(async () => {
     try {
-      console.log('🔐 === VÉRIFICATION PERMISSIONS ADMIN ===');
       const { data: { user }, error } = await supabase.auth.getUser();
       
-      if (error) {
-        console.error('❌ Erreur auth:', error);
+      if (error || !user) {
         return false;
       }
       
-      if (!user) {
-        console.error('❌ Utilisateur non connecté');
-        return false;
-      }
-      
-      console.log('👤 Utilisateur connecté:', user.email);
-      
-      if (user.email !== 'clodenerc@yahoo.fr') {
-        console.error('❌ Accès refusé. Email requis: clodenerc@yahoo.fr, email actuel:', user.email);
-        return false;
-      }
-      
-      console.log('✅ Permissions admin confirmées pour:', user.email);
-      return true;
+      return user.email === 'clodenerc@yahoo.fr';
     } catch (error) {
-      console.error('❌ Exception vérification permissions:', error);
       return false;
     }
   }, []);
@@ -90,22 +74,18 @@ export const useFooter = () => {
     console.log('🔍 === DÉBUT CHARGEMENT FOOTER DATA ===');
     
     try {
-      // Requêtes avec logs détaillés
-      console.log('🔍 Exécution des requêtes...');
-      
-      const [contentResult, socialsResult, legalPagesResult] = await Promise.all([
+      const [contentResult, socialsResult, linksResult] = await Promise.all([
         supabase.from('footer_content').select('*').eq('is_active', true).maybeSingle(),
         supabase.from('footer_socials').select('*').order('order_index'),
-        // UTILISER SEULEMENT legal_pages pour les liens
-        supabase.from('legal_pages').select('*').eq('is_active', true).order('category, order_index')
+        supabase.from('footer_links').select('*').order('category, order_index')
       ]);
 
       console.log('📊 === RÉSULTATS BRUTS ===');
       console.log('Content:', contentResult);
       console.log('Socials:', socialsResult);
-      console.log('Legal Pages:', legalPagesResult);
+      console.log('Links:', linksResult);
 
-      // Traitement avec logs détaillés
+      // Traitement des données
       if (contentResult.error) {
         console.error('❌ Erreur footer_content:', contentResult.error);
       } else {
@@ -113,31 +93,20 @@ export const useFooter = () => {
         console.log('✅ Content chargé:', contentResult.data);
       }
 
-      // 🔧 NOUVELLE LOGIQUE : Combiner footer_links + legal_pages
-      let allLinks = [];
-      
-      // Convertir legal_pages vers le format footer_links
-      const linksFromPages = (legalPagesResult.data || []).map(page => ({
-        id: `legal_page_${page.id}`,
-        category: page.category === 'legal' ? 'legal' : 
-                  page.category === 'support' ? 'support' : 'company',
-        name: page.title,
-        href: `/${page.slug}`,
-        order_index: page.order_index || 0,
-        is_active: page.is_active,
-        created_at: page.created_at,
-        updated_at: page.updated_at
-      }));
-
-      setLinks(linksFromPages);
-      console.log('✅ Links chargés (après déduplication):', linksFromPages.length, 'éléments');
-
       if (socialsResult.error) {
         console.error('❌ Erreur footer_socials:', socialsResult.error);
         setSocials([]);
       } else {
         setSocials(socialsResult.data || []);
         console.log('✅ Socials chargés:', socialsResult.data?.length, 'éléments');
+      }
+
+      if (linksResult.error) {
+        console.error('❌ Erreur footer_links:', linksResult.error);
+        setLinks([]);
+      } else {
+        setLinks(linksResult.data || []);
+        console.log('✅ Links chargés:', linksResult.data?.length, 'éléments');
       }
 
       console.log('🏁 === FIN CHARGEMENT FOOTER DATA ===');
@@ -156,14 +125,12 @@ export const useFooter = () => {
     }
   }, [toast]);
 
-  // Mettre à jour un lien avec LOGS ULTRA-DÉTAILLÉS
-  const updateLink = useCallback(async (id: string, updates: Partial<FooterLink>) => {
-    console.log('🔄 === DÉBUT updateLink ===');
-    console.log('📝 ID:', id);
-    console.log('📝 Updates:', updates);
+  // ✅ CORRECTION: Implémenter updateContent
+  const updateContent = useCallback(async (newContent: Omit<FooterContent, 'id' | 'created_at' | 'updated_at'>) => {
+    console.log('🔄 === DÉBUT updateContent ===');
+    console.log('📝 New Content:', newContent);
     
     try {
-      // Vérifier les permissions
       const hasPermissions = await checkAdminPermissions();
       if (!hasPermissions) {
         throw new Error('Permissions admin requises');
@@ -171,6 +138,161 @@ export const useFooter = () => {
 
       console.log('🔄 Envoi requête UPDATE vers Supabase...');
       
+      const { data, error } = await supabase
+        .from('footer_content')
+        .update({
+          ...newContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('is_active', true)
+        .select()
+        .single();
+
+      console.log('📊 === RÉPONSE SUPABASE updateContent ===');
+      console.log('Data:', data);
+      console.log('Error:', error);
+
+      if (error) {
+        console.error('❌ Erreur SQL updateContent:', error);
+        throw error;
+      }
+
+      console.log('✅ updateContent réussi !');
+      
+      toast({
+        title: "✅ Contenu mis à jour",
+        description: "Le contenu du footer a été mis à jour avec succès.",
+      });
+
+      // Recharger les données
+      await loadAllFooterData();
+      
+      console.log('🏁 === FIN updateContent ===');
+      return data;
+
+    } catch (error: any) {
+      console.error('❌ === ERREUR COMPLÈTE updateContent ===');
+      console.error('❌ Exception:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible de modifier le contenu: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, loadAllFooterData, toast]);
+
+  // ✅ CORRECTION: Implémenter addLink
+  const addLink = useCallback(async (link: Omit<FooterLink, 'id' | 'created_at' | 'updated_at'>) => {
+    console.log('🔄 === DÉBUT addLink ===');
+    console.log('📝 New Link:', link);
+    
+    try {
+      const hasPermissions = await checkAdminPermissions();
+      if (!hasPermissions) {
+        throw new Error('Permissions admin requises');
+      }
+
+      const { data, error } = await supabase
+        .from('footer_links')
+        .insert({
+          ...link,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur SQL addLink:', error);
+        throw error;
+      }
+
+      console.log('✅ addLink réussi !');
+      
+      toast({
+        title: "✅ Lien ajouté",
+        description: "Le lien a été ajouté avec succès.",
+      });
+
+      await loadAllFooterData();
+      return data;
+
+    } catch (error: any) {
+      console.error('❌ === ERREUR COMPLÈTE addLink ===');
+      console.error('❌ Exception:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible d'ajouter le lien: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, loadAllFooterData, toast]);
+
+  // ✅ CORRECTION: Implémenter addSocial
+  const addSocial = useCallback(async (social: Omit<FooterSocial, 'id' | 'created_at' | 'updated_at'>) => {
+    console.log('🔄 === DÉBUT addSocial ===');
+    console.log('📝 New Social:', social);
+    
+    try {
+      const hasPermissions = await checkAdminPermissions();
+      if (!hasPermissions) {
+        throw new Error('Permissions admin requises');
+      }
+
+      const { data, error } = await supabase
+        .from('footer_socials')
+        .insert({
+          ...social,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur SQL addSocial:', error);
+        throw error;
+      }
+
+      console.log('✅ addSocial réussi !');
+      
+      toast({
+        title: "✅ Réseau social ajouté",
+        description: "Le réseau social a été ajouté avec succès.",
+      });
+
+      await loadAllFooterData();
+      return data;
+
+    } catch (error: any) {
+      console.error('❌ === ERREUR COMPLÈTE addSocial ===');
+      console.error('❌ Exception:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible d'ajouter le réseau social: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, loadAllFooterData, toast]);
+
+  // Mettre à jour un lien
+  const updateLink = useCallback(async (id: string, updates: Partial<FooterLink>) => {
+    console.log('🔄 === DÉBUT updateLink ===');
+    console.log('📝 ID:', id);
+    console.log('📝 Updates:', updates);
+    
+    try {
+      const hasPermissions = await checkAdminPermissions();
+      if (!hasPermissions) {
+        throw new Error('Permissions admin requises');
+      }
+
       const { data, error } = await supabase
         .from('footer_links')
         .update({
@@ -180,10 +302,6 @@ export const useFooter = () => {
         .eq('id', id)
         .select()
         .single();
-
-      console.log('📊 === RÉPONSE SUPABASE updateLink ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
 
       if (error) {
         console.error('❌ Erreur SQL updateLink:', error);
@@ -197,10 +315,7 @@ export const useFooter = () => {
         description: "Le lien a été mis à jour avec succès.",
       });
 
-      // Recharger les données
       await loadAllFooterData();
-      
-      console.log('🏁 === FIN updateLink ===');
       return data;
 
     } catch (error: any) {
@@ -216,73 +331,18 @@ export const useFooter = () => {
     }
   }, [checkAdminPermissions, loadAllFooterData, toast]);
 
-  // Supprimer un lien avec LOGS ULTRA-DÉTAILLÉS
-  const deleteLink = useCallback(async (id: string) => {
-    console.log('🗑️ === DÉBUT deleteLink ===');
-    console.log('📝 ID à supprimer:', id);
-    
-    try {
-      // Vérifier les permissions
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
-
-      console.log('🗑️ Envoi requête DELETE vers Supabase...');
-      
-      const { error } = await supabase
-        .from('footer_links')
-        .delete()
-        .eq('id', id);
-
-      console.log('📊 === RÉPONSE SUPABASE deleteLink ===');
-      console.log('Error:', error);
-
-      if (error) {
-        console.error('❌ Erreur SQL deleteLink:', error);
-        throw error;
-      }
-
-      console.log('✅ deleteLink réussi !');
-      
-      toast({
-        title: "✅ Lien supprimé",
-        description: "Le lien a été supprimé définitivement.",
-      });
-
-      // Recharger les données
-      await loadAllFooterData();
-      
-      console.log('🏁 === FIN deleteLink ===');
-
-    } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE deleteLink ===');
-      console.error('❌ Exception:', error);
-      
-      toast({
-        title: "❌ Erreur",
-        description: `Impossible de supprimer le lien: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
-
-  // Mettre à jour un réseau social avec LOGS ULTRA-DÉTAILLÉS
+  // Mettre à jour un réseau social
   const updateSocial = useCallback(async (id: string, updates: Partial<FooterSocial>) => {
     console.log('🔄 === DÉBUT updateSocial ===');
     console.log('📝 ID:', id);
     console.log('📝 Updates:', updates);
     
     try {
-      // Vérifier les permissions
       const hasPermissions = await checkAdminPermissions();
       if (!hasPermissions) {
         throw new Error('Permissions admin requises');
       }
 
-      console.log('🔄 Envoi requête UPDATE vers Supabase...');
-      
       const { data, error } = await supabase
         .from('footer_socials')
         .update({
@@ -292,10 +352,6 @@ export const useFooter = () => {
         .eq('id', id)
         .select()
         .single();
-
-      console.log('📊 === RÉPONSE SUPABASE updateSocial ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
 
       if (error) {
         console.error('❌ Erreur SQL updateSocial:', error);
@@ -309,10 +365,7 @@ export const useFooter = () => {
         description: "Le réseau social a été mis à jour avec succès.",
       });
 
-      // Recharger les données
       await loadAllFooterData();
-      
-      console.log('🏁 === FIN updateSocial ===');
       return data;
 
     } catch (error: any) {
@@ -328,49 +381,59 @@ export const useFooter = () => {
     }
   }, [checkAdminPermissions, loadAllFooterData, toast]);
 
-  // Supprimer un réseau social avec LOGS ULTRA-DÉTAILLÉS
-  const deleteSocial = useCallback(async (id: string) => {
-    console.log('🗑️ === DÉBUT deleteSocial ===');
-    console.log('📝 ID à supprimer:', id);
-    
+  // Supprimer un lien
+  const deleteLink = useCallback(async (id: string) => {
     try {
-      // Vérifier les permissions
       const hasPermissions = await checkAdminPermissions();
       if (!hasPermissions) {
         throw new Error('Permissions admin requises');
       }
 
-      console.log('🗑️ Envoi requête DELETE vers Supabase...');
-      
+      const { error } = await supabase
+        .from('footer_links')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Lien supprimé",
+        description: "Le lien a été supprimé définitivement.",
+      });
+
+      await loadAllFooterData();
+    } catch (error: any) {
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible de supprimer le lien: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, loadAllFooterData, toast]);
+
+  // Supprimer un réseau social
+  const deleteSocial = useCallback(async (id: string) => {
+    try {
+      const hasPermissions = await checkAdminPermissions();
+      if (!hasPermissions) {
+        throw new Error('Permissions admin requises');
+      }
+
       const { error } = await supabase
         .from('footer_socials')
         .delete()
         .eq('id', id);
 
-      console.log('📊 === RÉPONSE SUPABASE deleteSocial ===');
-      console.log('Error:', error);
+      if (error) throw error;
 
-      if (error) {
-        console.error('❌ Erreur SQL deleteSocial:', error);
-        throw error;
-      }
-
-      console.log('✅ deleteSocial réussi !');
-      
       toast({
         title: "✅ Réseau social supprimé",
         description: "Le réseau social a été supprimé définitivement.",
       });
 
-      // Recharger les données
       await loadAllFooterData();
-      
-      console.log('🏁 === FIN deleteSocial ===');
-
     } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE deleteSocial ===');
-      console.error('❌ Exception:', error);
-      
       toast({
         title: "❌ Erreur",
         description: `Impossible de supprimer le réseau social: ${error.message}`,
@@ -380,70 +443,44 @@ export const useFooter = () => {
     }
   }, [checkAdminPermissions, loadAllFooterData, toast]);
 
-  // Fonctions simplifiées pour les autres opérations
-  const updateContent = useCallback(async (newContent: Omit<FooterContent, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('🔄 updateContent appelé mais pas encore implémenté');
-    return null;
-  }, []);
-
-  const addLink = useCallback(async (link: Omit<FooterLink, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('🔄 addLink appelé mais pas encore implémenté');
-    return null;
-  }, []);
-
-  const addSocial = useCallback(async (social: Omit<FooterSocial, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('🔄 addSocial appelé mais pas encore implémenté');
-    return null;
-  }, []);
-
   // Charger les données au montage
   useEffect(() => {
     loadAllFooterData();
   }, [loadAllFooterData]);
 
-  // Écouter les changements en temps réel sur legal_pages
+  // Listeners temps réel pour toutes les tables
   useEffect(() => {
     console.log('🔄 Configuration des listeners temps réel...');
     
-    // Listener pour les changements sur legal_pages
-    const legalPagesChannel = supabase
-      .channel('legal_pages_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'legal_pages'
-        },
-        (payload) => {
-          console.log('🔄 Changement détecté sur legal_pages:', payload);
-          // Recharger les données du footer quand legal_pages change
+    const channels = [
+      supabase
+        .channel('footer_content_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'footer_content' }, () => {
+          console.log('🔄 Changement détecté sur footer_content');
           loadAllFooterData();
-        }
-      )
-      .subscribe();
-
-    // Listener pour les changements sur footer_links
-    const footerLinksChannel = supabase
-      .channel('footer_links_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'footer_links'
-        },
-        (payload) => {
-          console.log('🔄 Changement détecté sur footer_links:', payload);
+        })
+        .subscribe(),
+      
+      supabase
+        .channel('footer_links_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'footer_links' }, () => {
+          console.log('🔄 Changement détecté sur footer_links');
           loadAllFooterData();
-        }
-      )
-      .subscribe();
+        })
+        .subscribe(),
+      
+      supabase
+        .channel('footer_socials_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'footer_socials' }, () => {
+          console.log('🔄 Changement détecté sur footer_socials');
+          loadAllFooterData();
+        })
+        .subscribe()
+    ];
 
     return () => {
       console.log('🧹 Nettoyage des listeners temps réel...');
-      supabase.removeChannel(legalPagesChannel);
-      supabase.removeChannel(footerLinksChannel);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [loadAllFooterData]);
 

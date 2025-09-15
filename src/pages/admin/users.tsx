@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HeaderAdmin from '@/components/admin/HeaderAdmin';
+import { useAdminCreation } from '@/hooks/useAdminCreation';
 
 interface User {
   id: string;
@@ -65,6 +66,7 @@ const AdminUsers = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createAdmin } = useAdminCreation();
 
   useEffect(() => {
     checkAdminAccess();
@@ -111,98 +113,23 @@ const AdminUsers = () => {
   };
 
   // Créer un nouvel administrateur
-  const handleCreateAdmin = async () => {
-    if (!newAdminForm.email || !newAdminForm.password) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCreateAdminLoading(true);
-    
+  const handleCreateAdmin = async (formData: any) => {
     try {
-      // 1. Créer l'utilisateur dans Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newAdminForm.email,
-        password: newAdminForm.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: newAdminForm.full_name || newAdminForm.email,
-          role: 'admin'
-        }
-      });
+      // Utiliser le hook de création d'admin
+      const result = await createAdmin(
+        formData.email,
+        formData.password,
+        formData.fullName
+      );
 
-      if (authError) {
-        console.error('Erreur création auth:', authError);
-        throw authError;
+      if (result.success) {
+        // Recharger la liste des utilisateurs
+        loadUsers();
+        // Fermer le modal
+        setShowCreateAdminDialog(false);
       }
-
-      // 2. Créer le profil avec le rôle admin
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          user_id: authData.user.id,
-          email: newAdminForm.email,
-          full_name: newAdminForm.full_name || newAdminForm.email,
-          role: 'admin',
-          plan: 'admin',
-          created_at: new Date().toISOString()
-        });
-
-      if (profileError) {
-        console.error('Erreur création profil:', profileError);
-        // Si le profil échoue, essayer de mettre à jour le profil existant
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            role: 'admin',
-            plan: 'admin',
-            full_name: newAdminForm.full_name || newAdminForm.email
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.error('Erreur mise à jour profil:', updateError);
-        }
-      }
-
-      // 3. Attribuer les permissions RBAC si le système existe
-      try {
-        await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role_id: 'admin'
-          });
-      } catch (rbacError) {
-        console.log('RBAC non disponible, utilisation du système simple');
-      }
-
-      toast({
-        title: "✅ Administrateur créé",
-        description: `Nouvel admin créé: ${newAdminForm.email}`,
-      });
-
-      // Reset du formulaire
-      setNewAdminForm({ email: '', full_name: '', password: '' });
-      setShowCreateAdminDialog(false);
-      
-      // Recharger la liste
-      await loadUsers();
-
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur création admin:', error);
-      toast({
-        title: "❌ Erreur",
-        description: error.message || "Impossible de créer l'administrateur",
-        variant: "destructive",
-      });
-    } finally {
-      setCreateAdminLoading(false);
     }
   };
 
@@ -369,7 +296,7 @@ const AdminUsers = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button 
-                        onClick={handleCreateAdmin}
+                        onClick={() => handleCreateAdmin(newAdminForm)}
                         disabled={createAdminLoading || !newAdminForm.email || !newAdminForm.password}
                         className="flex-1"
                       >

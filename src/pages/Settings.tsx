@@ -32,6 +32,7 @@ import { usePremium } from '@/hooks/usePremium';
 import { PremiumUpgradeModal } from '@/components/settings/PremiumUpgradeModal';
 import { AccountDeletionModal } from '@/components/settings/AccountDeletionModal';
 import { LanguageSelector } from '@/components/ui/language-selector';
+import { DeleteAccountForm } from '@/components/settings/DeleteAccountForm';
 
 const Settings = () => {
   const [user, setUser] = useState<any>(null);
@@ -542,14 +543,7 @@ const Settings = () => {
               </Button>
               
               {/* BOUTON SUPPRIMER COMPTE - FONCTIONNEL */}
-              <Button 
-                onClick={handleDeleteAccount}
-                variant="outline" 
-                className="w-full justify-start border-[#E63946]/30 text-[#E63946] hover:bg-[#E63946] hover:text-white hover:border-[#E63946] transition-all duration-300"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Fermer définitivement mon compte
-              </Button>
+              <DeleteAccountForm />
             </CardContent>
           </Card>
 
