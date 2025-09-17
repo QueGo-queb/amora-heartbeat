@@ -1,5 +1,5 @@
 /**
- * ✅ FORMULAIRE D'INSCRIPTION OPTIMISÉ avec corrections complètes
+ * ✅ FORMULAIRE D'INSCRIPTION CORRIGÉ ET OPTIMISÉ
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -21,7 +21,6 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { CountryMultiSelect } from '@/components/ui/country-multi-select';
 import { analytics } from '@/lib/analytics';
-import { RegionAutocomplete } from '@/components/ui/region-autocomplete';
 
 interface SignupFormProps {
   language: string;
@@ -258,7 +257,7 @@ const getErrorMessage = (error: any, t: any): string => {
   return t.errors.generalError;
 };
 
-// ✅ CORRECTION: Export avec le bon nom
+// ✅ FORMULAIRE CORRIGÉ
 export function SignupForm({ language, onClose }: SignupFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -274,7 +273,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     gender: '',
     seekingGender: 'any',
     age: '',
-    seekingCountry: [] as string[], // ✅ CORRECTION: Array de codes de pays
+    seekingCountry: [] as string[],
     interests: [] as string[]
   });
   
@@ -339,7 +338,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   }, []);
 
-  // ✅ SOUMISSION OPTIMISÉE AVEC GESTION D'ERREUR COMPLÈTE
+  // ✅ SOUMISSION CORRIGÉE ET OPTIMISÉE
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -351,7 +350,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     showLoader("Création de votre compte...", "heart");
 
     try {
-      console.log('🚀 Starting optimized signup process...');
+      console.log('🚀 Starting signup process...');
       
       // ✅ VALIDATION PRÉALABLE RENFORCÉE
       if (!formData.email || !formData.password || !formData.fullName) {
@@ -397,10 +396,16 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       let authData, authError;
       
       try {
-        // ✅ VERSION SIMPLIFIÉE SANS MÉTADONNÉES
         const result = await supabase.auth.signUp({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              age: parseInt(formData.age),
+              gender: formData.gender
+            }
+          }
         });
         
         authData = result.data;
@@ -445,9 +450,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         interests: formData.interests || [],
         plan: 'free',
         is_active: true,
-        // ✅ AJOUT DES CHAMPS OBLIGATOIRES MANQUANTS
-        role: 'user',
-        subscription_plan: 'free'
+        // ✅ NOUVEAU: Sauvegarde des pays ciblés
+        seeking_country: formData.seekingCountry || []
       };
 
       try {
@@ -688,15 +692,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     <SelectValue placeholder="Sélectionnez votre pays" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HT"> Haïti</SelectItem>
+                    <SelectItem value="HT">���� Haïti</SelectItem>
                     <SelectItem value="US">🇺🇸 États-Unis</SelectItem>
                     <SelectItem value="CA">🇨🇦 Canada</SelectItem>
                     <SelectItem value="FR">🇫🇷 France</SelectItem>
-                    <SelectItem value="ES"> Espagne</SelectItem>
+                    <SelectItem value="ES">���� Espagne</SelectItem>
                     <SelectItem value="BR">🇧🇷 Brésil</SelectItem>
-                    <SelectItem value="AR">🇦 Argentine</SelectItem>
-                    <SelectItem value="CL"> Chili</SelectItem>
-                    <SelectItem value="MX"> Mexique</SelectItem>
+                    <SelectItem value="AR">🇦�� Argentine</SelectItem>
+                    <SelectItem value="CL">���� Chili</SelectItem>
+                    <SelectItem value="MX">���� Mexique</SelectItem>
                     <SelectItem value="DO">🇩🇴 République Dominicaine</SelectItem>
                   </SelectContent>
                 </Select>
@@ -742,7 +746,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
               </div>
             </div>
 
-            {/* ✅ NOUVEAU: COMPOSANT DE SÉLECTION MULTI-PAYS OPTIMISÉ */}
+            {/* ✅ COMPOSANT DE SÉLECTION MULTI-PAYS OPTIMISÉ */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
@@ -809,7 +813,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </div>
               )}
 
-              {/* ✅ NOUVEAU: AFFICHAGE DES PAYS CIBLÉS */}
+              {/* ✅ AFFICHAGE DES PAYS CIBLÉS */}
               {formData.seekingCountry.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Pays ciblés</h3>
@@ -817,13 +821,13 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     {formData.seekingCountry.map((countryCode) => {
                       // Trouver le nom du pays à partir du code
                       const countryNames: Record<string, string> = {
-                        'US': '🇸 États-Unis',
+                        'US': '��🇸 États-Unis',
                         'CA': '🇨🇦 Canada',
                         'HT': '🇭🇹 Haïti',
                         'FR': '🇫🇷 France',
                         'ES': '🇪🇸 Espagne',
                         'BR': '🇧🇷 Brésil',
-                        'AR': '🇦 Argentine',
+                        'AR': '🇦🇷 Argentine',
                         'CL': '🇨🇱 Chili',
                         'MX': '🇲🇽 Mexique',
                         'DO': '🇩🇴 République Dominicaine'

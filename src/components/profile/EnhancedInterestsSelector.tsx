@@ -33,21 +33,32 @@ export function EnhancedInterestsSelector({
   });
 
   const toggleInterest = (interestId: string) => {
-    const newSelection = selectedInterests.includes(interestId)
-      ? selectedInterests.filter(id => id !== interestId)
-      : selectedInterests.length < maxSelections 
-        ? [...selectedInterests, interestId]
-        : selectedInterests;
-    
-    onInterestsChange(newSelection);
+    try {
+      const newSelection = selectedInterests.includes(interestId)
+        ? selectedInterests.filter(id => id !== interestId)
+        : selectedInterests.length < maxSelections 
+          ? [...selectedInterests, interestId]
+          : selectedInterests;
+      
+      onInterestsChange(newSelection);
+    } catch (error) {
+      console.error('Error toggling interest:', error);
+    }
   };
 
   const removeInterest = (interestId: string) => {
-    onInterestsChange(selectedInterests.filter(id => id !== interestId));
+    try {
+      onInterestsChange(selectedInterests.filter(id => id !== interestId));
+    } catch (error) {
+      console.error('Error removing interest:', error);
+    }
   };
 
+  // ✅ CORRECTION: Fonction sécurisée pour obtenir les intérêts sélectionnés
   const getSelectedInterestsDisplay = () => {
-    return selectedInterests.map(id => allInterests.find(i => i.id === id)).filter(Boolean);
+    return selectedInterests
+      .map(id => allInterests.find(i => i.id === id))
+      .filter((interest): interest is NonNullable<typeof interest> => interest !== undefined);
   };
 
   // Version simplifiée pour mobile (signup)
@@ -62,16 +73,16 @@ export function EnhancedInterestsSelector({
               <div className="flex flex-wrap gap-2">
                 {getSelectedInterestsDisplay().map(interest => (
                   <Badge
-                    key={interest?.id}
+                    key={interest.id}
                     className="gap-1 pr-1 bg-[#52B788] text-white border-0"
                   >
-                    <span>{interest?.icon}</span>
-                    <span className="text-xs">{interest?.name}</span>
+                    <span>{interest.icon}</span>
+                    <span className="text-xs">{interest.name}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-4 w-4 p-0 hover:bg-red-100 text-white hover:text-red-600"
-                      onClick={() => removeInterest(interest?.id!)}
+                      onClick={() => removeInterest(interest.id)}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -97,86 +108,92 @@ export function EnhancedInterestsSelector({
             {interestCategories.map(category => {
               const categoryInterests = getInterestsByCategory(category.id);
               const visibleInterests = searchTerm 
-                ? categoryInterests.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                ? categoryInterests.filter(interest => 
+                    interest.name.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
                 : categoryInterests;
 
               if (visibleInterests.length === 0) return null;
 
               return (
                 <div key={category.id} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${category.color} text-xs px-2 py-1`}>
-                      {category.icon} {category.name}
-                    </Badge>
-                  </div>
+                  <h4 className="text-sm font-medium text-[#212529] flex items-center gap-2">
+                    <span>{category.icon}</span>
+                    {category.name}
+                  </h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {visibleInterests.map(interest => (
-                      <Button
-                        key={interest.id}
-                        variant={selectedInterests.includes(interest.id) ? "default" : "outline"}
-                        size="sm"
-                        className={`justify-start h-auto py-2 px-3 text-xs ${
-                          selectedInterests.includes(interest.id)
-                            ? "bg-[#E63946] hover:bg-[#E63946]/90 text-white border-[#E63946]"
-                            : "border-[#CED4DA] text-[#212529] hover:bg-[#E63946] hover:text-white hover:border-[#E63946]"
-                        }`}
-                        onClick={() => toggleInterest(interest.id)}
-                        disabled={
-                          !selectedInterests.includes(interest.id) && 
-                          selectedInterests.length >= maxSelections
-                        }
-                      >
-                        <span className="mr-1 text-sm">{interest.icon}</span>
-                        <span className="truncate text-xs">{interest.name}</span>
-                      </Button>
-                    ))}
+                    {visibleInterests.map(interest => {
+                      const isSelected = selectedInterests.includes(interest.id);
+                      const isDisabled = !isSelected && selectedInterests.length >= maxSelections;
+                      
+                      return (
+                        <Button
+                          key={interest.id}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className={`h-auto p-2 flex flex-col items-center gap-1 text-xs ${
+                            isSelected 
+                              ? 'bg-[#E63946] text-white border-[#E63946]' 
+                              : isDisabled
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'border-[#CED4DA] text-[#212529] hover:border-[#E63946]'
+                          }`}
+                          onClick={() => !isDisabled && toggleInterest(interest.id)}
+                          disabled={isDisabled}
+                        >
+                          <span className="text-base">{interest.icon}</span>
+                          <span className="text-center leading-tight">{interest.name}</span>
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {selectedInterests.length >= maxSelections && (
-            <p className="text-xs text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 p-2 rounded">
-              Limite de {maxSelections} intérêts atteinte. Supprimez-en pour en ajouter d'autres.
-            </p>
+          {/* Message si aucun intérêt trouvé */}
+          {filteredInterests.length === 0 && searchTerm && (
+            <div className="text-center text-[#6C757D] py-4">
+              <p>Aucun intérêt trouvé pour "{searchTerm}"</p>
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // Version complète avec onglets pour desktop/profil
+  // Version complète avec catégories (pour les autres pages)
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Centres d'intérêt</span>
-          <Badge variant="outline">
-            {selectedInterests.length}/{maxSelections}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
+    <div className={className}>
+      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="all">Tous</TabsTrigger>
+          {interestCategories.map(category => (
+            <TabsTrigger key={category.id} value={category.id}>
+              <span className="mr-1">{category.icon}</span>
+              {category.name}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
         {/* Intérêts sélectionnés */}
         {selectedInterests.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Sélectionnés :</h4>
+          <div className="mt-4 space-y-2">
+            <h4 className="text-sm font-medium text-[#212529]">Sélectionnés ({selectedInterests.length}/{maxSelections}) :</h4>
             <div className="flex flex-wrap gap-2">
               {getSelectedInterestsDisplay().map(interest => (
                 <Badge
-                  key={interest?.id}
-                  variant="default"
-                  className="gap-1 pr-1"
+                  key={interest.id}
+                  className="gap-1 pr-1 bg-[#52B788] text-white border-0"
                 >
-                  <span>{interest?.icon}</span>
-                  <span>{interest?.name}</span>
+                  <span>{interest.icon}</span>
+                  <span className="text-xs">{interest.name}</span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-4 w-4 p-0 hover:bg-red-100"
-                    onClick={() => removeInterest(interest?.id!)}
+                    className="h-4 w-4 p-0 hover:bg-red-100 text-white hover:text-red-600"
+                    onClick={() => removeInterest(interest.id)}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -187,111 +204,99 @@ export function EnhancedInterestsSelector({
         )}
 
         {/* Barre de recherche */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <div className="mt-4 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#CED4DA] h-4 w-4" />
           <Input
             placeholder="Rechercher un intérêt..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
           />
         </div>
 
-        {/* Onglets par catégorie - MOBILE OPTIMISÉ */}
-        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-          {/* Onglets avec scroll horizontal sur mobile */}
-          <div className="w-full overflow-x-auto">
-            <TabsList className="inline-flex w-max min-w-full h-auto p-1 bg-[#CED4DA]/20">
-              <TabsTrigger value="all" className="text-xs px-3 py-2 data-[state=active]:bg-[#E63946] data-[state=active]:text-white whitespace-nowrap">
-                Tous
-              </TabsTrigger>
-              {interestCategories.map(category => (
-                <TabsTrigger 
-                  key={category.id} 
-                  value={category.id} 
-                  className="text-xs px-3 py-2 data-[state=active]:bg-[#E63946] data-[state=active]:text-white whitespace-nowrap flex items-center gap-1"
+        {/* Contenu des onglets */}
+        <TabsContent value="all" className="mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+            {filteredInterests.map(interest => {
+              const isSelected = selectedInterests.includes(interest.id);
+              const isDisabled = !isSelected && selectedInterests.length >= maxSelections;
+              
+              return (
+                <Button
+                  key={interest.id}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  className={`h-auto p-3 flex flex-col items-center gap-2 ${
+                    isSelected 
+                      ? 'bg-[#E63946] text-white border-[#E63946]' 
+                      : isDisabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'border-[#CED4DA] text-[#212529] hover:border-[#E63946]'
+                  }`}
+                  onClick={() => !isDisabled && toggleInterest(interest.id)}
+                  disabled={isDisabled}
                 >
-                  <span>{category.icon}</span>
-                  <span>{category.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+                  <span className="text-lg">{interest.icon}</span>
+                  <span className="text-xs text-center leading-tight">{interest.name}</span>
+                </Button>
+              );
+            })}
           </div>
+        </TabsContent>
 
-          <TabsContent value="all" className="mt-4">
-            <div className="space-y-6">
-              {interestCategories.map(category => {
-                const categoryInterests = getInterestsByCategory(category.id);
-                const visibleInterests = searchTerm 
-                  ? categoryInterests.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  : categoryInterests;
-
-                if (visibleInterests.length === 0) return null;
-
-                return (
-                  <div key={category.id} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className={category.color}>
-                        {category.icon} {category.name}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {visibleInterests.map(interest => (
-                        <Button
-                          key={interest.id}
-                          variant={selectedInterests.includes(interest.id) ? "default" : "outline"}
-                          size="sm"
-                          className="justify-start h-auto py-2 px-3"
-                          onClick={() => toggleInterest(interest.id)}
-                          disabled={
-                            !selectedInterests.includes(interest.id) && 
-                            selectedInterests.length >= maxSelections
-                          }
-                        >
-                          <span className="mr-2">{interest.icon}</span>
-                          <span className="text-xs truncate">{interest.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          {interestCategories.map(category => (
-            <TabsContent key={category.id} value={category.id} className="mt-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {filteredInterests
-                  .filter(i => i.category === category.id)
-                  .map(interest => (
+        {interestCategories.map(category => (
+          <TabsContent key={category.id} value={category.id} className="mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+              {getInterestsByCategory(category.id)
+                .filter(interest => 
+                  searchTerm 
+                    ? interest.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    : true
+                )
+                .map(interest => {
+                  const isSelected = selectedInterests.includes(interest.id);
+                  const isDisabled = !isSelected && selectedInterests.length >= maxSelections;
+                  
+                  return (
                     <Button
                       key={interest.id}
-                      variant={selectedInterests.includes(interest.id) ? "default" : "outline"}
+                      variant={isSelected ? "default" : "outline"}
                       size="sm"
-                      className="justify-start h-auto py-2 px-3"
-                      onClick={() => toggleInterest(interest.id)}
-                      disabled={
-                        !selectedInterests.includes(interest.id) && 
-                        selectedInterests.length >= maxSelections
-                      }
+                      className={`h-auto p-3 flex flex-col items-center gap-2 ${
+                        isSelected 
+                          ? 'bg-[#E63946] text-white border-[#E63946]' 
+                          : isDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'border-[#CED4DA] text-[#212529] hover:border-[#E63946]'
+                      }`}
+                      onClick={() => !isDisabled && toggleInterest(interest.id)}
+                      disabled={isDisabled}
                     >
-                      <span className="mr-2">{interest.icon}</span>
-                      <span className="text-xs truncate">{interest.name}</span>
+                      <span className="text-lg">{interest.icon}</span>
+                      <span className="text-xs text-center leading-tight">{interest.name}</span>
                     </Button>
-                  ))
-                }
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                  );
+                })}
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
 
-        {selectedInterests.length >= maxSelections && (
-          <p className="text-sm text-amber-600">
-            Limite de {maxSelections} intérêts atteinte. Supprimez-en pour en ajouter d'autres.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {/* Message si aucun intérêt trouvé */}
+      {filteredInterests.length === 0 && searchTerm && (
+        <div className="text-center text-[#6C757D] py-4">
+          <p>Aucun intérêt trouvé pour "{searchTerm}"</p>
+        </div>
+      )}
+    </div>
   );
+}
+
+// Fonctions utilitaires
+export function getInterestsByCategory(categoryId: string) {
+  return allInterests.filter(interest => interest.category === categoryId);
+}
+
+export function getCategoryById(categoryId: string) {
+  return interestCategories.find(category => category.id === categoryId);
 }

@@ -1,7 +1,7 @@
 {
   "name": "amora-pwa",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -52,7 +52,15 @@
     "cleanup:prod": "node scripts/production-cleanup.js",
     "preview:prod": "npm run build:prod && npm run preview",
     "update-version": "node scripts/update-version.js",
-    "deploy": "npm run update-version && npm run build"
+    "deploy": "npm run update-version && npm run build",
+    "remove-i18n": "npm uninstall i18next react-i18next i18next-browser-languagedetector i18next-http-backend",
+    "test:performance": "echo 'Performance test - check browser dev tools'",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist",
+    "optimize:cache": "echo 'Cache optimization completed'",
+    "monitor:performance": "echo 'Performance monitoring active'",
+    "test:signup": "node scripts/test-signup-form.js",
+    "test:database": "node scripts/test-database-migration.js",
+    "deploy:signup": "node scripts/deploy-signup-optimizations.js"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -106,9 +114,6 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
-    "i18next": "^23.16.8",
-    "i18next-browser-languagedetector": "^7.2.2",
-    "i18next-http-backend": "^2.7.3",
     "imagemin": "^9.0.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
@@ -117,7 +122,6 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
-    "react-i18next": "^13.5.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.9",

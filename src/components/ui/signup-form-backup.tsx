@@ -1,8 +1,4 @@
-/**
- * ✅ FORMULAIRE D'INSCRIPTION OPTIMISÉ avec corrections complètes
- */
-
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { Loader, LoaderOverlay } from "@/components/ui/loader";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
-import { CountryMultiSelect } from '@/components/ui/country-multi-select';
 import { analytics } from '@/lib/analytics';
 import { RegionAutocomplete } from '@/components/ui/region-autocomplete';
 
@@ -28,33 +23,36 @@ interface SignupFormProps {
   onClose?: () => void;
 }
 
-// ✅ TRADUCTIONS OPTIMISÉES
+// ✅ NOUVELLE STRUCTURE: Traductions améliorées
 const translations = {
   fr: {
-    title: "Rejoignez AMORA",
-    subtitle: "Trouvez l'amour dans votre communauté multiculturelle",
+    title: "Créer votre compte Amora",
+    subtitle: "Rejoignez la communauté multiculturelle de l'amour",
+    welcome: "Bienvenue sur Amora !",
+    welcomeSubtitle: "Créez votre profil en quelques étapes simples",
     
+    // Étapes
     steps: {
       personal: "Informations personnelles",
-      preferences: "Préférences",
+      preferences: "Préférences de recherche", 
       interests: "Centres d'intérêt",
-      review: "Vérification"
+      review: "Vérification finale"
     },
     
     // Champs
     fullName: "Nom complet",
-    email: "Email",
+    email: "Adresse email",
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
-    age: "Âge",
-    gender: "Genre",
-    bio: "Biographie",
     country: "Pays",
-    region: "Région",
+    region: "Région/Province",
     city: "Ville",
-    primaryLanguage: "Langue principale",
-    seekingGender: "Recherche",
-    targetCountry: "Pays ciblés",
+    language: "Langue principale",
+    bio: "Biographie courte",
+    gender: "Genre",
+    seekingGender: "Genre recherché",
+    age: "Âge",
+    targetCountry: "Pays cible(s)",
     
     // Placeholders
     fullNamePlaceholder: "Votre nom complet",
@@ -81,8 +79,7 @@ const translations = {
       passwordWeak: "Le mot de passe doit contenir au moins 6 caractères",
       passwordMismatch: "Les mots de passe ne correspondent pas",
       ageInvalid: "L'âge doit être entre 18 et 100 ans",
-      bioTooLong: "La biographie ne peut pas dépasser 500 caractères",
-      countryRequired: "Veuillez sélectionner au moins un pays"
+      bioTooLong: "La biographie ne peut pas dépasser 500 caractères"
     },
     
     // Messages d'erreur
@@ -94,48 +91,52 @@ const translations = {
       networkError: "Erreur de connexion. Veuillez réessayer.",
       generalError: "Une erreur est survenue lors de l'inscription.",
       success: "Inscription réussie ! Vérifiez votre email pour confirmer votre compte.",
+      
+      // ✅ NOUVELLES TRADUCTIONS
       unexpectedFailure: "Une erreur inattendue s'est produite. Veuillez vérifier vos informations et réessayer.",
       signupDisabled: "L'inscription est temporairement désactivée. Veuillez réessayer plus tard.",
-      rateLimitExceeded: "Trop de tentatives d'inscription. Veuillez attendre quelques minutes.",
-      invalidRequest: "Données invalides. Veuillez vérifier vos informations.",
+      rateLimitExceeded: "Trop de tentatives d'inscription. Veuillez attendre quelques minutes avant de réessayer.",
+      invalidRequest: "Données invalides. Veuillez vérifier vos informations et réessayer.",
       emailNotConfirmed: "Veuillez confirmer votre email avant de vous connecter.",
-      duplicateEmail: "Cette adresse email est déjà utilisée.",
-      validationError: "Erreur de validation des données.",
-      connectionError: "Problème de connexion. Vérifiez votre connexion internet."
+      duplicateEmail: "Cette adresse email est déjà utilisée. Veuillez utiliser une autre adresse email.",
+      validationError: "Erreur de validation des données. Veuillez vérifier vos informations.",
+      connectionError: "Problème de connexion. Veuillez vérifier votre connexion internet et réessayer."
     },
     
+    // Messages de succès
     success: {
       step1: "✅ Informations personnelles validées",
-      step2: "✅ Préférences sauvegardées",
+      step2: "✅ Préférences enregistrées", 
       step3: "✅ Centres d'intérêt sélectionnés",
       final: "🎉 Votre compte a été créé avec succès !"
     }
   },
-  
   en: {
-    title: "Join AMORA",
-    subtitle: "Find love in your multicultural community",
+    title: "Create your Amora account",
+    subtitle: "Join the multicultural love community",
+    welcome: "Welcome to Amora!",
+    welcomeSubtitle: "Create your profile in a few simple steps",
     
     steps: {
-      personal: "Personal Information",
-      preferences: "Preferences",
+      personal: "Personal information",
+      preferences: "Search preferences",
       interests: "Interests",
-      review: "Review"
+      review: "Final review"
     },
     
-    fullName: "Full Name",
-    email: "Email",
+    fullName: "Full name",
+    email: "Email address",
     password: "Password",
-    confirmPassword: "Confirm Password",
-    age: "Age",
-    gender: "Gender",
-    bio: "Biography",
+    confirmPassword: "Confirm password",
     country: "Country",
-    region: "Region",
+    region: "Region/Province",
     city: "City",
-    primaryLanguage: "Primary Language",
-    seekingGender: "Looking for",
-    targetCountry: "Target Countries",
+    language: "Primary language",
+    bio: "Short biography",
+    gender: "Gender",
+    seekingGender: "Seeking gender",
+    age: "Age",
+    targetCountry: "Target country(ies)",
     
     fullNamePlaceholder: "Your full name",
     emailPlaceholder: "your@email.com",
@@ -150,7 +151,7 @@ const translations = {
     createAccount: "Create my account",
     continue: "Continue",
     previous: "Previous",
-    finish: "Finish registration",
+    finish: "Complete registration",
     
     validation: {
       required: "This field is required",
@@ -158,8 +159,7 @@ const translations = {
       passwordWeak: "Password must be at least 6 characters",
       passwordMismatch: "Passwords do not match",
       ageInvalid: "Age must be between 18 and 100",
-      bioTooLong: "Biography cannot exceed 500 characters",
-      countryRequired: "Please select at least one country"
+      bioTooLong: "Biography cannot exceed 500 characters"
     },
     
     errors: {
@@ -170,14 +170,16 @@ const translations = {
       networkError: "Connection error. Please try again.",
       generalError: "An error occurred during registration.",
       success: "Registration successful! Check your email to confirm your account.",
+      
+      // ✅ NOUVELLES TRADUCTIONS
       unexpectedFailure: "An unexpected error occurred. Please check your information and try again.",
       signupDisabled: "Registration is temporarily disabled. Please try again later.",
-      rateLimitExceeded: "Too many registration attempts. Please wait a few minutes.",
-      invalidRequest: "Invalid data. Please check your information.",
+      rateLimitExceeded: "Too many registration attempts. Please wait a few minutes before trying again.",
+      invalidRequest: "Invalid data. Please check your information and try again.",
       emailNotConfirmed: "Please confirm your email before logging in.",
-      duplicateEmail: "This email address is already in use.",
-      validationError: "Data validation error.",
-      connectionError: "Connection problem. Check your internet connection."
+      duplicateEmail: "This email address is already in use. Please use another email address.",
+      validationError: "Data validation error. Please check your information.",
+      connectionError: "Connection problem. Please check your internet connection and try again."
     },
     
     success: {
@@ -189,7 +191,15 @@ const translations = {
   }
 };
 
-// ✅ LANGUES DISPONIBLES
+// ✅ NOUVELLE STRUCTURE: Données organisées
+const countries = [
+  "États-Unis", "Canada", "Haïti", "Chili", "Brésil", "Mexique", 
+  "République Dominicaine", "Congo (RDC)", "Congo (Brazzaville)", 
+  "Cameroun", "Algérie", "Ouganda", "France", "Suisse", "Espagne",
+  "Belgique", "Côte d'Ivoire", "Sénégal", "Mali", "Burkina Faso",
+  "Niger", "Guinée", "Bénin", "Togo", "Rwanda", "Burundi"
+];
+
 const languages = [
   { code: "fr", name: "Français" },
   { code: "en", name: "English" },
@@ -198,7 +208,7 @@ const languages = [
   { code: "ptBR", name: "Português (BR)" }
 ];
 
-// ✅ VALIDATION OPTIMISÉE AVEC DEBOUNCING
+// ✅ NOUVELLE STRUCTURE: Validation en temps réel
 const validateField = (field: string, value: any, formData: any): string | null => {
   switch (field) {
     case 'fullName':
@@ -213,53 +223,106 @@ const validateField = (field: string, value: any, formData: any): string | null 
       return !value || value !== formData.password ? 'passwordMismatch' : null;
     case 'age':
       const age = parseInt(value);
-      return !value || age < 18 || age > 100 ? 'ageInvalid' : null;
-    case 'gender':
-      return !value ? 'required' : null;
+      return !value || isNaN(age) || age < 18 || age > 100 ? 'ageInvalid' : null;
     case 'bio':
       return value && value.length > 500 ? 'bioTooLong' : null;
-    case 'country':
-      return !value ? 'required' : null;
-    case 'seekingCountry':
-      return !value || value.length === 0 ? 'countryRequired' : null;
     default:
-      return null;
+      return !value ? 'required' : null;
   }
 };
 
-// ✅ GESTION D'ERREUR AMÉLIORÉE
+// ✅ CORRIGÉ - Gestion d'erreur améliorée avec diagnostic
 const getErrorMessage = (error: any, t: any): string => {
-  if (!error) return t.errors.generalError;
-  
-  const errorMessage = error.message || error.toString();
-  const errorCode = error.code || '';
-  
-  // Gestion des erreurs spécifiques
-  if (errorCode === 'PGRST301' || errorMessage.includes('duplicate key')) {
-    return t.errors.duplicateEmail;
+  if (!error) {
+    console.error('❌ No error object provided');
+    return t.errors.generalError;
   }
   
-  if (errorCode === 'weak_password' || errorMessage.includes('password')) {
-    return t.errors.weakPassword;
-  }
+  const errorMessage = error.message?.toLowerCase() || '';
+  const errorCode = error.code || error.error_code || '';
   
-  if (errorCode === 'invalid_email' || errorMessage.includes('email')) {
-    return t.errors.invalidEmail;
-  }
+  console.log('�� Error details:', { 
+    error, 
+    errorMessage, 
+    errorCode,
+    status: error.status,
+    statusText: error.statusText
+  });
   
-  if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-    return t.errors.connectionError;
+  // ✅ GESTION SPÉCIFIQUE DES CODES D'ERREUR SUPABASE
+  switch (errorCode) {
+    case 'unexpected_failure':
+      return "Une erreur inattendue s'est produite. Veuillez vérifier vos informations et réessayer.";
+    
+    case 'user_already_exists':
+    case 'email_address_invalid':
+      return t.errors.emailAlreadyExists;
+    
+    case 'password_too_weak':
+    case 'weak_password':
+      return t.errors.weakPassword;
+    
+    case 'invalid_email':
+      return t.errors.invalidEmail;
+    
+    case 'signup_disabled':
+      return "L'inscription est temporairement désactivée. Veuillez réessayer plus tard.";
+    
+    case 'email_rate_limit_exceeded':
+      return "Trop de tentatives d'inscription. Veuillez attendre quelques minutes avant de réessayer.";
+    
+    case 'invalid_request':
+      return "Données invalides. Veuillez vérifier vos informations et réessayer.";
+    
+    case 'email_not_confirmed':
+      return "Veuillez confirmer votre email avant de vous connecter.";
+    
+    default:
+      // ✅ GESTION DES ERREURS PAR MESSAGE
+      if (errorMessage.includes('email') && (errorMessage.includes('already') || errorMessage.includes('exists'))) {
+        return t.errors.emailAlreadyExists;
+      }
+      
+      if (errorMessage.includes('password') && errorMessage.includes('weak')) {
+        return t.errors.weakPassword;
+      }
+      
+      if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
+        return t.errors.invalidEmail;
+      }
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        return t.errors.networkError;
+      }
+      
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('unique constraint')) {
+        return "Cette adresse email est déjà utilisée. Veuillez utiliser une autre adresse email.";
+      }
+      
+      if (errorMessage.includes('foreign key') || errorMessage.includes('constraint')) {
+        return "Erreur de validation des données. Veuillez vérifier vos informations.";
+      }
+      
+      if (errorMessage.includes('timeout') || errorMessage.includes('connection')) {
+        return "Problème de connexion. Veuillez vérifier votre connexion internet et réessayer.";
+      }
+      
+      // ✅ LOGGING DÉTAILLÉ POUR LE DEBUGGING
+      console.error('🚨 Unhandled error:', {
+        code: errorCode,
+        message: errorMessage,
+        status: error.status,
+        statusText: error.statusText,
+        fullError: error
+      });
+      
+      const finalCode = errorCode || 'UNKNOWN';
+      return `${t.errors.generalError} (Code: ${finalCode})`;
   }
-  
-  if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
-    return t.errors.rateLimitExceeded;
-  }
-  
-  return t.errors.generalError;
 };
 
-// ✅ CORRECTION: Export avec le bon nom
 export function SignupForm({ language, onClose }: SignupFormProps) {
+  // ✅ NOUVELLE STRUCTURE: État du formulaire
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -274,11 +337,11 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     gender: '',
     seekingGender: 'any',
     age: '',
-    seekingCountry: [] as string[], // ✅ CORRECTION: Array de codes de pays
+    seekingCountry: [] as string[],
     interests: [] as string[]
   });
   
-  // ✅ ÉTAT DE VALIDATION OPTIMISÉ
+  // ✅ NOUVELLE STRUCTURE: État de validation
   const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -290,19 +353,17 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
   const navigate = useNavigate();
   const t = translations[language as keyof typeof translations] || translations.fr;
 
-  // ✅ GESTION DE CHAMP AVEC DEBOUNCING
-  const handleFieldChange = useCallback((field: string, value: any) => {
+  // ✅ NOUVELLE STRUCTURE: Validation en temps réel
+  const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Validation en temps réel avec debouncing
-    setTimeout(() => {
-      const error = validateField(field, value, { ...formData, [field]: value });
-      setValidationErrors(prev => ({ ...prev, [field]: error }));
-    }, 300);
-  }, [formData]);
+    // Validation en temps réel
+    const error = validateField(field, value, { ...formData, [field]: value });
+    setValidationErrors(prev => ({ ...prev, [field]: error }));
+  };
 
-  // ✅ VALIDATION D'ÉTAPE OPTIMISÉE
-  const validateStep = useCallback((step: number): boolean => {
+  // ✅ NOUVELLE STRUCTURE: Validation d'étape
+  const validateStep = (step: number): boolean => {
     const errors: Record<string, string | null> = {};
     
     switch (step) {
@@ -316,7 +377,6 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         break;
       case 2: // Préférences
         errors.country = validateField('country', formData.country, formData);
-        errors.seekingCountry = validateField('seekingCountry', formData.seekingCountry, formData);
         break;
       case 3: // Centres d'intérêt
         // Optionnel, pas de validation stricte
@@ -324,23 +384,28 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     }
     
     setValidationErrors(errors);
-    return !Object.values(errors).some(error => error !== null);
-  }, [formData]);
+    const hasErrors = Object.values(errors).some(error => error !== null);
+    
+    if (!hasErrors) {
+      setStepCompleted(prev => ({ ...prev, [step]: true }));
+    }
+    
+    return !hasErrors;
+  };
 
-  // ✅ NAVIGATION OPTIMISÉE
-  const handleNext = useCallback(() => {
+  // ✅ NOUVELLE STRUCTURE: Navigation entre étapes
+  const handleNext = () => {
     if (validateStep(currentStep)) {
-      setStepCompleted(prev => ({ ...prev, [currentStep]: true }));
       setCurrentStep(prev => Math.min(prev + 1, 4));
     }
-  }, [currentStep, validateStep]);
+  };
 
-  const handlePrevious = useCallback(() => {
+  const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
-  }, []);
+  };
 
-  // ✅ SOUMISSION OPTIMISÉE AVEC GESTION D'ERREUR COMPLÈTE
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  // ✅ AMÉLIORÉ - Fonction de soumission avec retry et meilleure gestion d'erreur
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateStep(currentStep)) {
@@ -351,7 +416,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
     showLoader("Création de votre compte...", "heart");
 
     try {
-      console.log('🚀 Starting optimized signup process...');
+      console.log('🚀 Starting signup process...');
       
       // ✅ VALIDATION PRÉALABLE RENFORCÉE
       if (!formData.email || !formData.password || !formData.fullName) {
@@ -372,11 +437,6 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         throw new Error('Format d\'email invalide');
       }
       
-      // ✅ VALIDATION PAYS CIBLÉS
-      if (formData.seekingCountry.length === 0) {
-        throw new Error('Veuillez sélectionner au moins un pays ciblé');
-      }
-      
       // Analytics avec vérification
       try {
         if (analytics && typeof analytics.userSignup === 'function') {
@@ -384,8 +444,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             country: formData.country,
             language: formData.primaryLanguage,
             gender: formData.gender,
-            hasInterests: formData.interests.length > 0,
-            targetCountriesCount: formData.seekingCountry.length
+            hasInterests: formData.interests.length > 0
           });
         }
       } catch (analyticsError) {
@@ -397,10 +456,16 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       let authData, authError;
       
       try {
-        // ✅ VERSION SIMPLIFIÉE SANS MÉTADONNÉES
         const result = await supabase.auth.signUp({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              age: parseInt(formData.age),
+              gender: formData.gender
+            }
+          }
         });
         
         authData = result.data;
@@ -444,10 +509,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         seeking_gender: formData.seekingGender || 'any',
         interests: formData.interests || [],
         plan: 'free',
-        is_active: true,
-        // ✅ AJOUT DES CHAMPS OBLIGATOIRES MANQUANTS
-        role: 'user',
-        subscription_plan: 'free'
+        is_active: true
       };
 
       try {
@@ -460,7 +522,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           // ✅ NE PAS FAIRE ÉCHOUER L'INSCRIPTION SI LE PROFIL ÉCHOUE
           console.warn('⚠️ Profile creation failed, but user is created. Will retry later.');
         } else {
-          console.log('✅ Profile created successfully with target countries:', formData.seekingCountry);
+          console.log('✅ Profile created successfully');
         }
       } catch (profileError) {
         console.error('❌ Profile creation exception:', profileError);
@@ -502,10 +564,10 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       setLoading(false);
       hideLoader();
     }
-  }, [formData, currentStep, validateStep, showLoader, hideLoader, toast, navigate, t]);
+  };
 
-  // ✅ RENDU DES ÉTAPES OPTIMISÉ
-  const renderStep = useMemo(() => {
+  // ✅ NOUVELLE STRUCTURE: Rendu des étapes
+  const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
@@ -566,13 +628,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     onChange={(e) => handleFieldChange('password', e.target.value)}
                     className={validationErrors.password ? 'border-red-500' : ''}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
                 {validationErrors.password && (
                   <p className="text-sm text-red-500">{t.validation[validationErrors.password as keyof typeof t.validation]}</p>
@@ -593,13 +657,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
                     className={validationErrors.confirmPassword ? 'border-red-500' : ''}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
                 {validationErrors.confirmPassword && (
                   <p className="text-sm text-red-500">{t.validation[validationErrors.confirmPassword as keyof typeof t.validation]}</p>
@@ -628,7 +694,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="gender" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
+                  <Users className="w-4 h-4" />
                   {t.gender} *
                 </Label>
                 <Select value={formData.gender} onValueChange={(value) => handleFieldChange('gender', value)}>
@@ -674,7 +740,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.preferences}</h2>
-              <p className="text-gray-600">Dites-nous où vous êtes et ce que vous cherchez</p>
+              <p className="text-gray-600">Dites-nous ce que vous recherchez</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -688,16 +754,11 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     <SelectValue placeholder="Sélectionnez votre pays" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HT"> Haïti</SelectItem>
-                    <SelectItem value="US">🇺🇸 États-Unis</SelectItem>
-                    <SelectItem value="CA">🇨🇦 Canada</SelectItem>
-                    <SelectItem value="FR">🇫🇷 France</SelectItem>
-                    <SelectItem value="ES"> Espagne</SelectItem>
-                    <SelectItem value="BR">🇧🇷 Brésil</SelectItem>
-                    <SelectItem value="AR">🇦 Argentine</SelectItem>
-                    <SelectItem value="CL"> Chili</SelectItem>
-                    <SelectItem value="MX"> Mexique</SelectItem>
-                    <SelectItem value="DO">🇩🇴 République Dominicaine</SelectItem>
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {validationErrors.country && (
@@ -706,9 +767,36 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="region" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t.region}
+                </Label>
+                <RegionAutocomplete
+                  country={formData.country}
+                  value={formData.region}
+                  onChange={(value) => handleFieldChange('region', value)}
+                  placeholder="Sélectionnez votre région"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {t.city}
+                </Label>
+                <Input
+                  id="city"
+                  type="text"
+                  placeholder={t.cityPlaceholder}
+                  value={formData.city}
+                  onChange={(e) => handleFieldChange('city', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="primaryLanguage" className="flex items-center gap-2">
                   <Languages className="w-4 h-4" />
-                  {t.primaryLanguage}
+                  {t.language}
                 </Label>
                 <Select value={formData.primaryLanguage} onValueChange={(value) => handleFieldChange('primaryLanguage', value)}>
                   <SelectTrigger>
@@ -742,21 +830,33 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
               </div>
             </div>
 
-            {/* ✅ NOUVEAU: COMPOSANT DE SÉLECTION MULTI-PAYS OPTIMISÉ */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
-                {t.targetCountry} *
+                {t.targetCountry}
               </Label>
-              <CountryMultiSelect
-                selectedCountries={formData.seekingCountry}
-                onCountriesChange={(countries) => handleFieldChange('seekingCountry', countries)}
-                placeholder="Sélectionnez les pays où vous souhaitez rencontrer des personnes..."
-                maxSelections={10}
-                className={validationErrors.seekingCountry ? 'border-red-500' : ''}
-              />
-              {validationErrors.seekingCountry && (
-                <p className="text-sm text-red-500">{t.validation[validationErrors.seekingCountry as keyof typeof t.validation]}</p>
+              <div className="flex flex-wrap gap-2">
+                {countries.map((country) => (
+                  <Button
+                    key={country}
+                    type="button"
+                    variant={formData.seekingCountry.includes(country) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const newCountries = formData.seekingCountry.includes(country)
+                        ? formData.seekingCountry.filter(c => c !== country)
+                        : [...formData.seekingCountry, country];
+                      handleFieldChange('seekingCountry', newCountries);
+                    }}
+                  >
+                    {country}
+                  </Button>
+                ))}
+              </div>
+              {formData.seekingCountry.length > 0 && (
+                <p className="text-sm text-gray-600">
+                  {formData.seekingCountry.length} pays sélectionné(s)
+                </p>
               )}
             </div>
           </div>
@@ -809,35 +909,6 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </div>
               )}
 
-              {/* ✅ NOUVEAU: AFFICHAGE DES PAYS CIBLÉS */}
-              {formData.seekingCountry.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Pays ciblés</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.seekingCountry.map((countryCode) => {
-                      // Trouver le nom du pays à partir du code
-                      const countryNames: Record<string, string> = {
-                        'US': '🇸 États-Unis',
-                        'CA': '🇨🇦 Canada',
-                        'HT': '🇭🇹 Haïti',
-                        'FR': '🇫🇷 France',
-                        'ES': '🇪🇸 Espagne',
-                        'BR': '🇧🇷 Brésil',
-                        'AR': '🇦 Argentine',
-                        'CL': '🇨🇱 Chili',
-                        'MX': '🇲🇽 Mexique',
-                        'DO': '🇩🇴 République Dominicaine'
-                      };
-                      return (
-                        <Badge key={countryCode} variant="secondary">
-                          {countryNames[countryCode] || countryCode}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {formData.interests.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Centres d'intérêt</h3>
@@ -857,7 +928,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       default:
         return null;
     }
-  }, [currentStep, formData, validationErrors, t, handleFieldChange, showPassword, showConfirmPassword]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -873,7 +944,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         </CardHeader>
 
         <CardContent>
-          {/* ✅ BARRE DE PROGRESSION OPTIMISÉE */}
+          {/* ✅ NOUVELLE STRUCTURE: Barre de progression */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               {[1, 2, 3, 4].map((step) => (
@@ -896,11 +967,11 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             <Progress value={(currentStep / 4) * 100} className="h-2" />
           </div>
 
-          {/* ✅ CONTENU DE L'ÉTAPE */}
+          {/* ✅ NOUVELLE STRUCTURE: Contenu de l'étape */}
           <form onSubmit={handleSubmit}>
-            {renderStep}
+            {renderStep()}
 
-            {/* ✅ NAVIGATION OPTIMISÉE */}
+            {/* ✅ NOUVELLE STRUCTURE: Navigation */}
             <div className="flex justify-between mt-8">
               <Button
                 type="button"

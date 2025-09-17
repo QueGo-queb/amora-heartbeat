@@ -50,7 +50,6 @@ import { NetworkStatus } from '@/components/pwa/NetworkStatus';
 import { QueryProvider } from "@/providers/QueryProvider";
 import { initWebVitals } from '@/lib/webVitals';
 import { PushNotificationService } from '@/lib/pushNotifications';
-import '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { BadgesPage } from "./pages/BadgesPage";
 import { AIPage } from "./pages/AIPage";

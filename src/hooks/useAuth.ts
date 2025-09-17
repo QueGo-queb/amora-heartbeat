@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { trackEvent, trackError } from '@/lib/sentry';
+import { logger } from '@/lib/logger';
 
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
@@ -10,60 +11,36 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Récupérer la session initiale
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Erreur récupération session:', error);
-        }
-        
-        console.log('🔍 Session récupérée:', session?.user?.email || 'Aucun utilisateur');
-        setUser(session?.user ?? null);
-
-        // Tracker les connexions réussies dans getInitialSession
-        if (session?.user) {
-          trackEvent('user_session_restored', {
-            category: 'auth',
-            action: 'session_restore',
-            userId: session.user.id,
-          });
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération de session:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
+  // ✅ OPTIMISÉ: useCallback pour éviter les re-renders
+  const getInitialSession = useCallback(async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        logger.error('Erreur récupération session:', error);
       }
-    };
+      
+      logger.log('🔍 Session récupérée:', session?.user?.email || 'Aucun utilisateur');
+      setUser(session?.user ?? null);
 
-    getInitialSession();
-
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state change:', event, session?.user?.email || 'Aucun utilisateur');
-        
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // **SUPPRESSION DES REDIRECTIONS AUTOMATIQUES PROBLÉMATIQUES**
-        // Ne pas rediriger automatiquement depuis le feed
-        // L'utilisateur peut rester sur la page qu'il visite
-        
-        if (event === 'SIGNED_OUT') {
-          // Seulement rediriger lors de la déconnexion
-          navigate('/');
-        }
+      // Tracker les connexions réussies
+      if (session?.user) {
+        trackEvent('user_session_restored', {
+          category: 'auth',
+          action: 'session_restore',
+          userId: session.user.id,
+        });
       }
-    );
+    } catch (error) {
+      logger.error('Erreur lors de la récupération de session:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const signOut = async () => {
+  // ✅ OPTIMISÉ: useCallback pour signOut
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
       
@@ -75,36 +52,45 @@ export const useAuth = () => {
       });
       
       toast({
-        title: "Déconnexion",
+        title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès.",
       });
     } catch (error) {
-      // Tracker l'erreur de déconnexion
-      trackError(error as Error, {
-        userId: user?.id,
-        action: 'logout',
-        metadata: { 
-          timestamp: Date.now(),
-          userAgent: navigator.userAgent 
-        }
-      });
-      
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la déconnexion.",
-        variant: "destructive",
-      });
+      logger.error('Erreur lors de la déconnexion:', error);
+      trackError(error);
     }
-  };
+  }, [user, toast]);
 
-  // Vérification admin simple et fiable
-  const isAdminLegacy = user?.email === 'clodenerc@yahoo.fr';
+  useEffect(() => {
+    getInitialSession();
 
-  return {
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        logger.log('🔄 Auth state change:', event, session?.user?.email || 'Aucun utilisateur');
+        
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        if (event === 'SIGNED_OUT') {
+          navigate('/');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [getInitialSession, navigate]);
+
+  // ✅ OPTIMISÉ: useMemo pour les valeurs dérivées
+  const authState = useMemo(() => ({
     user,
     loading,
-    signOut,
     isAuthenticated: !!user,
-    isAdmin: isAdminLegacy,
+    isAdmin: user?.email === 'clodenerc@yahoo.fr'
+  }), [user, loading]);
+
+  return {
+    ...authState,
+    signOut
   };
 };

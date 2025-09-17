@@ -10,9 +10,13 @@ export const useAdminCreation = () => {
     setLoading(true);
     
     try {
+      console.log(' Starting admin creation process...');
+      
       // 1. Vérifier que l'utilisateur actuel est admin
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
 
       // Vérifier si l'utilisateur est dans la liste des admins autorisés
       const adminEmails = ['clodenerc@yahoo.fr'];
@@ -20,7 +24,10 @@ export const useAdminCreation = () => {
         throw new Error('Accès refusé: Seuls les administrateurs autorisés peuvent créer des utilisateurs');
       }
 
-      // 2. Créer l'utilisateur avec l'API standard (sans trigger)
+      console.log('✅ Admin access verified');
+
+      // 2. ✅ AMÉLIORÉ - Créer l'utilisateur avec l'API standard
+      console.log(' Creating auth user...');
       const { data: newUser, error: signupError } = await supabase.auth.signUp({
         email,
         password,
@@ -33,7 +40,7 @@ export const useAdminCreation = () => {
       });
 
       if (signupError) {
-        console.error('Erreur création auth:', signupError);
+        console.error('❌ Auth signup error:', signupError);
         throw signupError;
       }
 
@@ -41,74 +48,86 @@ export const useAdminCreation = () => {
         throw new Error('Erreur lors de la création de l\'utilisateur');
       }
 
-      // 3. Créer le profil manuellement (sans dépendre du trigger)
+      console.log('✅ Auth user created:', newUser.user.id);
+
+      // 3. ✅ AMÉLIORÉ - Créer le profil manuellement
+      console.log('🚀 Creating profile...');
+      const profileData = {
+        user_id: newUser.user.id,
+        email: email,
+        full_name: fullName || 'Administrateur',
+        is_active: true,
+        role: 'admin', // ✅ AJOUT - Marquer comme admin
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: newUser.user.id,
-          email: email,
-          full_name: fullName || 'Administrateur',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        .insert(profileData);
 
       if (profileError) {
-        console.error('Erreur création profil:', profileError);
+        console.error('❌ Profile creation error:', profileError);
         
         // Si le profil existe déjà, ne pas faire échouer
-        if (profileError.message?.includes('duplicate key')) {
-          console.log('Profil existe déjà, continuer...');
+        if (profileError.message?.includes('duplicate key') || 
+            profileError.message?.includes('already exists')) {
+          console.log('⚠️ Profile already exists, continuing...');
         } else {
           throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
         }
+      } else {
+        console.log('✅ Profile created successfully');
       }
 
-      // 4. Ajouter à la table admin_users si elle existe
-      const { error: adminError } = await supabase
-        .from('admin_users')
-        .insert({
-          user_id: newUser.user.id,
-          email: email,
-          role: 'admin',
-          created_by: user.id
-        });
+      // 4. ✅ AMÉLIORÉ - Ajouter à la table admin_users si elle existe
+      try {
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .insert({
+            user_id: newUser.user.id,
+            email: email,
+            role: 'admin',
+            created_by: user.id,
+            created_at: new Date().toISOString()
+          });
 
-      if (adminError) {
-        console.error('Erreur ajout admin:', adminError);
-        // Ne pas faire échouer si la table n'existe pas
+        if (adminError) {
+          console.warn('⚠️ Admin table error (non-critical):', adminError);
+          // Ne pas faire échouer si la table n'existe pas
+        } else {
+          console.log('✅ Admin record created successfully');
+        }
+      } catch (adminTableError) {
+        console.warn('⚠️ Admin table not available (non-critical):', adminTableError);
       }
 
-      toast({
-        title: "Admin créé",
-        description: `L'administrateur ${email} a été créé avec succès. Il recevra un email de confirmation.`,
-        variant: "default",
-      });
+      console.log('✅ Admin creation completed successfully');
 
       return { success: true, user: newUser.user };
 
     } catch (error: any) {
-      console.error('Erreur création admin:', error);
+      console.error('❌ Admin creation error:', error);
       
       let errorMessage = "Une erreur est survenue lors de la création de l'administrateur.";
       
+      // ✅ AMÉLIORÉ - Gestion d'erreur plus spécifique
       if (error.message?.includes('Database error saving new user')) {
-        errorMessage = "Erreur de base de données. Le trigger de création de profil a été désactivé.";
-      } else if (error.message?.includes('already registered')) {
-        errorMessage = "Cet email est déjà utilisé.";
+        errorMessage = "Erreur de base de données. Vérifiez la configuration Supabase.";
+      } else if (error.message?.includes('already registered') || 
+                 error.message?.includes('already exists')) {
+        errorMessage = "Cet email est déjà utilisé par un autre utilisateur.";
       } else if (error.message?.includes('Invalid email')) {
         errorMessage = "Format d'email invalide.";
       } else if (error.message?.includes('Password should be at least')) {
         errorMessage = "Le mot de passe doit contenir au moins 6 caractères.";
+      } else if (error.message?.includes('Accès refusé')) {
+        errorMessage = error.message;
+      } else if (error.message?.includes('Utilisateur non connecté')) {
+        errorMessage = "Vous devez être connecté pour créer un administrateur.";
       } else if (error.message) {
         errorMessage = error.message;
       }
-
-      toast({
-        title: "Erreur de création",
-        description: errorMessage,
-        variant: "destructive",
-      });
 
       return { success: false, error: errorMessage };
     } finally {

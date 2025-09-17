@@ -258,8 +258,7 @@ const getErrorMessage = (error: any, t: any): string => {
   return t.errors.generalError;
 };
 
-// ✅ CORRECTION: Export avec le bon nom
-export function SignupForm({ language, onClose }: SignupFormProps) {
+export function SignupFormOptimized({ language, onClose }: SignupFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -397,10 +396,16 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       let authData, authError;
       
       try {
-        // ✅ VERSION SIMPLIFIÉE SANS MÉTADONNÉES
         const result = await supabase.auth.signUp({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              age: parseInt(formData.age),
+              gender: formData.gender
+            }
+          }
         });
         
         authData = result.data;
@@ -445,9 +450,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         interests: formData.interests || [],
         plan: 'free',
         is_active: true,
-        // ✅ AJOUT DES CHAMPS OBLIGATOIRES MANQUANTS
-        role: 'user',
-        subscription_plan: 'free'
+        // ✅ NOUVEAU: Sauvegarde des pays ciblés
+        seeking_country: formData.seekingCountry || []
       };
 
       try {
@@ -688,15 +692,15 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     <SelectValue placeholder="Sélectionnez votre pays" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HT"> Haïti</SelectItem>
+                    <SelectItem value="HT">���� Haïti</SelectItem>
                     <SelectItem value="US">🇺🇸 États-Unis</SelectItem>
                     <SelectItem value="CA">🇨🇦 Canada</SelectItem>
                     <SelectItem value="FR">🇫🇷 France</SelectItem>
-                    <SelectItem value="ES"> Espagne</SelectItem>
+                    <SelectItem value="ES">���� Espagne</SelectItem>
                     <SelectItem value="BR">🇧🇷 Brésil</SelectItem>
-                    <SelectItem value="AR">🇦 Argentine</SelectItem>
-                    <SelectItem value="CL"> Chili</SelectItem>
-                    <SelectItem value="MX"> Mexique</SelectItem>
+                    <SelectItem value="AR">🇦�� Argentine</SelectItem>
+                    <SelectItem value="CL">���� Chili</SelectItem>
+                    <SelectItem value="MX">���� Mexique</SelectItem>
                     <SelectItem value="DO">🇩🇴 République Dominicaine</SelectItem>
                   </SelectContent>
                 </Select>
@@ -817,13 +821,13 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     {formData.seekingCountry.map((countryCode) => {
                       // Trouver le nom du pays à partir du code
                       const countryNames: Record<string, string> = {
-                        'US': '🇸 États-Unis',
+                        'US': '��🇸 États-Unis',
                         'CA': '🇨🇦 Canada',
                         'HT': '🇭🇹 Haïti',
                         'FR': '🇫🇷 France',
                         'ES': '🇪🇸 Espagne',
                         'BR': '🇧🇷 Brésil',
-                        'AR': '🇦 Argentine',
+                        'AR': '🇦🇷 Argentine',
                         'CL': '🇨🇱 Chili',
                         'MX': '🇲🇽 Mexique',
                         'DO': '🇩🇴 République Dominicaine'

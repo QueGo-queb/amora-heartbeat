@@ -122,7 +122,6 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
-          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
           media_types?: string[]
           publication_language?: string
           gender_targeting?: string
@@ -146,7 +145,6 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
-          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
           media_types?: string[]
           publication_language?: string
           gender_targeting?: string
@@ -170,7 +168,6 @@ export type Database = {
           post_type?: string
           likes_count?: number
           comments_count?: number
-          // ✅ AJOUT - Nouvelles colonnes pour le ciblage
           media_types?: string[]
           publication_language?: string
           gender_targeting?: string
@@ -264,33 +261,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subscriptions: {
-        Row: {
-          end_date: string
-          id: string
-          plan: "free" | "premium"
-          start_date: string
-          status: "active" | "inactive" | "canceled"
-          user_id: string
-        }
-        Insert: {
-          end_date?: string
-          id?: string
-          plan?: "free" | "premium"
-          start_date?: string
-          status?: "active" | "inactive" | "canceled"
-          user_id?: string
-        }
-        Update: {
-          end_date?: string
-          id?: string
-          plan?: "free" | "premium"
-          start_date?: string
-          status?: "active" | "inactive" | "canceled"
-          user_id?: string
-        }
-        Relationships: []
-      }
       users: {
         Row: {
           created_at: string
@@ -312,269 +282,196 @@ export type Database = {
         }
         Relationships: []
       }
-      // NOUVELLES TABLES AJOUTÉES
-      subscription_plans: {
+      // ✅ TABLES AJOUTÉES CORRECTEMENT
+      locals_available_for_travelers: {
         Row: {
           id: string
-          name: string
-          description: string
-          duration_type: 'monthly' | 'yearly' | 'lifetime'
-          price_amount: number
-          currency: string
-          stripe_price_id: string | null
-          is_active: boolean
-          is_featured: boolean
+          user_id: string
+          full_name: string
+          age: number | null
+          destination_city: string | null
+          destination_country: string | null
+          travel_type: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          name: string
-          description: string
-          duration_type: 'monthly' | 'yearly' | 'lifetime'
-          price_amount: number
-          currency?: string
-          stripe_price_id?: string | null
-          is_active?: boolean
-          is_featured?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string
-          duration_type?: 'monthly' | 'yearly' | 'lifetime'
-          price_amount?: number
-          currency?: string
-          stripe_price_id?: string | null
-          is_active?: boolean
-          is_featured?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      user_subscriptions: {
-        Row: {
-          id: string
           user_id: string
-          plan_id: string
-          start_date: string
-          end_date: string | null
-          status: 'active' | 'inactive' | 'canceled'
-          created_at: string
-          plan?: string
-          auto_renewal?: boolean
-          updated_at?: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          plan_id: string
-          start_date?: string
-          end_date?: string | null
-          status?: 'active' | 'inactive' | 'canceled'
+          full_name: string
+          age?: number | null
+          destination_city?: string | null
+          destination_country?: string | null
+          travel_type?: string | null
           created_at?: string
-          plan?: string
-          auto_renewal?: boolean
           updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          plan_id?: string
-          start_date?: string
-          end_date?: string | null
-          status?: 'active' | 'inactive' | 'canceled' | 'expired'
-          auto_renewal?: boolean
+          full_name?: string
+          age?: number | null
+          destination_city?: string | null
+          destination_country?: string | null
+          travel_type?: string | null
+          created_at?: string
           updated_at?: string
         }
         Relationships: []
       }
-      premium_notifications: {
+      video_profiles: {
         Row: {
           id: string
           user_id: string
-          type: string
-          title: string
+          video_profile_url: string | null
+          storage_path: string | null
+          thumbnail_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          video_profile_url?: string | null
+          storage_path?: string | null
+          thumbnail_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          video_profile_url?: string | null
+          storage_path?: string | null
+          thumbnail_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      live_chat_messages: {
+        Row: {
+          id: string
+          user_id: string
           message: string
-          read_at: string | null
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          type: string
-          title: string
           message: string
-          read_at?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          type?: string
-          title?: string
           message?: string
-          read_at?: string | null
           created_at?: string
         }
         Relationships: []
       }
-      premium_subscriptions: {
+      favorites: {
         Row: {
           id: string
           user_id: string
-          plan_id: string
-          status: 'active' | 'inactive' | 'canceled' | 'expired'
-          start_date: string
-          end_date: string
-          notification_sent: boolean
+          favorite_user_id: string
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          plan_id: string
-          status?: 'active' | 'inactive' | 'canceled' | 'expired'
-          start_date: string
-          end_date: string
-          notification_sent?: boolean
+          favorite_user_id: string
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          plan_id?: string
-          status?: 'active' | 'inactive' | 'canceled' | 'expired'
-          start_date?: string
-          end_date?: string
-          notification_sent?: boolean
+          favorite_user_id?: string
           created_at?: string
         }
         Relationships: []
       }
-      user_roles: {
+      matches: {
         Row: {
           id: string
           user_id: string
-          role_id: string
+          matched_user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          matched_user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          matched_user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          id: string
+          user_id: string
+          notifications_enabled: boolean
+          email_notifications: boolean
+          push_notifications: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          notifications_enabled?: boolean
+          email_notifications?: boolean
+          push_notifications?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          notifications_enabled?: boolean
+          email_notifications?: boolean
+          push_notifications?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      legal_pages: {
+        Row: {
+          id: string
+          slug: string
+          title: string
+          content: string
+          meta_description: string | null
           is_active: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
-          user_id: string
-          role_id: string
+          slug: string
+          title: string
+          content: string
+          meta_description?: string | null
           is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
-          user_id?: string
-          role_id?: string
+          slug?: string
+          title?: string
+          content?: string
+          meta_description?: string | null
           is_active?: boolean
           created_at?: string
-        }
-        Relationships: []
-      }
-      roles: {
-        Row: {
-          id: string
-          name: string
-          display_name: string
-          description: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          display_name: string
-          description: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          display_name?: string
-          description?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      permissions: {
-        Row: {
-          id: string
-          name: string
-          display_name: string
-          description: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          display_name: string
-          description: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          display_name?: string
-          description?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          id: string
-          role_id: string
-          permission_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          role_id: string
-          permission_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          role_id?: string
-          permission_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      transactions: {
-        Row: {
-          id: string
-          user_id: string
-          amount_cents: number
-          currency: string
-          status: 'pending' | 'succeeded' | 'failed'
-          stripe_payment_intent_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          amount_cents: number
-          currency?: string
-          status?: 'pending' | 'succeeded' | 'failed'
-          stripe_payment_intent_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          amount_cents?: number
-          currency?: string
-          status?: 'pending' | 'succeeded' | 'failed'
-          stripe_payment_intent_id?: string
-          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -582,747 +479,37 @@ export type Database = {
         Row: {
           id: string
           reporter_id: string
-          reported_id: string
-          type: string
+          reported_user_id: string | null
+          reported_post_id: string | null
+          report_type: string
           reason: string
-          status: 'pending' | 'resolved' | 'dismissed'
+          status: string
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           reporter_id: string
-          reported_id: string
-          type: string
+          reported_user_id?: string | null
+          reported_post_id?: string | null
+          report_type: string
           reason: string
-          status?: 'pending' | 'resolved' | 'dismissed'
+          status?: string
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           reporter_id?: string
-          reported_id?: string
-          type?: string
+          reported_user_id?: string | null
+          reported_post_id?: string | null
+          report_type?: string
           reason?: string
-          status?: 'pending' | 'resolved' | 'dismissed'
+          status?: string
           created_at?: string
-        }
-        Relationships: []
-      }
-      ads: {
-        Row: {
-          id: string
-          title: string
-          content: string
-          type: string
-          is_active: boolean
-          start_at: string
-          end_at: string
-          target_tags: string[]
-          created_at: string
-          media?: string[]
-          created_by?: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          content: string
-          type: string
-          is_active?: boolean
-          start_at: string
-          end_at: string
-          target_tags?: string[]
-          created_at?: string
-          media?: string[]
-          created_by?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          content?: string
-          type?: string
-          is_active?: boolean
-          start_at?: string
-          end_at?: string
-          target_tags?: string[]
-          created_at?: string
-          media?: string[]
-          created_by?: string
-        }
-        Relationships: []
-      }
-      promotions: {
-        Row: {
-          id: string
-          title: string
-          description: string
-          discount_percentage: number
-          is_active: boolean
-          start_date: string
-          end_date: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          description: string
-          discount_percentage: number
-          is_active?: boolean
-          start_date: string
-          end_date: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          description?: string
-          discount_percentage?: number
-          is_active?: boolean
-          start_date?: string
-          end_date?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      likes: {
-        Row: {
-          id: string
-          user_id: string
-          post_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          post_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          post_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      push_subscriptions: {
-        Row: {
-          id: string
-          user_id: string
-          subscription: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          subscription: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          subscription?: string
           updated_at?: string
         }
         Relationships: []
-      }
-      paypal_config: {
-        Row: {
-          id: string
-          client_id: string
-          client_secret: string
-          paypal_email: string
-          environment: string
-          is_active: boolean
-          created_at: string
-          created_by?: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          client_secret: string
-          paypal_email: string
-          environment?: string
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          client_secret?: string
-          paypal_email?: string
-          environment?: string
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-        }
-        Relationships: []
-      }
-      paypal_payments: {
-        Row: {
-          id: string
-          user_id: string
-          order_id: string
-          amount: number
-          currency: string
-          status: 'pending' | 'failed' | 'completed' | 'cancelled'
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          order_id: string
-          amount: number
-          currency?: string
-          status?: 'pending' | 'failed' | 'completed' | 'cancelled'
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          order_id?: string
-          amount?: number
-          currency?: string
-          status?: 'pending' | 'failed' | 'completed' | 'cancelled'
-          created_at?: string
-        }
-        Relationships: []
-      }
-      premium_pricing: {
-        Row: {
-          id: string
-          price_usd: number
-          currency: string
-          is_active: boolean
-          updated_at: string
-          created_at: string
-          price_eur: number | null
-          price_cad: number | null
-          price_clp: number | null
-          price_htg: number | null
-        }
-        Insert: {
-          id?: string
-          price_usd: number
-          currency?: string
-          is_active?: boolean
-          updated_at?: string
-          created_at?: string
-          price_eur?: number | null
-          price_cad?: number | null
-          price_clp?: number | null
-          price_htg?: number | null
-        }
-        Update: {
-          id?: string
-          price_usd?: number
-          currency?: string
-          is_active?: boolean
-          updated_at?: string
-          created_at?: string
-          price_eur?: number | null
-          price_cad?: number | null
-          price_clp?: number | null
-          price_htg?: number | null
-        }
-        Relationships: []
-      }
-      usdt_payment_links: {
-        Row: {
-          id: string
-          trc20_address: string
-          erc20_address: string
-          trc20_qr_code: string
-          erc20_qr_code: string
-          is_active: boolean
-          updated_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          trc20_address: string
-          erc20_address: string
-          trc20_qr_code?: string
-          erc20_qr_code?: string
-          is_active?: boolean
-          updated_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          trc20_address?: string
-          erc20_address?: string
-          trc20_qr_code?: string
-          erc20_qr_code?: string
-          is_active?: boolean
-          updated_at?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      user_visible_posts: {
-        Row: {
-          id: string
-          content: string
-          post_type: string
-          target_age_min: number
-          target_age_max: number
-          created_at: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          content: string
-          post_type: string
-          target_age_min: number
-          target_age_max: number
-          created_at?: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          content?: string
-          post_type?: string
-          target_age_min?: number
-          target_age_max?: number
-          created_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      footer_socials: {
-        Row: {
-          id: string
-          platform: string
-          url: string
-          icon: string
-          is_active: boolean
-          created_at: string
-          created_by?: string
-          name: string
-          icon_name: string
-          href: string
-          color_class: string
-          order_index: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          platform: string
-          url: string
-          icon: string
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-          name: string
-          icon_name: string
-          href: string
-          color_class?: string
-          order_index?: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          platform?: string
-          url?: string
-          icon?: string
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-          name?: string
-          icon_name?: string
-          href?: string
-          color_class?: string
-          order_index?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      footer_links: {
-        Row: {
-          id: string
-          title: string
-          url: string
-          order: number
-          is_active: boolean
-          created_at: string
-          created_by?: string
-          category: 'quick_links' | 'support' | 'legal'
-          name: string
-          href: string
-          order_index: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          url: string
-          order?: number
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-          category: 'quick_links' | 'support' | 'legal'
-          name: string
-          href: string
-          order_index?: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          url?: string
-          order?: number
-          is_active?: boolean
-          created_at?: string
-          created_by?: string
-          category?: 'quick_links' | 'support' | 'legal'
-          name?: string
-          href?: string
-          order_index?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      moncash_config: {
-        Row: {
-          id: string
-          phone_number: string
-          account_name: string
-          is_active: boolean
-          is_paused: boolean
-          created_at: string
-          updated_at: string
-          created_by?: string
-        }
-        Insert: {
-          id?: string
-          phone_number: string
-          account_name: string
-          is_active?: boolean
-          is_paused?: boolean
-          created_at?: string
-          updated_at?: string
-          created_by?: string
-        }
-        Update: {
-          id?: string
-          phone_number?: string
-          account_name?: string
-          is_active?: boolean
-          is_paused?: boolean
-          created_at?: string
-          updated_at?: string
-          created_by?: string
-        }
-        Relationships: []
-      }
-      moncash_payments: {
-        Row: {
-          id: string
-          config_id: string
-          user_id: string
-          amount: number
-          status: 'pending' | 'verified' | 'rejected'
-          transaction_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          config_id: string
-          user_id: string
-          amount: number
-          status?: 'pending' | 'verified' | 'rejected'
-          transaction_id?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          config_id?: string
-          user_id?: string
-          amount?: number
-          status?: 'pending' | 'verified' | 'rejected'
-          transaction_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      caja_vecina_payments: {
-        Row: {
-          id: string
-          config_id: string
-          user_id: string
-          amount: number
-          status: 'pending' | 'verified' | 'rejected'
-          transaction_id: string
-          created_at: string
-          account_id: string
-          receipt_image_url?: string
-          transaction_reference?: string
-        }
-        Insert: {
-          id?: string
-          config_id: string
-          user_id: string
-          amount: number
-          status?: 'pending' | 'verified' | 'rejected'
-          transaction_id?: string
-          created_at?: string
-          account_id: string
-          receipt_image_url?: string
-          transaction_reference?: string
-        }
-        Update: {
-          id?: string
-          config_id?: string
-          user_id?: string
-          amount?: number
-          status?: 'pending' | 'verified' | 'rejected'
-          transaction_id?: string
-          created_at?: string
-          account_id?: string
-          receipt_image_url?: string
-          transaction_reference?: string
-        }
-        Relationships: []
-      }
-      post_likes: {
-        Row: {
-          id: string
-          post_id: string
-          user_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          post_id: string
-          user_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          post_id?: string
-          user_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      footer_content: {
-        Row: {
-          id: string
-          company_name: string
-          company_description: string
-          company_stats: any
-          is_active: boolean
-          created_at: string
-          updated_at: string
-          created_by?: string
-        }
-        Insert: {
-          id?: string
-          company_name: string
-          company_description: string
-          company_stats: any
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-          created_by?: string
-        }
-        Update: {
-          id?: string
-          company_name?: string
-          company_description?: string
-          company_stats?: any
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-          created_by?: string
-        }
-        Relationships: []
-      }
-      caja_vecina_accounts: {
-        Row: {
-          id: string
-          phone_number: string
-          account_name: string
-          is_active: boolean
-          is_paused: boolean
-          created_at: string
-          updated_at: string
-          account_number: string
-          rut: string
-          created_by?: string
-        }
-        Insert: {
-          id?: string
-          phone_number: string
-          account_name: string
-          is_active?: boolean
-          is_paused?: boolean
-          created_at?: string
-          updated_at?: string
-          account_number: string
-          rut: string
-          created_by?: string
-        }
-        Update: {
-          id?: string
-          phone_number?: string
-          account_name?: string
-          is_active?: boolean
-          is_paused?: boolean
-          created_at?: string
-          updated_at?: string
-          account_number?: string
-          rut?: string
-          created_by?: string
-        }
-        Relationships: []
-      }
-      admin_config: {
-        Row: {
-          id: string
-          key: string
-          value: any
-          description: string
-          updated_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          key: string
-          value: any
-          description?: string
-          updated_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          key?: string
-          value?: any
-          description?: string
-          updated_at?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      call_sessions: {
-        Row: {
-          id: string
-          caller_id: string
-          receiver_id: string
-          call_type: 'audio' | 'video'
-          status: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
-          duration_seconds: number
-          created_at: string
-          started_at: string | null
-          ended_at: string | null
-          last_activity_at: string
-          caller_sdp: Json | null
-          receiver_sdp: Json | null
-          ice_candidates: Json | null
-          connection_quality: 'excellent' | 'good' | 'poor' | 'unknown' | null
-        }
-        Insert: {
-          id?: string
-          caller_id: string
-          receiver_id: string
-          call_type: 'audio' | 'video'
-          status?: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
-          duration_seconds?: number
-          created_at?: string
-          started_at?: string | null
-          ended_at?: string | null
-          last_activity_at?: string
-          caller_sdp?: Json | null
-          receiver_sdp?: Json | null
-          ice_candidates?: Json | null
-          connection_quality?: 'excellent' | 'good' | 'poor' | 'unknown' | null
-        }
-        Update: {
-          id?: string
-          caller_id?: string
-          receiver_id?: string
-          call_type?: 'audio' | 'video'
-          status?: 'initiating' | 'ringing' | 'connecting' | 'active' | 'ended' | 'cancelled' | 'failed' | 'rejected'
-          duration_seconds?: number
-          created_at?: string
-          started_at?: string | null
-          ended_at?: string | null
-          last_activity_at?: string
-          caller_sdp?: Json | null
-          receiver_sdp?: Json | null
-          ice_candidates?: Json | null
-          connection_quality?: 'excellent' | 'good' | 'poor' | 'unknown' | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "call_sessions_caller_id_fkey"
-            columns: ["caller_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "call_sessions_receiver_id_fkey"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      call_preferences: {
-        Row: {
-          user_id: string
-          allow_calls_from: 'everyone' | 'matches' | 'premium' | 'none'
-          auto_answer: boolean
-          call_notifications: boolean
-          video_quality: 'low' | 'medium' | 'high' | 'auto'
-          audio_echo_cancellation: boolean
-          available_for_calls: boolean
-          available_hours_start: string
-          available_hours_end: string
-          timezone: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          user_id: string
-          allow_calls_from?: 'everyone' | 'matches' | 'premium' | 'none'
-          auto_answer?: boolean
-          call_notifications?: boolean
-          video_quality?: 'low' | 'medium' | 'high' | 'auto'
-          audio_echo_cancellation?: boolean
-          available_for_calls?: boolean
-          available_hours_start?: string
-          available_hours_end?: string
-          timezone?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          user_id?: string
-          allow_calls_from?: 'everyone' | 'matches' | 'premium' | 'none'
-          auto_answer?: boolean
-          call_notifications?: boolean
-          video_quality?: 'low' | 'medium' | 'high' | 'auto'
-          audio_echo_cancellation?: boolean
-          available_for_calls?: boolean
-          available_hours_start?: string
-          available_hours_end?: string
-          timezone?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "call_preferences_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
       }
     }
     Views: {
@@ -1347,111 +534,6 @@ export type Database = {
         }
         Returns: any[]
       }
-      get_all_premium_pricing: {
-        Args: {}
-        Returns: any[]
-      }
-      get_active_premium_pricing: {
-        Args: {}
-        Returns: any
-      }
-      save_premium_pricing: {
-        Args: {
-          pricing_data: any
-          admin_email?: string
-          p_price_usd?: number
-          p_price_eur?: number
-          p_price_cad?: number
-          p_price_clp?: number
-          p_price_htg?: number
-          p_currency?: string
-          p_exchange_rates?: any
-        }
-        Returns: any
-      }
-      activate_premium_pricing: {
-        Args: {
-          pricing_id: string
-        }
-        Returns: boolean
-      }
-      get_current_user_unified: {
-        Args: {}
-        Returns: any
-      }
-    }
-    // NOUVELLES TABLES POUR LE SYSTÈME DE TRANSFERT D'ARGENT
-    payment_methods: {
-      Row: {
-        id: string
-        type: 'bank' | 'card' | 'interac'
-        name: string
-        details: string
-        is_default: boolean
-        is_active: boolean
-        created_by: string
-        created_at: string
-        updated_at: string
-      }
-      Insert: {
-        id?: string
-        type: 'bank' | 'card' | 'interac'
-        name: string
-        details: string
-        is_default?: boolean
-        is_active?: boolean
-        created_by: string
-        created_at?: string
-        updated_at?: string
-      }
-      Update: {
-        id?: string
-        type?: 'bank' | 'card' | 'interac'
-        name?: string
-        details?: string
-        is_default?: boolean
-        is_active?: boolean
-        created_by?: string
-        created_at?: string
-        updated_at?: string
-      }
-      Relationships: []
-    }
-    admin_transfers: {
-      Row: {
-        id: string
-        amount: number
-        status: 'pending' | 'completed' | 'failed'
-        transfer_method: string
-        payment_method_id: string
-        requested_by: string
-        description: string
-        created_at: string
-        updated_at: string
-      }
-      Insert: {
-        id?: string
-        amount: number
-        status?: 'pending' | 'completed' | 'failed'
-        transfer_method: string
-        payment_method_id: string
-        requested_by: string
-        description: string
-        created_at?: string
-        updated_at?: string
-      }
-      Update: {
-        id?: string
-        amount?: number
-        status?: 'pending' | 'completed' | 'failed'
-        transfer_method?: string
-        payment_method_id?: string
-        requested_by?: string
-        description?: string
-        created_at?: string
-        updated_at?: string
-      }
-      Relationships: []
     }
     Enums: {
       [_ in never]: never

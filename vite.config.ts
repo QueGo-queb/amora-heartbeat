@@ -28,12 +28,21 @@ export default defineConfig(({ mode }) => ({
     }
   },
   
-  // Optimisations production
+  // ✅ OPTIMISÉ: Suppression automatique des console.log en production
   define: {
     ...(mode === 'production' && {
       'console.log': '(() => {})',
       'console.debug': '(() => {})',
       'console.warn': '(() => {})',
+      'console.info': '(() => {})',
+      'console.trace': '(() => {})',
+      'console.table': '(() => {})',
+      'console.group': '(() => {})',
+      'console.groupEnd': '(() => {})',
+      'console.time': '(() => {})',
+      'console.timeEnd': '(() => {})',
+      'console.count': '(() => {})',
+      'console.clear': '(() => {})'
     }),
   },
   
@@ -46,19 +55,22 @@ export default defineConfig(({ mode }) => ({
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
           supabase: ['@supabase/supabase-js'],
           utils: ['date-fns', 'clsx', 'zustand'],
+          // ✅ OPTIMISÉ: Séparer les composants lourds
+          charts: ['recharts'],
+          animations: ['framer-motion', 'react-spring'],
         },
       },
     },
     terserOptions: {
       compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.debug', 'console.warn'],
+        drop_console: mode === 'production',
+        drop_debugger: mode === 'production',
+        pure_funcs: mode === 'production' ? ['console.log', 'console.debug', 'console.warn', 'console.info'] : [],
       },
     },
   },
   
-  // Optimisations générales
+  // ✅ OPTIMISÉ: Suppression des console en production
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },

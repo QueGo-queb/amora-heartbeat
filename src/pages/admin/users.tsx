@@ -68,6 +68,43 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const { createAdmin } = useAdminCreation();
 
+  // ✅ AJOUT - État de validation
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // ✅ AJOUT - Validation en temps réel
+  const validateAdminForm = (field: string, value: string) => {
+    const errors: Record<string, string> = { ...validationErrors };
+    
+    switch (field) {
+      case 'email':
+        if (!value) {
+          errors.email = 'L\'email est requis';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = 'Format d\'email invalide';
+        } else {
+          delete errors.email;
+        }
+        break;
+      case 'password':
+        if (!value) {
+          errors.password = 'Le mot de passe est requis';
+        } else if (value.length < 6) {
+          errors.password = 'Le mot de passe doit contenir au moins 6 caractères';
+        } else {
+          delete errors.password;
+        }
+        break;
+    }
+    
+    setValidationErrors(errors);
+  };
+
+  // ✅ AMÉLIORÉ - Gestion des changements de formulaire
+  const handleFormChange = (field: string, value: string) => {
+    setNewAdminForm(prev => ({ ...prev, [field]: value }));
+    validateAdminForm(field, value);
+  };
+
   useEffect(() => {
     checkAdminAccess();
     loadUsers();
@@ -112,24 +149,85 @@ const AdminUsers = () => {
     }
   };
 
-  // Créer un nouvel administrateur
+  // ✅ CORRIGÉ - Fonction de création d'admin
   const handleCreateAdmin = async (formData: any) => {
     try {
-      // Utiliser le hook de création d'admin
+      setCreateAdminLoading(true);
+      
+      // ✅ VALIDATION PRÉALABLE
+      if (!formData.email || !formData.password) {
+        toast({
+          title: "Erreur de validation",
+          description: "L'email et le mot de passe sont requis.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (formData.password.length < 6) {
+        toast({
+          title: "Erreur de validation",
+          description: "Le mot de passe doit contenir au moins 6 caractères.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // ✅ VALIDATION EMAIL
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast({
+          title: "Erreur de validation",
+          description: "Format d'email invalide.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log(' Creating admin with data:', formData);
+      
+      // ✅ CORRIGÉ - Utiliser le bon nom de champ
       const result = await createAdmin(
         formData.email,
         formData.password,
-        formData.fullName
+        formData.full_name || formData.fullName // Support des deux formats
       );
 
       if (result.success) {
+        // ✅ RÉINITIALISER LE FORMULAIRE
+        setNewAdminForm({
+          email: '',
+          full_name: '',
+          password: ''
+        });
+        
         // Recharger la liste des utilisateurs
-        loadUsers();
+        await loadUsers();
+        
         // Fermer le modal
         setShowCreateAdminDialog(false);
+        
+        toast({
+          title: "✅ Succès",
+          description: `L'administrateur ${formData.email} a été créé avec succès !`,
+        });
+      } else {
+        toast({
+          title: "❌ Erreur",
+          description: result.error || "Erreur lors de la création de l'administrateur.",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
-      console.error('Erreur création admin:', error);
+    } catch (error: any) {
+      console.error('❌ Erreur création admin:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: error.message || "Une erreur inattendue s'est produite.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreateAdminLoading(false);
     }
   };
 
@@ -271,7 +369,9 @@ const AdminUsers = () => {
                         onChange={(e) => setNewAdminForm(prev => ({ ...prev, email: e.target.value }))}
                         placeholder="admin@example.com"
                         disabled={createAdminLoading}
+                        className="mt-1"
                       />
+                      {validationErrors.email && <p className="text-sm text-red-500 mt-1">{validationErrors.email}</p>}
                     </div>
                     <div>
                       <Label htmlFor="admin-name">Nom complet</Label>
@@ -281,6 +381,7 @@ const AdminUsers = () => {
                         onChange={(e) => setNewAdminForm(prev => ({ ...prev, full_name: e.target.value }))}
                         placeholder="Nom de l'administrateur"
                         disabled={createAdminLoading}
+                        className="mt-1"
                       />
                     </div>
                     <div>
@@ -290,11 +391,16 @@ const AdminUsers = () => {
                         type="password"
                         value={newAdminForm.password}
                         onChange={(e) => setNewAdminForm(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder="Mot de passe sécurisé"
+                        placeholder="Mot de passe sécurisé (min. 6 caractères)"
                         disabled={createAdminLoading}
+                        className="mt-1"
                       />
+                      {validationErrors.password && <p className="text-sm text-red-500 mt-1">{validationErrors.password}</p>}
+                      <p className="text-sm text-gray-500 mt-1">
+                        L'administrateur devra changer ce mot de passe lors de sa première connexion.
+                      </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-4">
                       <Button 
                         onClick={() => handleCreateAdmin(newAdminForm)}
                         disabled={createAdminLoading || !newAdminForm.email || !newAdminForm.password}
@@ -309,7 +415,10 @@ const AdminUsers = () => {
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={() => setShowCreateAdminDialog(false)}
+                        onClick={() => {
+                          setShowCreateAdminDialog(false);
+                          setNewAdminForm({ email: '', full_name: '', password: '' });
+                        }}
                         disabled={createAdminLoading}
                       >
                         <X className="w-4 h-4" />
