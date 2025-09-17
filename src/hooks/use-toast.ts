@@ -171,6 +171,7 @@ function toast({ ...props }: Toast) {
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
+  // ✅ SOLUTION BOUCLE INFINIE #5 - useEffect stable
   React.useEffect(() => {
     listeners.push(setState)
     return () => {
@@ -179,7 +180,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // ✅ Tableau vide - setState est stable
 
   return {
     ...state,

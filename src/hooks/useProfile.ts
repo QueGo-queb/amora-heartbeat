@@ -208,7 +208,7 @@ export function useProfile() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []); // ✅ Pas de dépendances
 
   // Mettre à jour le profil
   const updateProfile = useCallback(async (updatedData: Partial<ProfileData>) => {
@@ -255,11 +255,21 @@ export function useProfile() {
   const refreshProfile = useCallback(async () => {
     console.log('🔄 Rafraîchissement du profil...');
     await loadProfile();
-  }, [loadProfile]);
+  }, []); // ✅ Pas de dépendances - loadProfile sera appelé directement
 
+  // ✅ SOLUTION BOUCLE INFINIE #1 - refreshProfile stable
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    if (user?.id) {
+      loadProfile();
+    }
+  }, [user?.id]); // ✅ Seulement user.id
+
+  // ✅ SOLUTION BOUCLE INFINIE #2 - useEffect stable
+  useEffect(() => {
+    if (user?.id) {
+      loadProfile();
+    }
+  }, [user?.id]); // ✅ Seulement user.id
 
   return {
     profile,

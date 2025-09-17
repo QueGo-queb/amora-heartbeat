@@ -3,7 +3,7 @@
  * Gère le chargement, le filtrage et la pagination des posts
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { FeedPost, FeedFilters, FeedResponse } from '../../types/feed';
@@ -31,6 +31,24 @@ export function useFeed(options: UseFeedOptions = {}) {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // ✅ SOLUTION BOUCLE INFINIE #2 - Utiliser useRef pour les valeurs stables
+  const filtersRef = useRef(filters);
+  const pageSizeRef = useRef(pageSize);
+  const userRef = useRef(user);
+
+  // Mettre à jour les refs quand nécessaire
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    pageSizeRef.current = pageSize;
+  }, [pageSize]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   // Fonction de scoring pour trier les posts
   const calculatePostScore = (post: FeedPost): number => {
     let score = 0;
@@ -52,7 +70,7 @@ export function useFeed(options: UseFeedOptions = {}) {
     return score;
   };
 
-  // Charger les posts avec scoring
+  // ✅ SOLUTION BOUCLE INFINIE #2 - loadPosts stable
   const loadPosts = useCallback(async (cursor?: string, append = false) => {
     try {
       setError(null);
@@ -61,15 +79,15 @@ export function useFeed(options: UseFeedOptions = {}) {
 
       // Préparer les filtres pour la fonction RPC
       const userFilters = {
-        media_type: filters.media_type || 'all',
-        premium_only: filters.premium_only ? 'true' : 'false',
-        tags: filters.tags || []
+        media_type: filtersRef.current.media_type || 'all',
+        premium_only: filtersRef.current.premium_only ? 'true' : 'false',
+        tags: filtersRef.current.tags || []
       };
 
       // Utiliser notre fonction RPC optimisée
       const { data, error: fetchError } = await supabase.rpc('get_feed_posts_optimized', {
-        user_id: user?.id || '',
-        page_size: pageSize,
+        user_id: userRef.current?.id || '',
+        page_size: pageSizeRef.current,
         cursor_date: cursor ? cursor : null,
         user_filters: userFilters
       });
@@ -119,7 +137,7 @@ export function useFeed(options: UseFeedOptions = {}) {
       })) || [];
 
       // Trier par score si demandé
-      if (filters.sort_by === 'popular') {
+      if (filtersRef.current.sort_by === 'popular') {
         transformedPosts.sort((a, b) => b.score - a.score);
       }
 
@@ -131,7 +149,7 @@ export function useFeed(options: UseFeedOptions = {}) {
       }
 
       // Gérer la pagination
-      setHasMore(transformedPosts.length === pageSize);
+      setHasMore(transformedPosts.length === pageSizeRef.current);
       if (transformedPosts.length > 0) {
         setNextCursor(transformedPosts[transformedPosts.length - 1].created_at);
       }
@@ -148,57 +166,86 @@ export function useFeed(options: UseFeedOptions = {}) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [filters, pageSize, toast, user?.id]);
+  }, [toast]); // ✅ Seulement toast dans les dépendances
 
-  // Charger plus de posts (pagination)
+  // ✅ SOLUTION BOUCLE INFINIE - loadMore stable
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore && nextCursor) {
       loadPosts(nextCursor, true);
     }
-  }, [loadPosts, loadingMore, hasMore, nextCursor]);
+  }, [loadingMore, hasMore, nextCursor]); // ✅ PAS de loadPosts dans les dépendances
 
-  // Rafraîchir le feed
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
+  useEffect(() => {
+    if (loadingMore || !hasMore || !nextCursor) return;
+    loadPosts(nextCursor, true);
+  }, [loadingMore, hasMore, nextCursor]); // ✅ PAS de loadPosts dans les dépendances
+
+  // ✅ SOLUTION BOUCLE INFINIE - refresh stable
   const refresh = useCallback(() => {
     setPosts([]);
     setNextCursor(null);
     setHasMore(true);
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Retirer loadPosts des dépendances
 
-  // Like/Unlike un post
+  // ✅ SOLUTION BOUCLE INFINIE #1 - toggleLike stable
   const toggleLike = useCallback(async (postId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Utilisateur non connecté');
 
-      const post = posts.find(p => p.id === postId);
-      if (!post) return;
+      // ✅ Utiliser une fonction de callback stable
+      setPosts(prev => {
+        const post = prev.find(p => p.id === postId);
+        if (!post) return prev;
 
-      if (post.is_liked) {
-        // Unlike
-        await supabase
-          .from('post_likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('user_id', user.id);
+        if (post.is_liked) {
+          // Unlike - effectuer l'action en base
+          supabase
+            .from('post_likes')
+            .delete()
+            .eq('post_id', postId)
+            .eq('user_id', user.id)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Error removing like:', error);
+                toast({
+                  title: "Erreur",
+                  description: "Impossible de supprimer le like",
+                  variant: "destructive",
+                });
+              }
+            });
 
-        setPosts(prev => prev.map(p => 
-          p.id === postId 
-            ? { ...p, is_liked: false, likes_count: p.likes_count - 1 }
-            : p
-        ));
-      } else {
-        // Like
-        await supabase
-          .from('post_likes')
-          .insert({ post_id: postId, user_id: user.id });
+          return prev.map(p => 
+            p.id === postId 
+              ? { ...p, is_liked: false, likes_count: p.likes_count - 1 }
+              : p
+          );
+        } else {
+          // Like - effectuer l'action en base
+          supabase
+            .from('post_likes')
+            .insert({ post_id: postId, user_id: user.id })
+            .then(({ error }) => {
+              if (error) {
+                console.error('Error adding like:', error);
+                toast({
+                  title: "Erreur",
+                  description: "Impossible d'ajouter le like",
+                  variant: "destructive",
+                });
+              }
+            });
 
-        setPosts(prev => prev.map(p => 
-          p.id === postId 
-            ? { ...p, is_liked: true, likes_count: p.likes_count + 1 }
-            : p
-        ));
-      }
+          return prev.map(p => 
+            p.id === postId 
+              ? { ...p, is_liked: true, likes_count: p.likes_count + 1 }
+              : p
+          );
+        }
+      });
     } catch (err) {
       console.error('Error toggling like:', err);
       toast({
@@ -207,7 +254,7 @@ export function useFeed(options: UseFeedOptions = {}) {
         variant: "destructive",
       });
     }
-  }, [posts, toast]);
+  }, [toast]); // ✅ Seulement toast dans les dépendances
 
   // Créer un nouveau post
   const createPost = useCallback(async (postData: any) => {
@@ -272,10 +319,12 @@ export function useFeed(options: UseFeedOptions = {}) {
     };
   }, [autoRefresh]);
 
-  // Charger les posts au montage et quand les filtres changent
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
-    loadPosts();
-  }, [loadPosts]);
+    if (user?.id) {
+      loadPosts();
+    }
+  }, []); // ✅ Se déclenche une seule fois
 
   return {
     posts,

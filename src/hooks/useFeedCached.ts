@@ -52,58 +52,71 @@ export function useFeedCached(options: UseFeedOptions = {}) {
 
       if (fetchError) throw fetchError;
 
-      const newPosts = data || [];
-      
-      if (append) {
-        setPosts(prev => [...prev, ...newPosts]);
+      const transformedPosts = data?.map(post => ({
+        id: post.id,
+        content: post.content,
+        created_at: post.created_at,
+        user: {
+          id: post.user_id,
+          full_name: post.user_full_name,
+          avatar_url: post.user_avatar_url
+        },
+        likes_count: post.likes_count,
+        comments_count: post.comments_count
+      })) || [];
+
+      if (append && cursor) {
+        setPosts(prev => [...prev, ...transformedPosts]);
       } else {
-        setPosts(newPosts);
-        
-        // Mettre en cache si premier chargement
-        if (useCache && !cursor && newPosts.length > 0) {
-          await FeedCacheService.setUserFeed(user.id, newPosts);
-          }
+        setPosts(transformedPosts);
       }
 
-      setHasMore(newPosts.length === pageSize);
+      setHasMore(transformedPosts.length === pageSize);
+
+      // Mettre en cache si activé
+      if (useCache && !cursor && !append) {
+        await FeedCacheService.setUserFeed(user.id, transformedPosts);
+      }
 
     } catch (err) {
-      console.error('Error loading feed:', err);
-      setError('Erreur lors du chargement du feed');
+      console.error('Erreur chargement feed:', err);
+      setError('Erreur lors du chargement');
     } finally {
       setLoading(false);
     }
   }, [user?.id, pageSize, useCache, cacheFirst]);
 
-  const refreshFeed = useCallback(async () => {
-    if (user?.id && useCache) {
-      // Invalidate cache and reload
-      await FeedCacheService.invalidateUserFeed(user.id);
-    }
+  const refresh = useCallback(async () => {
+    setPosts([]);
+    setHasMore(true);
     await loadPosts();
-  }, [user?.id, useCache, loadPosts]);
+  }, []); // ✅ Retirer loadPosts des dépendances
 
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
-    
-    const lastPost = posts[posts.length - 1];
-    if (lastPost) {
-      await loadPosts(lastPost.created_at, true);
+  // ✅ SOLUTION BOUCLE INFINIE - loadMore stable
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      const lastPost = posts[posts.length - 1];
+      if (lastPost) {
+        loadPosts(lastPost.created_at, true);
+      }
     }
-  }, [posts, hasMore, loading, loadPosts]);
+  }, [loading, hasMore, posts]); // ✅ PAS de loadPosts dans les dépendances
 
-  // Chargement initial
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
+    if (loading || !hasMore) return;
+    if (posts.length === 0) return; // Éviter le chargement initial en boucle
+    
+    // Charger plus de posts
     loadPosts();
-  }, [loadPosts]);
+  }, [loading, hasMore, posts]); // ✅ PAS de loadPosts dans les dépendances
 
   return {
     posts,
     loading,
     error,
     hasMore,
-    loadMore,
-    refreshFeed,
-    invalidateCache: () => user?.id && FeedCacheService.invalidateUserFeed(user.id)
+    refresh,
+    loadMore
   };
 }

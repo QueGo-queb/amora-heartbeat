@@ -3,13 +3,20 @@
  * Utilise Supabase Realtime pour écouter les nouveaux posts
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { FeedPost, FeedFilters, FeedResponse } from '../../types/feed';
 
 export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
   const [newPosts, setNewPosts] = useState<FeedPost[]>([]);
   const [hasNewPosts, setHasNewPosts] = useState(false);
+  
+  // ✅ SOLUTION BOUCLE INFINIE #3 - Utiliser useRef pour viewerProfile
+  const viewerProfileRef = useRef(viewerProfile);
+  
+  useEffect(() => {
+    viewerProfileRef.current = viewerProfile;
+  }, [viewerProfile]);
 
   useEffect(() => {
     // S'abonner aux nouveaux posts
@@ -38,9 +45,9 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
 
             if (error || !newPost) return;
 
-            // Vérifier si le post correspond aux critères de l'utilisateur
+            // ✅ Utiliser la ref stable
             const { attachScores } = await import('../../utils/scoring');
-            const scoredPosts = attachScores([newPost], viewerProfile);
+            const scoredPosts = attachScores([newPost], viewerProfileRef.current);
             
             if (scoredPosts.length > 0) {
               setNewPosts(prev => [scoredPosts[0], ...prev]);
@@ -56,7 +63,7 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [viewerProfile]);
+  }, []); // ✅ Tableau vide - subscription stable
 
   // Fonction pour intégrer les nouveaux posts dans le feed principal
   const integrateNewPosts = () => {

@@ -213,13 +213,15 @@ export function useFeedOptimized(options: UseFeedOptimizedOptions = {}) {
     }
   }, [filters, pageSize, nextCursor, user, cacheKey, enableCache, cacheTTL, calculatePostScore, toast, measureQuery]);
 
-  // ✅ OPTIMISÉ: Fonction de refresh avec invalidation du cache
+  // ✅ SOLUTION BOUCLE INFINIE - refresh stable
   const refresh = useCallback(async () => {
+    console.log('🔄 Rafraîchissement du feed optimisé...');
+    
     if (enableCache) {
-      await CacheService.delete(cacheKey);
+      await CacheService.clear(`feed:${cacheKey}`);
     }
     await loadPosts(false);
-  }, [loadPosts, cacheKey, enableCache]);
+  }, [cacheKey, enableCache]); // ✅ Retirer loadPosts des dépendances
 
   // ✅ OPTIMISÉ: Fonction de like optimisée
   const toggleLike = useCallback(async (postId: string) => {
@@ -274,10 +276,10 @@ export function useFeedOptimized(options: UseFeedOptimizedOptions = {}) {
     }
   }, [user, cacheKey, enableCache, toast]);
 
-  // ✅ OPTIMISÉ: Chargement initial
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
     loadPosts(false);
-  }, [loadPosts]);
+  }, []); // ✅ Se déclenche une seule fois
 
   // ✅ OPTIMISÉ: Nettoyage à la destruction
   useEffect(() => {

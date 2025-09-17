@@ -68,7 +68,7 @@ export const useFooter = () => {
     }
   }, []);
 
-  // Charger les données
+  // ✅ SOLUTION BOUCLES INFINITES - loadAllFooterData stable
   const loadAllFooterData = useCallback(async () => {
     setLoading(true);
     console.log('🔍 === DÉBUT CHARGEMENT FOOTER DATA ===');
@@ -123,55 +123,28 @@ export const useFooter = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast]); // ✅ Seulement toast dans les dépendances
 
-  // ✅ CORRECTION: Implémenter updateContent
-  const updateContent = useCallback(async (newContent: Omit<FooterContent, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('🔄 === DÉBUT updateContent ===');
-    console.log('📝 New Content:', newContent);
-    
+  // ✅ SOLUTION BOUCLE INFINIE FINALE - Toutes les fonctions stables
+  const updateContent = useCallback(async (newContent: any) => {
     try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
 
-      console.log('🔄 Envoi requête UPDATE vers Supabase...');
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('footer_content')
-        .update({
-          ...newContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('is_active', true)
-        .select()
-        .single();
+        .upsert(newContent);
 
-      console.log('📊 === RÉPONSE SUPABASE updateContent ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
+      if (error) throw error;
 
-      if (error) {
-        console.error('❌ Erreur SQL updateContent:', error);
-        throw error;
-      }
-
-      console.log('✅ updateContent réussi !');
-      
       toast({
-        title: "✅ Contenu mis à jour",
-        description: "Le contenu du footer a été mis à jour avec succès.",
+        title: "Succès",
+        description: "Contenu mis à jour avec succès",
       });
 
-      // Recharger les données
+      // ✅ Recharger les données après mise à jour
       await loadAllFooterData();
-      
-      console.log('🏁 === FIN updateContent ===');
-      return data;
-
     } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE updateContent ===');
       console.error('❌ Exception:', error);
       
       toast({
@@ -181,46 +154,35 @@ export const useFooter = () => {
       });
       throw error;
     }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
 
   // ✅ CORRECTION: Implémenter addLink
   const addLink = useCallback(async (link: Omit<FooterLink, 'id' | 'created_at' | 'updated_at'>) => {
     console.log('🔄 === DÉBUT addLink ===');
     console.log('📝 New Link:', link);
-    
-    try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
 
-      const { data, error } = await supabase
+    try {
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
+
+      const { error } = await supabase
         .from('footer_links')
-        .insert({
+        .insert([{
           ...link,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+        }]);
 
-      if (error) {
-        console.error('❌ Erreur SQL addLink:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ addLink réussi !');
-      
       toast({
-        title: "✅ Lien ajouté",
-        description: "Le lien a été ajouté avec succès.",
+        title: "Succès",
+        description: "Lien ajouté avec succès",
       });
 
+      // ✅ Recharger les données après ajout
       await loadAllFooterData();
-      return data;
-
     } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE addLink ===');
       console.error('❌ Exception:', error);
       
       toast({
@@ -230,46 +192,109 @@ export const useFooter = () => {
       });
       throw error;
     }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
+
+  // ✅ CORRECTION: Implémenter updateLink
+  const updateLink = useCallback(async (id: string, updates: Partial<FooterLink>) => {
+    console.log('🔄 === DÉBUT updateLink ===');
+    console.log('🔧 Link ID:', id);
+    console.log('📝 Updates:', updates);
+
+    try {
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
+
+      const { error } = await supabase
+        .from('footer_links')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Lien mis à jour avec succès",
+      });
+
+      // ✅ Recharger les données après mise à jour
+      await loadAllFooterData();
+    } catch (error: any) {
+      console.error('❌ Exception:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible de mettre à jour le lien: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
+
+  // ✅ CORRECTION: Implémenter deleteLink
+  const deleteLink = useCallback(async (id: string) => {
+    console.log('🔄 === DÉBUT deleteLink ===');
+    console.log('🗑️ Link ID:', id);
+
+    try {
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
+
+      const { error } = await supabase
+        .from('footer_links')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Lien supprimé avec succès",
+      });
+
+      // ✅ Recharger les données après suppression
+      await loadAllFooterData();
+    } catch (error: any) {
+      console.error('❌ Exception:', error);
+      
+      toast({
+        title: "❌ Erreur",
+        description: `Impossible de supprimer le lien: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
 
   // ✅ CORRECTION: Implémenter addSocial
   const addSocial = useCallback(async (social: Omit<FooterSocial, 'id' | 'created_at' | 'updated_at'>) => {
     console.log('🔄 === DÉBUT addSocial ===');
     console.log('📝 New Social:', social);
-    
-    try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
 
-      const { data, error } = await supabase
+    try {
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
+
+      const { error } = await supabase
         .from('footer_socials')
-        .insert({
+        .insert([{
           ...social,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+        }]);
 
-      if (error) {
-        console.error('❌ Erreur SQL addSocial:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ addSocial réussi !');
-      
       toast({
-        title: "✅ Réseau social ajouté",
-        description: "Le réseau social a été ajouté avec succès.",
+        title: "Succès",
+        description: "Réseau social ajouté avec succès",
       });
 
+      // ✅ Recharger les données après ajout
       await loadAllFooterData();
-      return data;
-
     } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE addSocial ===');
       console.error('❌ Exception:', error);
       
       toast({
@@ -279,146 +304,55 @@ export const useFooter = () => {
       });
       throw error;
     }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
 
-  // Mettre à jour un lien
-  const updateLink = useCallback(async (id: string, updates: Partial<FooterLink>) => {
-    console.log('🔄 === DÉBUT updateLink ===');
-    console.log('📝 ID:', id);
-    console.log('📝 Updates:', updates);
-    
-    try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
-
-      const { data, error } = await supabase
-        .from('footer_links')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Erreur SQL updateLink:', error);
-        throw error;
-      }
-
-      console.log('✅ updateLink réussi !');
-      
-      toast({
-        title: "✅ Lien mis à jour",
-        description: "Le lien a été mis à jour avec succès.",
-      });
-
-      await loadAllFooterData();
-      return data;
-
-    } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE updateLink ===');
-      console.error('❌ Exception:', error);
-      
-      toast({
-        title: "❌ Erreur",
-        description: `Impossible de modifier le lien: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
-
-  // Mettre à jour un réseau social
+  // ✅ CORRECTION: Implémenter updateSocial
   const updateSocial = useCallback(async (id: string, updates: Partial<FooterSocial>) => {
     console.log('🔄 === DÉBUT updateSocial ===');
-    console.log('📝 ID:', id);
+    console.log('�� Social ID:', id);
     console.log('📝 Updates:', updates);
-    
-    try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
 
-      const { data, error } = await supabase
+    try {
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
+
+      const { error } = await supabase
         .from('footer_socials')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Erreur SQL updateSocial:', error);
-        throw error;
-      }
-
-      console.log('✅ updateSocial réussi !');
-      
-      toast({
-        title: "✅ Réseau social mis à jour",
-        description: "Le réseau social a été mis à jour avec succès.",
-      });
-
-      await loadAllFooterData();
-      return data;
-
-    } catch (error: any) {
-      console.error('❌ === ERREUR COMPLÈTE updateSocial ===');
-      console.error('❌ Exception:', error);
-      
-      toast({
-        title: "❌ Erreur",
-        description: `Impossible de modifier le réseau social: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
-
-  // Supprimer un lien
-  const deleteLink = useCallback(async (id: string) => {
-    try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
-
-      const { error } = await supabase
-        .from('footer_links')
-        .delete()
         .eq('id', id);
 
       if (error) throw error;
 
       toast({
-        title: "✅ Lien supprimé",
-        description: "Le lien a été supprimé définitivement.",
+        title: "Succès",
+        description: "Réseau social mis à jour avec succès",
       });
 
+      // ✅ Recharger les données après mise à jour
       await loadAllFooterData();
     } catch (error: any) {
+      console.error('❌ Exception:', error);
+      
       toast({
         title: "❌ Erreur",
-        description: `Impossible de supprimer le lien: ${error.message}`,
+        description: `Impossible de mettre à jour le réseau social: ${error.message}`,
         variant: "destructive",
       });
       throw error;
     }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
 
-  // Supprimer un réseau social
+  // ✅ CORRECTION: Implémenter deleteSocial
   const deleteSocial = useCallback(async (id: string) => {
+    console.log('🔄 === DÉBUT deleteSocial ===');
+    console.log('🗑️ Social ID:', id);
+
     try {
-      const hasPermissions = await checkAdminPermissions();
-      if (!hasPermissions) {
-        throw new Error('Permissions admin requises');
-      }
+      const isAdmin = await checkAdminPermissions();
+      if (!isAdmin) throw new Error('Accès non autorisé');
 
       const { error } = await supabase
         .from('footer_socials')
@@ -428,12 +362,15 @@ export const useFooter = () => {
       if (error) throw error;
 
       toast({
-        title: "✅ Réseau social supprimé",
-        description: "Le réseau social a été supprimé définitivement.",
+        title: "Succès",
+        description: "Réseau social supprimé avec succès",
       });
 
+      // ✅ Recharger les données après suppression
       await loadAllFooterData();
     } catch (error: any) {
+      console.error('❌ Exception:', error);
+      
       toast({
         title: "❌ Erreur",
         description: `Impossible de supprimer le réseau social: ${error.message}`,
@@ -441,14 +378,14 @@ export const useFooter = () => {
       });
       throw error;
     }
-  }, [checkAdminPermissions, loadAllFooterData, toast]);
+  }, [checkAdminPermissions, toast]); // ✅ loadAllFooterData retiré des dépendances
 
-  // Charger les données au montage
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
     loadAllFooterData();
-  }, [loadAllFooterData]);
+  }, []); // ✅ Se déclenche une seule fois
 
-  // Listeners temps réel pour toutes les tables
+  // ✅ SOLUTION BOUCLE INFINIE - listeners stable
   useEffect(() => {
     console.log('🔄 Configuration des listeners temps réel...');
     
@@ -482,7 +419,7 @@ export const useFooter = () => {
       console.log('🧹 Nettoyage des listeners temps réel...');
       channels.forEach(channel => supabase.removeChannel(channel));
     };
-  }, [loadAllFooterData]);
+  }, []); // ✅ Se configure une seule fois
 
   return {
     content,

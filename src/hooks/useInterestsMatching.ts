@@ -111,8 +111,10 @@ export function useInterestsMatching() {
 
   // Recharger quand les intérêts changent
   useEffect(() => {
-    loadUsersWithCommonInterests();
-  }, [loadUsersWithCommonInterests]);
+    if (user?.id) {
+      loadUsersWithCommonInterests();
+    }
+  }, [user?.id]); // ✅ Seulement user.id
 
   return {
     users,
