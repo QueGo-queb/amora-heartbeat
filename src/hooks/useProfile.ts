@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProfileData {
   id: string;
@@ -23,260 +24,188 @@ interface ProfileData {
   updated_at: string;
 }
 
-// ✅ FONCTION UTILITAIRE: Générer un UUID compatible
-const generateUUID = (): string => {
-  // Essayer crypto.randomUUID d'abord
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  
-  // Fallback: générer un UUID simple
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
 export function useProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Charger le profil de l'utilisateur connecté
+  // 🔧 CORRECTION PRINCIPALE - Requête SQL simplifiée et sécurisée
   const loadProfile = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('❌ Erreur authentification:', authError);
-        throw new Error("Utilisateur non authentifié");
-      }
+      console.log('🔍 Chargement du profil pour:', user.email);
 
-      console.log(' Chargement du profil pour user:', user.id);
+      // 🔧 CORRECTION 1: Requête simplifiée - chercher d'abord par user_id
+      let { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle(); // maybeSingle() au lieu de single() pour éviter l'erreur si pas trouvé
 
-      // ✅ STRATÉGIE SIMPLIFIÉE: Essayer d'abord avec user_id, puis avec id
-      let profileData: ProfileData | null = null;
-      let lastError: any = null;
-
-      // Tentative 1: Recherche par user_id
-      try {
-        console.log('🔄 Tentative 1: Recherche par user_id...');
-        const { data, error } = await supabase
+      // 🔧 CORRECTION 2: Si pas trouvé par user_id, chercher par id
+      if (!existingProfile && !profileError) {
+        const result = await supabase
           .from('profiles')
           .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!error && data) {
-          console.log('✅ Profil trouvé avec user_id');
-          profileData = data;
-        } else {
-          lastError = error;
-          console.log('❌ Profil non trouvé avec user_id:', error?.message);
-        }
-      } catch (err) {
-        lastError = err;
-        console.log('❌ Erreur recherche par user_id:', err);
-      }
-
-      // Tentative 2: Recherche par id (si user_id a échoué)
-      if (!profileData) {
-        try {
-          console.log('🔄 Tentative 2: Recherche par id...');
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-          if (!error && data) {
-            console.log('✅ Profil trouvé avec id');
-            profileData = data;
-            
-            // Mettre à jour le profil pour ajouter user_id
-            if (!data.user_id) {
-              console.log(' Ajout de user_id au profil...');
-              const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ user_id: user.id })
-                .eq('id', user.id);
-              
-              if (!updateError) {
-                profileData.user_id = user.id;
-                console.log('✅ user_id ajouté au profil');
-              }
-            }
-          } else {
-            lastError = error;
-            console.log('❌ Profil non trouvé avec id:', error?.message);
-          }
-        } catch (err) {
-          lastError = err;
-          console.log('❌ Erreur recherche par id:', err);
-        }
-      }
-
-      // Tentative 3: Recherche par email (si les autres ont échoué)
-      if (!profileData) {
-        try {
-          console.log('🔄 Tentative 3: Recherche par email...');
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', user.email)
-            .single();
-
-          if (!error && data) {
-            console.log('✅ Profil trouvé avec email');
-            profileData = data;
-            
-            // Mettre à jour le profil pour ajouter user_id
-            if (!data.user_id) {
-              console.log(' Ajout de user_id au profil...');
-              const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ user_id: user.id })
-                .eq('id', data.id);
-              
-              if (!updateError) {
-                profileData.user_id = user.id;
-                console.log('✅ user_id ajouté au profil');
-              }
-            }
-          } else {
-            lastError = error;
-            console.log('❌ Profil non trouvé avec email:', error?.message);
-          }
-        } catch (err) {
-          lastError = err;
-          console.log('❌ Erreur recherche par email:', err);
-        }
-      }
-
-      // Si aucun profil trouvé, créer un profil par défaut
-      if (!profileData) {
-        console.log('📝 Création d\'un profil par défaut...');
+          .eq('id', user.id)
+          .maybeSingle();
         
-        const defaultProfile: ProfileData = {
-          id: generateUUID(), // ✅ CORRIGÉ: utiliser la fonction utilitaire
-          user_id: user.id,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
-          interests: [],
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        existingProfile = result.data;
+        profileError = result.error;
+      }
 
-        try {
-          const { error: insertError } = await supabase
+      if (profileError) {
+        console.error('❌ Erreur récupération profil:', profileError);
+        throw profileError;
+      }
+
+      if (existingProfile) {
+        console.log('✅ Profil trouvé:', existingProfile.full_name);
+        setProfile(existingProfile);
+      } else {
+        console.log('⚠️ Aucun profil trouvé, création automatique...');
+        
+        // 🔧 CORRECTION 3: Vérifier d'abord si un profil existe déjà (pour éviter la contrainte unique)
+        const { data: checkExisting } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (checkExisting) {
+          // Un profil existe déjà, le récupérer
+          const { data: foundProfile } = await supabase
             .from('profiles')
-            .insert([defaultProfile]);
-
-          if (insertError) {
-            console.error('❌ Erreur insertion profil par défaut:', insertError);
-            // Utiliser le profil en mémoire même si l'insertion échoue
-            setProfile(defaultProfile);
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (foundProfile) {
+            setProfile(foundProfile);
             return;
           }
-
-          console.log('✅ Profil par défaut créé');
-          setProfile(defaultProfile);
-        } catch (insertError) {
-          console.error('❌ Exception lors de l\'insertion:', insertError);
-          // Utiliser le profil en mémoire
-          setProfile(defaultProfile);
-          return;
         }
-      } else {
-        console.log('✅ Profil récupéré:', profileData);
-        setProfile(profileData);
+
+        // 🔧 CORRECTION 4: Création sécurisée avec UPSERT
+        const newProfile = {
+          user_id: user.id, // Utiliser user_id au lieu de id personnalisé
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || 'Utilisateur',
+          interests: [],
+          bio: '',
+          country: '',
+          language: 'fr',
+          plan: 'free' as const,
+          is_active: true,
+          avatar_url: null
+        };
+
+        console.log('📝 Création du profil:', newProfile);
+
+        // 🔧 CORRECTION 5: Utiliser UPSERT pour éviter les conflits
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .upsert(newProfile, { 
+            onConflict: 'user_id',
+            ignoreDuplicates: false 
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ Erreur création profil:', createError);
+          throw createError;
+        }
+
+        console.log('✅ Profil créé avec succès:', createdProfile.full_name);
+        setProfile(createdProfile);
       }
 
-    } catch (err) {
-      console.error('❌ Erreur chargement profil:', err);
+    } catch (error: any) {
+      console.error('❌ Erreur loadProfile:', error);
+      setError(error.message);
       
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du profil';
-      setError(errorMessage);
-      
-      // Ne pas afficher de toast d'erreur pour éviter le spam
+      // 🔧 CORRECTION 6: Ne pas afficher le toast d'erreur si c'est juste un problème de contrainte
+      if (!error.message.includes('unique constraint')) {
+        toast({
+          title: "Erreur de profil",
+          description: "Impossible de charger votre profil",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, []); // ✅ Pas de dépendances
+  }, [user?.id, toast]); // 🔧 CORRECTION 7: Dépendances minimales
 
   // Mettre à jour le profil
-  const updateProfile = useCallback(async (updatedData: Partial<ProfileData>) => {
-    if (!profile) {
-      console.error('❌ Aucun profil à mettre à jour');
-      return { success: false, error: 'Aucun profil à mettre à jour' };
-    }
+  const updateProfile = useCallback(async (updates: Partial<ProfileData>) => {
+    if (!profile || !user) return;
 
     try {
-      console.log('🔄 Mise à jour du profil...');
+      setLoading(true);
+      setError(null);
 
-      // Utiliser user_id si disponible, sinon id
-      const whereClause = profile.user_id 
-        ? { user_id: profile.user_id }
-        : { id: profile.id };
+      console.log('📝 Mise à jour du profil:', updates);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update({
-          ...updatedData,
-          updated_at: new Date().toISOString()
-        })
-        .match(whereClause);
+        .update(updates)
+        .eq('user_id', user.id) // 🔧 CORRECTION 8: Utiliser user_id uniquement
+        .select()
+        .single();
 
       if (error) {
-        console.error('❌ Erreur mise à jour Supabase:', error);
+        console.error('❌ Erreur mise à jour profil:', error);
         throw error;
       }
 
-      console.log('✅ Profil mis à jour avec succès');
+      console.log('✅ Profil mis à jour avec succès:', data);
+      setProfile(data);
+      
+      toast({
+        title: "Profil mis à jour",
+        description: "Vos informations ont été sauvegardées avec succès",
+      });
 
-      // Mettre à jour le profil local
-      setProfile(prev => prev ? { ...prev, ...updatedData, updated_at: new Date().toISOString() } : null);
-
-      return { success: true };
-    } catch (err) {
-      console.error('❌ Erreur mise à jour profil:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour';
-      return { success: false, error: errorMessage };
+      return data;
+    } catch (error: any) {
+      console.error('❌ Erreur updateProfile:', error);
+      setError(error.message);
+      
+      toast({
+        title: "Erreur de mise à jour",
+        description: "Impossible de sauvegarder vos modifications",
+        variant: "destructive",
+      });
+      
+      throw error;
+    } finally {
+      setLoading(false);
     }
-  }, [profile]);
+  }, [profile, user, toast]);
 
-  // Rafraîchir le profil
-  const refreshProfile = useCallback(async () => {
-    console.log('🔄 Rafraîchissement du profil...');
-    await loadProfile();
-  }, []); // ✅ Pas de dépendances - loadProfile sera appelé directement
-
-  // ✅ SOLUTION BOUCLE INFINIE #1 - refreshProfile stable
+  // 🔧 CORRECTION 9: useEffect avec protection contre les appels multiples
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !profile && !loading) {
       loadProfile();
     }
-  }, [user?.id]); // ✅ Seulement user.id
-
-  // ✅ SOLUTION BOUCLE INFINIE #2 - useEffect stable
-  useEffect(() => {
-    if (user?.id) {
-      loadProfile();
-    }
-  }, [user?.id]); // ✅ Seulement user.id
+  }, [user?.id]); // Dépendance minimale pour éviter les boucles
 
   return {
     profile,
     loading,
     error,
+    loadProfile,
     updateProfile,
-    refreshProfile,
-    loadProfile
   };
 }

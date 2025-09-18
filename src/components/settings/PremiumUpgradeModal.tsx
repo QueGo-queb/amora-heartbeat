@@ -185,18 +185,79 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
 
   // Copier l'adresse USDT dans le presse-papiers
   const copyUsdtAddress = async (address: string, network: string) => {
-    try {
-      await navigator.clipboard.writeText(address);
+    // 🔧 CORRECTION 1: Vérifier que l'adresse est valide
+    if (!address || address.trim() === '' || address.includes('non configurée')) {
       toast({
-        title: "Adresse copiée",
-        description: `Adresse ${network} copiée dans le presse-papiers`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de copier l'adresse",
+        title: "❌ Erreur",
+        description: `Aucune adresse ${network} configurée. Contactez l'administrateur.`,
         variant: "destructive",
       });
+      return;
+    }
+
+    // 🔧 CORRECTION 2: Vérifier que l'adresse a un format valide
+    const isValidTRC20 = network === 'TRC20' && address.startsWith('T') && address.length === 34;
+    const isValidERC20 = network === 'ERC20' && address.startsWith('0x') && address.length === 42;
+    
+    if (!isValidTRC20 && !isValidERC20) {
+      toast({
+        title: "❌ Erreur",
+        description: `Adresse ${network} invalide. Contactez l'administrateur.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // �� CORRECTION 3: Fallback direct si Clipboard API non disponible
+    try {
+      // Vérifier si on est en HTTPS ou localhost
+      const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost';
+      
+      if (isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(address);
+        toast({
+          title: "✅ Adresse copiée !",
+          description: `Adresse ${network} copiée dans le presse-papiers`,
+          duration: 3000,
+        });
+      } else {
+        throw new Error('Clipboard API non disponible');
+      }
+    } catch (error) {
+      console.log('Utilisation du fallback pour la copie');
+      
+      // �� CORRECTION 4: Fallback amélioré
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = address;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          toast({
+            title: "✅ Adresse copiée !",
+            description: `Adresse ${network} copiée (méthode alternative)`,
+            duration: 3000,
+          });
+        } else {
+          throw new Error('Fallback failed');
+        }
+      } catch (fallbackError) {
+        // �� CORRECTION 5: Dernier recours - afficher l'adresse pour copie manuelle
+        toast({
+          title: "📋 Copie manuelle requise",
+          description: `Copiez cette adresse : ${address}`,
+          duration: 10000,
+        });
+      }
     }
   };
 
@@ -537,16 +598,78 @@ export function PremiumUpgradeModal({ open, onClose, userCountry }: PremiumUpgra
               {usdtData.network && (
                 <div className="space-y-3">
                   <Label>Adresse USDT ({usdtData.network})</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={usdtData.network === 'TRC20' ? 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx' : '0xXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'}
-                      readOnly
-                      className="font-mono text-sm"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  
+                  {/* État de chargement */}
+                  {usdtLoading && (
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded border">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-gray-600">Chargement de l'adresse...</span>
+                    </div>
+                  )}
+                  
+                  {/* Erreur de chargement */}
+                  {!usdtLoading && !usdtLinks && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded">
+                      <p className="text-sm text-red-600">❌ Impossible de charger les adresses USDT</p>
+                      <p className="text-xs text-red-500 mt-1">Contactez l'administrateur</p>
+                    </div>
+                  )}
+                  
+                  {/* Adresse chargée */}
+                  {!usdtLoading && usdtLinks && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={
+                          usdtData.network === 'TRC20' 
+                            ? (usdtLinks.trc20_address || 'Adresse TRC20 non configurée') 
+                            : (usdtLinks.erc20_address || 'Adresse ERC20 non configurée')
+                        }
+                        readOnly
+                        className="font-mono text-sm"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={() => copyUsdtAddress(
+                          usdtData.network === 'TRC20' 
+                            ? (usdtLinks.trc20_address || '') 
+                            : (usdtLinks.erc20_address || ''),
+                          usdtData.network
+                        )}
+                        disabled={
+                          !usdtLinks || 
+                          (usdtData.network === 'TRC20' && !usdtLinks.trc20_address) ||
+                          (usdtData.network === 'ERC20' && !usdtLinks.erc20_address)
+                        }
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Bouton de copie rapide */}
+                  {!usdtLoading && usdtLinks && (
+                    <div className="flex justify-center">
+                      <Button
+                        variant="secondary"
+                        onClick={() => copyUsdtAddress(
+                          usdtData.network === 'TRC20' 
+                            ? (usdtLinks.trc20_address || '') 
+                            : (usdtLinks.erc20_address || ''),
+                          usdtData.network
+                        )}
+                        disabled={
+                          !usdtLinks || 
+                          (usdtData.network === 'TRC20' && !usdtLinks.trc20_address) ||
+                          (usdtData.network === 'ERC20' && !usdtLinks.erc20_address)
+                        }
+                        className="flex items-center gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copier l'adresse {usdtData.network}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 

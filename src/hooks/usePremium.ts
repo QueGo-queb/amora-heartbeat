@@ -29,7 +29,7 @@ export function usePremium() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('plan, premium_since')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profile) {
@@ -59,7 +59,7 @@ export function usePremium() {
           plan: 'premium',
           premium_since: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 

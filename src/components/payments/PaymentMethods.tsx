@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Smartphone, DollarSign, Upload, Crown, Bitcoin, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePremium } from '@/hooks/usePremium';
+import { useUsdtLinks } from '@/hooks/useUsdtLinks'; // 🔧 AJOUT MANQUANT
 
 interface PaymentMethodsProps {
   onPaymentSuccess?: () => void;
@@ -29,6 +30,18 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
   });
   const { toast } = useToast();
   const { upgradeToPremium } = usePremium();
+  
+  // 🔧 CORRECTION PRINCIPALE - Récupérer les adresses USDT réelles
+  const { links: usdtLinks, loading: usdtLoading } = useUsdtLinks();
+
+  // 🔧 MISE À JOUR DE L'ADRESSE USDT QUAND LES DONNÉES SONT CHARGÉES
+  useEffect(() => {
+    if (usdtLinks && selectedMethod === 'usdt') {
+      // Priorité à TRC20, sinon ERC20
+      const address = usdtLinks.trc20_address || usdtLinks.erc20_address || '';
+      setCryptoData(prev => ({ ...prev, address }));
+    }
+  }, [usdtLinks, selectedMethod]);
 
   // 🔧 MISE À JOUR - Ajout de 
   const paymentMethods = [
@@ -203,12 +216,21 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
     }
   };
 
-  // 🔧 FONCTION DE COPIE MANQUANTE
+  // 🔧 FONCTION DE COPIE AMÉLIORÉE
   const copyToClipboard = async (text: string, label: string = 'Adresse') => {
+    if (!text || text.trim() === '') {
+      toast({
+        title: "Erreur",
+        description: "Aucune adresse disponible à copier",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "Copié !",
+        title: "✅ Copié !",
         description: `${label} copiée dans le presse-papiers`,
         duration: 3000,
       });
@@ -224,14 +246,14 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
         document.body.removeChild(textArea);
         
         toast({
-          title: "Copié !",
-          description: `${label} copiée dans le presse-papiers`,
+          title: "✅ Copié !",
+          description: `${label} copiée dans le presse-papiers (fallback)`,
           duration: 3000,
         });
       } catch (fallbackError) {
         toast({
-          title: "Erreur",
-          description: "Impossible de copier l'adresse. Veuillez la sélectionner manuellement.",
+          title: "❌ Erreur",
+          description: "Impossible de copier l'adresse. Copiez manuellement.",
           variant: "destructive",
         });
       }
@@ -331,7 +353,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
       </Card>
 
       {/* �� SECTION CRYPTO CORRIGÉE (USDT seulement) */}
-      {selectedMethod === 'usdt' && cryptoData.address && (
+      {selectedMethod === 'usdt' && (
         <Card className="culture-card border-2 border-green-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -340,34 +362,60 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-semibold mb-2">Instructions de paiement :</h4>
-              <div className="space-y-2 text-sm">
-                <p><strong>Montant :</strong> {cryptoData.amount} USDT</p>
-                <p><strong>Réseau :</strong> TRC20/ERC20</p>
-                <p><strong>Adresse :</strong></p>
-                
-                {/* 🔧 ADRESSE AVEC BOUTON COPIER */}
-                <div className="flex items-center gap-2">
-                  <div className="bg-white p-3 rounded border font-mono text-xs break-all flex-1">
-                    {cryptoData.address}
+            {usdtLoading ? (
+              <div className="text-center py-4">
+                <p>Chargement des adresses USDT...</p>
+              </div>
+            ) : !usdtLinks ? (
+              <div className="text-center py-4 text-red-600">
+                <p>❌ Aucune adresse USDT configurée</p>
+                <p className="text-sm text-gray-600">Contactez l'administrateur</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-amber-800 mb-2">Instructions de paiement USDT</h4>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-amber-700">
+                    <li>Copiez l'adresse USDT ci-dessous</li>
+                    <li>Envoyez exactement <strong>29.99 USDT</strong></li>
+                    <li>Utilisez le réseau <strong>{usdtLinks.trc20_address ? 'TRC20 (TRON)' : 'ERC20 (Ethereum)'}</strong></li>
+                    <li>Collez le hash de transaction ci-dessous</li>
+                    <li>Votre compte sera activé après vérification</li>
+                  </ol>
+                </div>
+
+                {/* 🔧 ADRESSE AVEC BOUTON COPIER - DONNÉES RÉELLES */}
+                <div className="space-y-2">
+                  <Label>
+                    Adresse USDT ({usdtLinks.trc20_address ? 'TRC20' : 'ERC20'})
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-white p-3 rounded border font-mono text-xs break-all flex-1">
+                      {usdtLinks.trc20_address || usdtLinks.erc20_address}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(
+                        usdtLinks.trc20_address || usdtLinks.erc20_address || '', 
+                        'Adresse USDT'
+                      )}
+                      className="flex items-center gap-1 px-3 py-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span className="hidden sm:inline">Copier</span>
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(cryptoData.address, 'Adresse USDT')}
-                    className="flex items-center gap-1 px-3 py-2"
-                  >
-                    <Copy className="w-4 h-4" />
-                    <span className="hidden sm:inline">Copier</span>
-                  </Button>
                 </div>
                 
                 {/* 🔧 BOUTON COPIER RAPIDE SUPPLÉMENTAIRE */}
-                <div className="flex justify-center mt-3">
+                <div className="flex justify-center">
                   <Button
                     variant="secondary"
-                    onClick={() => copyToClipboard(cryptoData.address, 'Adresse USDT')}
+                    onClick={() => copyToClipboard(
+                      usdtLinks.trc20_address || usdtLinks.erc20_address || '', 
+                      'Adresse USDT'
+                    )}
                     className="flex items-center gap-2"
                   >
                     <Copy className="w-4 h-4" />
@@ -375,7 +423,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
                   </Button>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-3">
               <div>

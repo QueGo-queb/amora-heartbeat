@@ -47,10 +47,10 @@ export const DeleteAccountForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="password">Confirmez votre mot de passe</Label>
+            <Label htmlFor="delete-password">Confirmez votre mot de passe</Label>
             <div className="relative">
               <Input
-                id="password"
+                id="delete-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
