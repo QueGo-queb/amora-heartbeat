@@ -216,7 +216,7 @@ export const useCall = (): UseCallReturn => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]); // 🔧 SUPPRIMER checkCallPermission des dépendances
+  }, [user?.id, toast]);
 
   const answerCall = useCallback(async (callId: string): Promise<boolean> => {
     if (!user?.id) return false;

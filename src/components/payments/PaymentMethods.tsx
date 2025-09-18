@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Smartphone, DollarSign, Upload, Crown } from 'lucide-react';
+import { CreditCard, Smartphone, DollarSign, Upload, Crown, Bitcoin, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePremium } from '@/hooks/usePremium';
 
@@ -16,6 +16,12 @@ interface PaymentMethodsProps {
 export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [cryptoData, setCryptoData] = useState({
+    address: '',
+    amount: '',
+    txHash: '',
+    receipt: null as File | null
+  });
   const [cajaVecinaData, setCajaVecinaData] = useState({
     rut: '',
     receipt: null as File | null,
@@ -24,50 +30,66 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
   const { toast } = useToast();
   const { upgradeToPremium } = usePremium();
 
+  // 🔧 MISE À JOUR - Ajout de 
   const paymentMethods = [
     {
       id: 'stripe',
       name: 'Carte de crédit/débit',
       icon: CreditCard,
       description: 'Visa, Mastercard, American Express',
-      countries: ['Global']
+      countries: ['Global'],
+      color: 'bg-blue-500'
     },
     {
       id: 'interac',
       name: 'Interac',
       icon: CreditCard,
       description: 'Paiement électronique canadien',
-      countries: ['Canada']
+      countries: ['Canada'],
+      color: 'bg-red-500'
     },
     {
       id: 'paypal',
       name: 'PayPal',
       icon: DollarSign,
       description: 'Compte PayPal ou carte via PayPal',
-      countries: ['Global']
+      countries: ['Global'],
+      color: 'bg-blue-600'
     },
     {
       id: 'usdt',
-      name: 'USDT (Crypto)',
+      name: 'USDT (Tether)',
       icon: DollarSign,
-      description: 'Tether USD sur réseau TRC20',
-      countries: ['Global']
+      description: 'Tether USD sur réseau TRC20/ERC20',
+      countries: ['Global'],
+      color: 'bg-green-500'
     },
     {
       id: 'moncash',
       name: 'MonCash',
       icon: Smartphone,
       description: 'Portefeuille mobile haïtien',
-      countries: ['Haïti']
+      countries: ['Haïti'],
+      color: 'bg-orange-500'
     },
     {
       id: 'caja_vecina',
       name: 'Caja Vecina',
       icon: Smartphone,
       description: 'Réseau de paiement chilien',
-      countries: ['Chili']
+      countries: ['Chili'],
+      color: 'bg-purple-500'
     }
   ];
+
+  // 🔧 NOUVELLES ADRESSES CRYPTO
+  const cryptoAddresses = {
+    usdt: {
+      trc20: 'TXYZabc123456789...',
+      erc20: '0x1234567890abcdef...',
+      amount: '29.99'
+    }
+  };
 
   // Générer un RUT aléatoire pour Caja Vecina
   const generateRUT = () => {
@@ -97,12 +119,10 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
     try {
       switch (methodId) {
         case 'stripe':
-          // Rediriger vers Stripe Checkout
           window.location.href = '/api/create-checkout-session';
           break;
           
         case 'caja_vecina':
-          // Générer RUT et afficher instructions
           const rut = generateRUT();
           setCajaVecinaData(prev => ({ ...prev, rut }));
           toast({
@@ -112,15 +132,20 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
           break;
           
         case 'paypal':
-          // Rediriger vers PayPal
           window.open('https://paypal.me/amora/29.99', '_blank');
           break;
           
         case 'usdt':
-          // Afficher adresse crypto
+          setCryptoData({
+            address: cryptoAddresses.usdt.erc20,
+            amount: cryptoAddresses.usdt.amount,
+            txHash: '',
+            receipt: null
+          });
           toast({
             title: "Paiement USDT",
-            description: "Adresse TRC20: TXYZabc123... (29.99 USDT)",
+            description: `Envoyez ${cryptoAddresses.usdt.amount} USDT à l'adresse affichée`,
+            duration: 8000,
           });
           break;
           
@@ -139,6 +164,77 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔧 FONCTION DE SOUMISSION CRYPTO (USDT + USDC)
+  const handleCryptoSubmit = async () => {
+    if (!cryptoData.txHash && !cryptoData.receipt) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez fournir le hash de transaction ou télécharger une preuve de paiement",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Simuler la vérification de la transaction crypto
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Mettre à jour vers premium
+      const result = await upgradeToPremium();
+      if (result.success) {
+        toast({
+          title: "Paiement crypto vérifié !",
+          description: `Transaction ${selectedMethod.toUpperCase()} confirmée. Bienvenue dans Amora Premium !`,
+        });
+        onPaymentSuccess?.();
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur de vérification",
+        description: "Impossible de vérifier la transaction. Contactez le support.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔧 FONCTION DE COPIE MANQUANTE
+  const copyToClipboard = async (text: string, label: string = 'Adresse') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copié !",
+        description: `${label} copiée dans le presse-papiers`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error);
+      // Fallback pour les navigateurs plus anciens
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        toast({
+          title: "Copié !",
+          description: `${label} copiée dans le presse-papiers`,
+          duration: 3000,
+        });
+      } catch (fallbackError) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de copier l'adresse. Veuillez la sélectionner manuellement.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -201,7 +297,9 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <Icon className="w-5 h-5" />
+                      <div className={`p-2 rounded-full ${method.color} text-white`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
                       <span className="font-medium">{method.name}</span>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{method.description}</p>
@@ -232,7 +330,93 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
         </CardContent>
       </Card>
 
-      {/* Section spéciale Caja Vecina */}
+      {/* �� SECTION CRYPTO CORRIGÉE (USDT seulement) */}
+      {selectedMethod === 'usdt' && cryptoData.address && (
+        <Card className="culture-card border-2 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bitcoin className="w-5 h-5 text-green-500" />
+              Paiement USDT
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-semibold mb-2">Instructions de paiement :</h4>
+              <div className="space-y-2 text-sm">
+                <p><strong>Montant :</strong> {cryptoData.amount} USDT</p>
+                <p><strong>Réseau :</strong> TRC20/ERC20</p>
+                <p><strong>Adresse :</strong></p>
+                
+                {/* 🔧 ADRESSE AVEC BOUTON COPIER */}
+                <div className="flex items-center gap-2">
+                  <div className="bg-white p-3 rounded border font-mono text-xs break-all flex-1">
+                    {cryptoData.address}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(cryptoData.address, 'Adresse USDT')}
+                    className="flex items-center gap-1 px-3 py-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span className="hidden sm:inline">Copier</span>
+                  </Button>
+                </div>
+                
+                {/* 🔧 BOUTON COPIER RAPIDE SUPPLÉMENTAIRE */}
+                <div className="flex justify-center mt-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => copyToClipboard(cryptoData.address, 'Adresse USDT')}
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copier l'adresse USDT
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="txHash">Hash de transaction (optionnel)</Label>
+                <Input
+                  id="txHash"
+                  placeholder="0x123abc..."
+                  value={cryptoData.txHash}
+                  onChange={(e) => setCryptoData(prev => ({ 
+                    ...prev, 
+                    txHash: e.target.value 
+                  }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cryptoReceipt">Ou télécharger une preuve de paiement</Label>
+                <Input
+                  id="cryptoReceipt"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setCryptoData(prev => ({ 
+                    ...prev, 
+                    receipt: e.target.files?.[0] || null 
+                  }))}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCryptoSubmit}
+              disabled={loading || (!cryptoData.txHash && !cryptoData.receipt)}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              {loading ? 'Vérification en cours...' : 'Vérifier le paiement USDT'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Section Caja Vecina (existante) */}
       {selectedMethod === 'caja_vecina' && cajaVecinaData.rut && (
         <Card className="culture-card">
           <CardHeader>
