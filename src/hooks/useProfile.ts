@@ -84,34 +84,31 @@ export function useProfile() {
         setProfile(existingProfile);
         hasLoadedRef.current = true;
       } else {
-        console.log('⚠️ Aucun profil trouvé, création automatique...');
+        console.log('⚠️ Aucun profil trouvé, vérification approfondie...');
         
-        // Vérifier d'abord si un profil existe déjà
-        const { data: checkExisting } = await supabase
+        // Vérifier d'abord si un profil existe déjà (recherche exhaustive)
+        const { data: existingProfiles } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .select('*')
+          .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+          .limit(1);
 
-        if (checkExisting) {
-          const { data: foundProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-          
-          if (foundProfile) {
-            setProfile(foundProfile);
-            hasLoadedRef.current = true;
-            return;
-          }
+        if (existingProfiles && existingProfiles.length > 0) {
+          console.log('✅ Profil existant trouvé:', existingProfiles[0].full_name);
+          setProfile(existingProfiles[0]);
+          hasLoadedRef.current = true;
+          return;
         }
 
-        // Création sécurisée avec UPSERT
+        // Seulement créer un nouveau profil si vraiment aucun n'existe
+        console.log('�� Aucun profil existant, création nécessaire...');
+        
+        // Ne créer un profil que si l'utilisateur n'a vraiment pas de profil
+        // et seulement avec les métadonnées disponibles
         const newProfile = {
           user_id: user.id,
           email: user.email || '',
-          full_name: user.user_metadata?.full_name || 'Utilisateur',
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur',
           interests: [],
           bio: '',
           country: '',
@@ -121,18 +118,32 @@ export function useProfile() {
           avatar_url: null
         };
 
-        console.log('📝 Création du profil:', newProfile);
+        console.log('�� Création du profil de secours:', newProfile);
 
+        // Utiliser INSERT au lieu d'UPSERT pour éviter d'écraser un profil existant
         const { data: createdProfile, error: createError } = await supabase
           .from('profiles')
-          .upsert(newProfile, { 
-            onConflict: 'user_id',
-            ignoreDuplicates: false 
-          })
+          .insert(newProfile)
           .select()
           .single();
 
         if (createError) {
+          // Si l'erreur est due à un conflit (profil existe déjà), essayer de le récupérer
+          if (createError.code === '23505') {
+            console.log('�� Profil existe déjà, tentative de récupération...');
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (existingProfile) {
+              setProfile(existingProfile);
+              hasLoadedRef.current = true;
+              return;
+            }
+          }
+          
           console.error('❌ Erreur création profil:', createError);
           throw createError;
         }

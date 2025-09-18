@@ -4,6 +4,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Phone, Video, PhoneOff, Loader2 } from 'lucide-react';
 import { useCall } from '@/hooks/useCall';
 import { cn } from '@/lib/utils';
+import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
+import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
 
 interface CallButtonProps {
   userId: string;
@@ -74,20 +76,37 @@ export const CallButton: React.FC<CallButtonProps> = ({
     }
   }, [userId, checkCallPermission, userPlan]);
 
+  const { 
+    isPremium, 
+    showPremiumModal, 
+    restrictedFeature, 
+    targetUserName,
+    checkPremiumFeature, 
+    closePremiumModal 
+  } = usePremiumRestriction();
+
   const handleCall = async () => {
     if (!canCall || currentCall || loading) return;
 
-    try {
-      const success = await initiateCall(userId, callType);
-      if (success) {
-        onCallInitiated?.();
-      }
-    } catch (error) {
-      console.error('Erreur initiation appel:', error);
-    }
+    // �� VÉRIFICATION PREMIUM AVEC INCITATION
+    checkPremiumFeature(
+      callType === 'video' ? 'video_call' : 'audio_call',
+      async () => {
+        // Action normale pour les utilisateurs Premium
+        try {
+          const success = await initiateCall(userId, callType);
+          if (success) {
+            onCallInitiated?.();
+          }
+        } catch (error) {
+          console.error('Erreur initiation appel:', error);
+        }
+      },
+      userName
+    );
   };
 
-  const isDisabled = disabled || loading || checking || !canCall || !!currentCall || userPlan !== 'premium';
+  const isDisabled = disabled || loading || checking || !canCall || !!currentCall;
 
   const getButtonIcon = () => {
     if (loading || checking) {
@@ -170,6 +189,14 @@ export const CallButton: React.FC<CallButtonProps> = ({
           <p>{getTooltipText()}</p>
         </TooltipContent>
       </Tooltip>
+
+      {/* �� AJOUT: Modal d'incitation Premium */}
+      <PremiumFeatureModal
+        open={showPremiumModal}
+        onClose={closePremiumModal}
+        feature={restrictedFeature || 'audio_call'}
+        userName={targetUserName}
+      />
     </TooltipProvider>
   );
 };

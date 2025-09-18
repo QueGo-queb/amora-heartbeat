@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HeaderAdmin from '@/components/admin/HeaderAdmin';
 import { useAdminCreation } from '@/hooks/useAdminCreation';
+import { UserToAdminSelector } from '@/components/admin/UserToAdminSelector';
 
 interface User {
   id: string;
@@ -64,6 +65,7 @@ const AdminUsers = () => {
     full_name: '',
     password: ''
   });
+  const [showUserToAdminSelector, setShowUserToAdminSelector] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { createAdmin } = useAdminCreation();
@@ -347,12 +349,12 @@ const AdminUsers = () => {
             </div>
             
             <div className="flex gap-2">
-              {/* NOUVEAU BOUTON CRÉER ADMIN */}
+              {/* Bouton pour créer un nouvel admin (création de compte) */}
               <Dialog open={showCreateAdminDialog} onOpenChange={setShowCreateAdminDialog}>
                 <DialogTrigger asChild>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Créer Admin
+                    Nouveau Compte Admin
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
@@ -427,6 +429,15 @@ const AdminUsers = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* NOUVEAU: Bouton pour promouvoir un utilisateur existant */}
+              <Button 
+                onClick={() => setShowUserToAdminSelector(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Promouvoir en Admin
+              </Button>
 
               <Button onClick={loadUsers} variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -543,6 +554,16 @@ const AdminUsers = () => {
           </Card>
         </div>
       </main>
+
+      {/* Nouveau modal de sélection d'utilisateur */}
+      <UserToAdminSelector
+        open={showUserToAdminSelector}
+        onClose={() => setShowUserToAdminSelector(false)}
+        onAdminCreated={() => {
+          loadUsers(); // Recharger la liste
+          setShowUserToAdminSelector(false);
+        }}
+      />
     </div>
   );
 };

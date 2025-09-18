@@ -39,11 +39,28 @@ export function useInterestsFeed() {
           user_id,
           content,
           created_at,
+          image_url,
+          video_url,
+          media,
+          tags,
+          visibility,
           likes_count,
-          comments_count
+          comments_count,
+          post_type,
+          phone_number,
+          target_countries,
+          target_genders,
+          target_interests
         `)
+        .eq('visibility', 'public') // Seulement les posts publics
         .order('created_at', { ascending: false })
         .limit(20);
+
+      console.log('�� Posts récupérés:', postsData);
+      console.log('�� Nombre de posts:', postsData?.length || 0);
+      if (postsData && postsData.length > 0) {
+        console.log('🔍 Premier post structure:', postsData[0]);
+      }
 
       if (postsError) {
         console.error('Erreur posts:', postsError);
@@ -84,18 +101,51 @@ export function useInterestsFeed() {
       }
 
       // Combiner les posts avec leurs profils
-      const postsWithProfiles = postsData.map(post => ({
-        ...post,
-        profiles: profilesMap.get(post.user_id) || {
-          id: post.user_id,
-          full_name: 'Utilisateur',
-          avatar_url: null,
-          user_id: post.user_id
+      const postsWithProfilesAndMedia = postsData.map(post => {
+        // �� TRANSFORMATION DES MÉDIAS
+        let mediaArray = [];
+        
+        // Gérer l'ancien format (image_url, video_url)
+        if (post.image_url) {
+          mediaArray.push({ type: 'image', url: post.image_url });
         }
-      }));
+        if (post.video_url) {
+          mediaArray.push({ type: 'video', url: post.video_url });
+        }
+        
+        // Gérer le nouveau format (media JSONB) si disponible
+        if (post.media && Array.isArray(post.media) && post.media.length > 0) {
+          mediaArray = [...mediaArray, ...post.media];
+        }
+        
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          content: post.content,
+          created_at: post.created_at,
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          visibility: post.visibility || 'public',
+          tags: post.tags || [],
+          media: mediaArray, // Format attendu par PostCard
+          phone_number: post.phone_number,
+          target_countries: post.target_countries || [],
+          target_genders: post.target_genders || [],
+          target_interests: post.target_interests || [],
+          profiles: profilesMap.get(post.user_id) || {
+            id: post.user_id,
+            full_name: 'Utilisateur',
+            avatar_url: null,
+            user_id: post.user_id,
+            location: null,
+            interests: []
+          }
+        };
+      });
 
-      console.log('✅ Posts chargés avec profils:', postsWithProfiles.length);
-      setPosts(postsWithProfiles);
+      console.log('✅ Posts transformés avec profils et médias:', postsWithProfilesAndMedia.length);
+      console.log('🔍 Premier post transformé:', postsWithProfilesAndMedia[0]);
+      setPosts(postsWithProfilesAndMedia);
 
     } catch (err: any) {
       console.error('Erreur chargement posts:', err);

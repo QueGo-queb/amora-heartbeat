@@ -6,6 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
+import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
 
 interface ContactButtonProps {
   postId: string;
@@ -35,6 +37,15 @@ export const ContactButton: React.FC<ContactButtonProps> = ({
   
   const { toast } = useToast();
 
+  const { 
+    isPremium, 
+    showPremiumModal, 
+    restrictedFeature, 
+    targetUserName,
+    checkPremiumFeature, 
+    closePremiumModal 
+  } = usePremiumRestriction();
+
   // Vérifier le statut de contact au chargement
   useEffect(() => {
     const checkStatus = async () => {
@@ -51,7 +62,16 @@ export const ContactButton: React.FC<ContactButtonProps> = ({
     checkStatus();
   }, [postId, authorId, currentUserId, checkContactStatus]);
 
-  const handleContactRequest = async () => {
+  const handleSendRequest = async () => {
+    if (!message.trim()) {
+      toast({
+        title: "Message requis",
+        description: "Veuillez saisir un message avant d'envoyer",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!currentUserId) {
       toast({
         title: "Connexion requise",
@@ -70,13 +90,28 @@ export const ContactButton: React.FC<ContactButtonProps> = ({
       return;
     }
 
-    const result = await createContactRequest(postId, message.trim() || undefined);
-    
-    if (result.success) {
-      setContactStatus('pending');
-      setIsDialogOpen(false);
-      setMessage('');
-    }
+    // �� VÉRIFICATION PREMIUM AVEC INCITATION
+    checkPremiumFeature(
+      'messages',
+      async () => {
+        // Action normale pour les utilisateurs Premium
+        try {
+          const success = await createContactRequest(postId, authorId, message);
+          if (success) {
+            setContactStatus('pending');
+            setIsDialogOpen(false);
+            setMessage('');
+            toast({
+              title: "Demande envoyée !",
+              description: `Votre message a été envoyé à ${authorName}`,
+            });
+          }
+        } catch (error) {
+          console.error('Erreur envoi demande:', error);
+        }
+      },
+      authorName
+    );
   };
 
   const getButtonContent = () => {
@@ -195,7 +230,7 @@ export const ContactButton: React.FC<ContactButtonProps> = ({
               Annuler
             </Button>
             <Button
-              onClick={handleContactRequest}
+              onClick={handleSendRequest}
               disabled={loading}
             >
               {loading ? (
@@ -210,6 +245,13 @@ export const ContactButton: React.FC<ContactButtonProps> = ({
           </div>
         </div>
       </DialogContent>
+      {/* �� AJOUT: Modal d'incitation Premium */}
+      <PremiumFeatureModal
+        open={showPremiumModal}
+        onClose={closePremiumModal}
+        feature={restrictedFeature || 'messages'}
+        userName={targetUserName}
+      />
     </Dialog>
   );
 };

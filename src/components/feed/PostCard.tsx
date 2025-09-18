@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Clock, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Clock, MapPin, Crown, Phone, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,8 @@ import { useNavigate } from 'react-router-dom';
 import { ContactButton } from './ContactButton';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { CallButtonGroup } from '@/components/chat/CallButton';
+import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
+import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
 
 interface PostCardProps {
   post: FeedPost;
@@ -35,12 +37,38 @@ interface PostCardProps {
 const locales = { fr, en: enUS, es, 'pt-BR': ptBR };
 
 export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
+  // 🔍 DEBUG: Vérifier que le composant se rend
+  console.log('🎯 PostCard rendu:', {
+    postId: post.id,
+    hasContent: !!post.content,
+    hasAuthor: !!post.profiles?.full_name,
+    currentUserId,
+    isAuthor: currentUserId === post.user_id
+  });
+
   const [isLiked, setIsLiked] = useState(false); // TODO: Récupérer depuis l'API
   const [showFullContent, setShowFullContent] = useState(false);
   const [currentUserInterests, setCurrentUserInterests] = useState<string[]>([]);
   
   const isAuthor = currentUserId === post.user_id;
-  const isPremium = post.profiles.plan === 'premium';
+  const { isPremium } = usePremium();
+  const { 
+    showPremiumModal, 
+    restrictedFeature, 
+    targetUserName,
+    checkPremiumFeature, 
+    closePremiumModal 
+  } = usePremiumRestriction();
+
+  // 🔍 DEBUG: Vérifier que le composant se rend
+  console.log('🎯 PostCard rendu:', {
+    postId: post.id,
+    hasContent: !!post.content,
+    hasAuthor: !!post.profiles?.full_name,
+    currentUserId,
+    isAuthor,
+    isPremium
+  });
 
   // Récupérer les intérêts de l'utilisateur actuel
   useEffect(() => {
@@ -135,7 +163,84 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Bouton de contact ajouté ici */}
+            {/* Badge Premium si nécessaire */}
+            {!isPremium && (
+              <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300">
+                <Crown className="w-3 h-3 mr-1" />
+                Premium requis
+              </Badge>
+            )}
+            
+            {/* Bouton Message simplifié */}
+            {!isAuthor && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (isPremium) {
+                    // Action normale
+                    console.log('Message envoyé à', post.profiles.full_name);
+                  } else {
+                    // Incitation Premium
+                    checkPremiumFeature('messages', () => {
+                      console.log('Message envoyé à', post.profiles.full_name);
+                    }, post.profiles.full_name);
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Message
+              </Button>
+            )}
+            
+            {/* Bouton Appel Audio simplifié */}
+            {!isAuthor && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (isPremium) {
+                    // Action normale
+                    console.log('Appel audio à', post.profiles.full_name);
+                  } else {
+                    // Incitation Premium
+                    checkPremiumFeature('audio_call', () => {
+                      console.log('Appel audio à', post.profiles.full_name);
+                    }, post.profiles.full_name);
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <Phone className="w-4 h-4" />
+                Appel
+              </Button>
+            )}
+            
+            {/* Bouton Appel Vidéo simplifié */}
+            {!isAuthor && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (isPremium) {
+                    // Action normale
+                    console.log('Appel vidéo à', post.profiles.full_name);
+                  } else {
+                    // Incitation Premium
+                    checkPremiumFeature('video_call', () => {
+                      console.log('Appel vidéo à', post.profiles.full_name);
+                    }, post.profiles.full_name);
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <Video className="w-4 h-4" />
+                Vidéo
+              </Button>
+            )}
+
+            {/* Bouton de contact avec restriction */}
             <ContactButton
               postId={post.id}
               authorId={post.user_id}
@@ -143,6 +248,14 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
               currentUserId={currentUserId}
             />
             
+            {/* Boutons d'appel avec restriction intégrée */}
+            <CallButtonGroup
+              userId={post.user_id}
+              userName={post.profiles.full_name}
+              size="sm"
+            />
+
+            {/* Menu options */}
             {!isAuthor && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -291,6 +404,14 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
           </div>
         )}
       </CardContent>
+
+      {/* �� AJOUT: Modal d'incitation Premium */}
+      <PremiumFeatureModal
+        open={showPremiumModal}
+        onClose={closePremiumModal}
+        feature={restrictedFeature || 'messages'}
+        userName={targetUserName}
+      />
     </Card>
   );
 }

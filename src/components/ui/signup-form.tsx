@@ -400,7 +400,13 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         // ✅ VERSION SIMPLIFIÉE SANS MÉTADONNÉES
         const result = await supabase.auth.signUp({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              name: formData.fullName
+            }
+          }
         });
         
         authData = result.data;
