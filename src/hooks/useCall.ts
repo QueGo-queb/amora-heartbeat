@@ -81,146 +81,57 @@ export const useCall = (): UseCallReturn => {
     ],
   };
 
-  // Charger les préférences au démarrage
-  useEffect(() => {
-    if (user?.id) {
-      loadCallPreferences();
-      loadCallHistory();
-      setupRealtimeSubscription();
-    }
+  // 🔧 DÉPLACER checkCallPermission AVANT initiateCall
+  const checkCallPermission = useCallback(async (receiverId: string): Promise<boolean> => {
+    if (!user?.id) return false;
     
-    return () => {
-      cleanupCall();
-    };
-  }, [user?.id]);
-
-  const loadCallPreferences = async () => {
     try {
-      const { data, error } = await supabase
+      // Vérifier si l'utilisateur est disponible pour les appels
+      const { data: receiverPrefs, error } = await supabase
         .from('call_preferences')
-        .select('*')
-        .eq('user_id', user!.id)
+        .select('available_for_calls, allow_calls_from')
+        .eq('user_id', receiverId)
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        console.warn('Erreur vérification permissions:', error);
+        // En cas d'erreur, autoriser par défaut
+        return true;
       }
 
-      if (data) {
-        setPreferences(data);
-      } else {
-        // Créer les préférences par défaut
-        const { data: newPrefs, error: createError } = await supabase
-          .from('call_preferences')
-          .insert([{ user_id: user!.id }])
-          .select()
-          .single();
+      // Si pas de préférences, autoriser par défaut
+      if (!receiverPrefs) {
+        return true;
+      }
 
-        if (createError) throw createError;
-        setPreferences(newPrefs);
+      // Vérifier la disponibilité générale
+      if (!receiverPrefs.available_for_calls) {
+        return false;
+      }
+
+      // Vérifier les permissions selon les préférences
+      switch (receiverPrefs.allow_calls_from) {
+        case 'none':
+          return false;
+        case 'everyone':
+          return true;
+        case 'matches':
+          // Pour l'instant, autoriser si les deux utilisateurs existent
+          // TODO: Implémenter la logique de matching
+          return true;
+        case 'premium':
+          // TODO: Vérifier si l'appelant est premium
+          return true;
+        default:
+          return true; // Autoriser par défaut
       }
     } catch (error) {
-      console.error('Erreur chargement préférences:', error);
-      // En cas d'erreur, créer des préférences par défaut en mémoire
-      setPreferences({
-        user_id: user!.id,
-        allow_calls_from: 'everyone',
-        auto_answer: false,
-        call_notifications: true,
-        video_quality: 'auto',
-        available_for_calls: true
-      });
+      console.warn('Erreur vérification permission:', error);
+      return true; // Autoriser par défaut en cas d'erreur
     }
-  };
+  }, [user?.id]);
 
-  const loadCallHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('call_sessions')
-        .select('*')
-        .or(`caller_id.eq.${user!.id},receiver_id.eq.${user!.id}`)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      setCallHistory(data || []);
-    } catch (error) {
-      console.error('Erreur chargement historique:', error);
-      setCallHistory([]);
-    }
-  };
-
-  const setupRealtimeSubscription = () => {
-    try {
-      // Écouter les appels entrants
-      realtimeChannel.current = supabase
-        .channel('call-notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'call_sessions',
-            filter: `receiver_id=eq.${user!.id}`,
-          },
-          handleIncomingCall
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'call_sessions',
-            filter: `caller_id=eq.${user!.id},receiver_id=eq.${user!.id}`,
-          },
-          handleCallUpdate
-        )
-        .subscribe();
-    } catch (error) {
-      console.error('Erreur setup realtime:', error);
-    }
-  };
-
-  const handleIncomingCall = (payload: any) => {
-    const newCall = payload.new as CallSession;
-    
-    if (newCall.receiver_id === user!.id && newCall.status === 'ringing') {
-      setIncomingCall(newCall);
-      
-      // Notification sonore/visuelle
-      toast({
-        title: '📞 Appel entrant',
-        description: `Appel ${newCall.call_type === 'video' ? 'vidéo' : 'audio'} entrant`,
-        duration: 30000, // 30 secondes
-      });
-
-      trackEvent('call_received', {
-        category: 'call',
-        action: 'incoming',
-        callType: newCall.call_type,
-      });
-    }
-  };
-
-  const handleCallUpdate = (payload: any) => {
-    const updatedCall = payload.new as CallSession;
-    
-    if (currentCall?.id === updatedCall.id) {
-      setCurrentCall(updatedCall);
-      
-      if (updatedCall.status === 'ended') {
-        cleanupCall();
-      }
-    }
-    
-    if (incomingCall?.id === updatedCall.id) {
-      if (updatedCall.status === 'cancelled' || updatedCall.status === 'ended') {
-        setIncomingCall(null);
-      }
-    }
-  };
-
-  // CORRECTION: Version simplifiée de initiateCall qui fonctionne immédiatement
+  // 🔧 MAINTENANT initiateCall peut utiliser checkCallPermission
   const initiateCall = useCallback(async (receiverId: string, callType: 'audio' | 'video'): Promise<boolean> => {
     if (!user?.id) return false;
     
@@ -513,55 +424,144 @@ export const useCall = (): UseCallReturn => {
     }
   }, [user?.id]);
 
-  // CORRECTION: Simplifier la vérification des permissions pour permettre les appels
-  const checkCallPermission = useCallback(async (receiverId: string): Promise<boolean> => {
-    if (!user?.id) return false;
+  // Charger les préférences au démarrage
+  useEffect(() => {
+    if (user?.id) {
+      loadCallPreferences();
+      loadCallHistory();
+      setupRealtimeSubscription();
+    }
     
+    return () => {
+      cleanupCall();
+    };
+  }, [user?.id]);
+
+  const loadCallPreferences = async () => {
     try {
-      // Vérifier si l'utilisateur est disponible pour les appels
-      const { data: receiverPrefs, error } = await supabase
+      const { data, error } = await supabase
         .from('call_preferences')
-        .select('available_for_calls, allow_calls_from')
-        .eq('user_id', receiverId)
+        .select('*')
+        .eq('user_id', user!.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.warn('Erreur vérification permissions:', error);
-        // En cas d'erreur, autoriser par défaut
-        return true;
+        throw error;
       }
 
-      // Si pas de préférences, autoriser par défaut
-      if (!receiverPrefs) {
-        return true;
-      }
+      if (data) {
+        setPreferences(data);
+      } else {
+        // Créer les préférences par défaut
+        const { data: newPrefs, error: createError } = await supabase
+          .from('call_preferences')
+          .insert([{ user_id: user!.id }])
+          .select()
+          .single();
 
-      // Vérifier la disponibilité générale
-      if (!receiverPrefs.available_for_calls) {
-        return false;
-      }
-
-      // Vérifier les permissions selon les préférences
-      switch (receiverPrefs.allow_calls_from) {
-        case 'none':
-          return false;
-        case 'everyone':
-          return true;
-        case 'matches':
-          // Pour l'instant, autoriser si les deux utilisateurs existent
-          // TODO: Implémenter la logique de matching
-          return true;
-        case 'premium':
-          // TODO: Vérifier si l'appelant est premium
-          return true;
-        default:
-          return true; // Autoriser par défaut
+        if (createError) throw createError;
+        setPreferences(newPrefs);
       }
     } catch (error) {
-      console.warn('Erreur vérification permission:', error);
-      return true; // Autoriser par défaut en cas d'erreur
+      console.error('Erreur chargement préférences:', error);
+      // En cas d'erreur, créer des préférences par défaut en mémoire
+      setPreferences({
+        user_id: user!.id,
+        allow_calls_from: 'everyone',
+        auto_answer: false,
+        call_notifications: true,
+        video_quality: 'auto',
+        available_for_calls: true
+      });
     }
-  }, [user?.id]);
+  };
+
+  const loadCallHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('call_sessions')
+        .select('*')
+        .or(`caller_id.eq.${user!.id},receiver_id.eq.${user!.id}`)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setCallHistory(data || []);
+    } catch (error) {
+      console.error('Erreur chargement historique:', error);
+      setCallHistory([]);
+    }
+  };
+
+  const setupRealtimeSubscription = () => {
+    try {
+      // Écouter les appels entrants
+      realtimeChannel.current = supabase
+        .channel('call-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'call_sessions',
+            filter: `receiver_id=eq.${user!.id}`,
+          },
+          handleIncomingCall
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'call_sessions',
+            filter: `caller_id=eq.${user!.id},receiver_id=eq.${user!.id}`,
+          },
+          handleCallUpdate
+        )
+        .subscribe();
+    } catch (error) {
+      console.error('Erreur setup realtime:', error);
+    }
+  };
+
+  const handleIncomingCall = (payload: any) => {
+    const newCall = payload.new as CallSession;
+    
+    if (newCall.receiver_id === user!.id && newCall.status === 'ringing') {
+      setIncomingCall(newCall);
+      
+      // Notification sonore/visuelle
+      toast({
+        title: '📞 Appel entrant',
+        description: `Appel ${newCall.call_type === 'video' ? 'vidéo' : 'audio'} entrant`,
+        duration: 30000, // 30 secondes
+      });
+
+      trackEvent('call_received', {
+        category: 'call',
+        action: 'incoming',
+        callType: newCall.call_type,
+      });
+    }
+  };
+
+  const handleCallUpdate = (payload: any) => {
+    const updatedCall = payload.new as CallSession;
+    
+    if (currentCall?.id === updatedCall.id) {
+      setCurrentCall(updatedCall);
+      
+      if (updatedCall.status === 'ended') {
+        cleanupCall();
+      }
+    }
+    
+    if (incomingCall?.id === updatedCall.id) {
+      if (updatedCall.status === 'cancelled' || updatedCall.status === 'ended') {
+        setIncomingCall(null);
+      }
+    }
+  };
 
   return {
     // État des appels

@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ContactButton } from './ContactButton';
 import { LazyImage } from '@/components/ui/LazyImage';
+import { CallButtonGroup } from '@/components/chat/CallButton';
 
 interface PostCardProps {
   post: FeedPost;
@@ -274,6 +275,21 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
             </Badge>
           )}
         </div>
+
+        {/* ✅ BOUTONS D'APPEL RÉELS (si ce n'est pas son propre post) */}
+        {!isAuthor && post.user_id && (
+          <div className="mt-4 pt-4 border-t">
+            <CallButtonGroup
+              userId={post.user_id}
+              userName={post.profiles?.full_name || 'Utilisateur'}
+              size="sm"
+              variant="outline"
+              onCallInitiated={(callType) => {
+                console.log(`🎥 Appel ${callType} initié depuis le feed`);
+              }}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

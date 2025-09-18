@@ -35,6 +35,30 @@ export const CallButton: React.FC<CallButtonProps> = ({
 
   const [checking, setChecking] = React.useState(false);
   const [canCall, setCanCall] = React.useState<boolean | null>(null);
+  const [userPlan, setUserPlan] = React.useState<string | null>(null);
+
+  // Vérifier le plan de l'utilisateur connecté
+  React.useEffect(() => {
+    const checkUserPlan = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('plan')
+            .eq('id', user.id)
+            .single();
+          
+          setUserPlan(profile?.plan || 'free');
+        }
+      } catch (error) {
+        console.error('Erreur vérification plan:', error);
+        setUserPlan('free');
+      }
+    };
+
+    checkUserPlan();
+  }, []);
 
   // Vérifier les permissions au montage
   React.useEffect(() => {
@@ -45,8 +69,10 @@ export const CallButton: React.FC<CallButtonProps> = ({
       setChecking(false);
     };
 
-    checkPermissions();
-  }, [userId, checkCallPermission]);
+    if (userPlan) {
+      checkPermissions();
+    }
+  }, [userId, checkCallPermission, userPlan]);
 
   const handleCall = async () => {
     if (!canCall || currentCall || loading) return;
@@ -61,7 +87,7 @@ export const CallButton: React.FC<CallButtonProps> = ({
     }
   };
 
-  const isDisabled = disabled || loading || checking || !canCall || !!currentCall;
+  const isDisabled = disabled || loading || checking || !canCall || !!currentCall || userPlan !== 'premium';
 
   const getButtonIcon = () => {
     if (loading || checking) {
@@ -79,12 +105,17 @@ export const CallButton: React.FC<CallButtonProps> = ({
     if (checking) return 'Vérification...';
     if (loading) return 'Appel en cours...';
     if (currentCall) return 'En appel';
+    if (userPlan !== 'premium') return '👑 Premium requis';
     if (!canCall) return 'Appel non autorisé';
     
     return callType === 'video' ? 'Appel vidéo' : 'Appel audio';
   };
 
   const getTooltipText = () => {
+    if (userPlan !== 'premium') {
+      return 'Mettez à niveau vers Premium pour passer des appels';
+    }
+    
     if (!canCall) {
       return `${userName} ne reçoit pas d'appels pour le moment`;
     }
@@ -115,14 +146,19 @@ export const CallButton: React.FC<CallButtonProps> = ({
               sizeClasses[size],
               'transition-all duration-200',
               {
-                'bg-green-600 hover:bg-green-700': callType === 'audio' && !isDisabled,
-                'bg-blue-600 hover:bg-blue-700': callType === 'video' && !isDisabled,
+                'bg-green-600 hover:bg-green-700': callType === 'audio' && !isDisabled && userPlan === 'premium',
+                'bg-blue-600 hover:bg-blue-700': callType === 'video' && !isDisabled && userPlan === 'premium',
                 'bg-gray-400 cursor-not-allowed': isDisabled,
+                'bg-orange-500 hover:bg-orange-600': userPlan !== 'premium', // Style premium requis
               },
               className
             )}
           >
-            {getButtonIcon()}
+            {userPlan !== 'premium' ? (
+              <span className="text-xs">👑</span>
+            ) : (
+              getButtonIcon()
+            )}
             {size === 'lg' && (
               <span className="ml-2 hidden sm:inline">
                 {getButtonText()}

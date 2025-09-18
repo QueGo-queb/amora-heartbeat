@@ -536,8 +536,10 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
-    }
+      gender_type: ["homme", "femme"],
+      plan_type: ["free", "premium"],
+      subscription_status: ["active", "inactive", "canceled"],
+    },
     CompositeTypes: {
       [_ in never]: never
     }
