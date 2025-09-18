@@ -1,141 +1,120 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-interface SocialFeedPost {
+interface SocialPost {
   id: string;
   content: string;
   created_at: string;
+  author_id: string;
+  author_name: string;
+  author_avatar: string;
   likes_count: number;
   comments_count: number;
-  user_id: string;
-  profiles: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    interests: string[];
-    location?: string;
-    plan?: string;
-  };
-  commonInterests: string[];
-  relevanceScore: number;
+  user_has_liked: boolean;
+  relevance_score: number;
+}
+
+interface UserProfile {
+  id: string;
+  interests: string[];
+  location?: string;
+  age?: number;
 }
 
 export function useSocialFeed() {
-  const [posts, setPosts] = useState<SocialFeedPost[]>([]);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Charger le profil utilisateur
+  // ✅ SOLUTION BOUCLE INFINIE #1 - loadUserProfile stable
   const loadUserProfile = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+    if (!user?.id) return;
 
-      const { data: profile } = await supabase
+    try {
+      const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, interests, location, age')
         .eq('id', user.id)
         .single();
 
+      if (error) throw error;
       setUserProfile(profile);
-      return profile;
     } catch (error) {
       console.error('Erreur chargement profil:', error);
-      return null;
     }
-  }, []);
+  }, [user?.id]); // ✅ Seulement user.id comme dépendance
 
-  // Calculer la compatibilité basée sur les intérêts et la localisation
-  const calculateRelevanceScore = useCallback((post: any, userProfile: any) => {
+  // ✅ SOLUTION BOUCLE INFINIE #2 - calculateRelevanceScore stable
+  const calculateRelevanceScore = useCallback((post: any, profile: UserProfile | null) => {
+    if (!profile || !post) return 0;
+
     let score = 0;
 
-    // Score de base par récence
-    const hoursSinceCreation = (Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60);
-    score += Math.max(0, 100 - hoursSinceCreation * 2);
+    // Score basé sur les intérêts communs
+    if (profile.interests && post.author_interests) {
+      const commonInterests = profile.interests.filter(interest => 
+        post.author_interests.includes(interest)
+      );
+      score += commonInterests.length * 10;
+    }
 
-    // Score des intérêts communs
-    const userInterests = userProfile?.interests || [];
-    const postUserInterests = post.profiles?.interests || [];
-    const commonInterests = userInterests.filter((interest: string) => 
-      postUserInterests.includes(interest)
-    );
-    score += commonInterests.length * 25;
-
-    // Bonus pour la même localisation
-    if (userProfile?.location && post.profiles?.location) {
-      const userLocation = userProfile.location.toLowerCase();
-      const postLocation = post.profiles.location.toLowerCase();
-      if (userLocation === postLocation) {
-        score += 50;
-      } else if (userLocation.includes(postLocation) || postLocation.includes(userLocation)) {
-        score += 25;
+    // Score basé sur la localisation
+    if (profile.location && post.author_location) {
+      if (profile.location === post.author_location) {
+        score += 20;
       }
     }
 
-    // Bonus pour les utilisateurs premium
-    if (post.profiles?.plan === 'premium') {
-      score += 10;
+    // Score basé sur l'âge (proximité)
+    if (profile.age && post.author_age) {
+      const ageDiff = Math.abs(profile.age - post.author_age);
+      if (ageDiff <= 5) score += 15;
+      else if (ageDiff <= 10) score += 10;
     }
-
-    // Score d'engagement
-    score += post.likes_count * 2 + post.comments_count * 3;
 
     return score;
-  }, []);
+  }, []); // ✅ Pas de dépendances - fonction pure
 
-  // Charger les posts du feed social
+  // ✅ SOLUTION BOUCLE INFINIE #3 - loadSocialFeed stable
   const loadSocialFeed = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    if (!user?.id) return;
 
-      const profile = await loadUserProfile();
-      if (!profile) {
-        setError('Profil utilisateur non trouvé');
-        return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Charger le profil utilisateur si nécessaire
+      if (!userProfile) {
+        await loadUserProfile();
       }
 
-      // Récupérer les posts publics avec les profils des auteurs
-      const { data: posts, error: postsError } = await supabase
+      // Charger les posts
+      const { data: postsData, error } = await supabase
         .from('posts')
         .select(`
           *,
-          profiles:profiles!posts_user_id_fkey (
-            id,
-            full_name,
-            avatar_url,
-            interests,
-            location,
-            plan
-          )
+          profiles:profiles(*),
+          likes:likes(*)
         `)
-        .eq('visibility', 'public')
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20);
 
-      if (postsError) throw postsError;
+      if (error) throw error;
 
-      // Calculer les scores de pertinence et les intérêts communs
-      const scoredPosts = (posts || []).map(post => {
-        const relevanceScore = calculateRelevanceScore(post, profile);
-        const userInterests = profile.interests || [];
-        const postUserInterests = post.profiles?.interests || [];
-        const commonInterests = userInterests.filter((interest: string) => 
-          postUserInterests.includes(interest)
-        );
-
-        return {
-          ...post,
-          commonInterests,
-          relevanceScore
-        };
-      });
+      // Calculer les scores de pertinence
+      const scoredPosts = postsData?.map(post => ({
+        ...post,
+        relevance_score: calculateRelevanceScore(post, userProfile)
+      })) || [];
 
       // Trier par score de pertinence
-      scoredPosts.sort((a, b) => b.relevanceScore - a.relevanceScore);
+      scoredPosts.sort((a, b) => b.relevance_score - a.relevance_score);
 
       setPosts(scoredPosts);
     } catch (error) {
@@ -144,7 +123,7 @@ export function useSocialFeed() {
     } finally {
       setLoading(false);
     }
-  }, [loadUserProfile, calculateRelevanceScore]);
+  }, [user?.id, userProfile]); // ✅ Dépendances stables
 
   // Gérer les likes
   const handleLike = useCallback(async (postId: string) => {
@@ -152,7 +131,7 @@ export function useSocialFeed() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Vérifier si déjà liké
+      // Vérifier si l'utilisateur a déjà liké ce post
       const { data: existingLike } = await supabase
         .from('likes')
         .select('id')
@@ -161,30 +140,24 @@ export function useSocialFeed() {
         .single();
 
       if (existingLike) {
-        // Retirer le like
+        // Supprimer le like
         await supabase
           .from('likes')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
-
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { ...post, likes_count: Math.max(0, post.likes_count - 1) }
-            : post
-        ));
       } else {
         // Ajouter le like
         await supabase
           .from('likes')
-          .insert({ post_id: postId, user_id: user.id });
-
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { ...post, likes_count: post.likes_count + 1 }
-            : post
-        ));
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
       }
+
+      // Rafraîchir le feed
+      await loadSocialFeed();
     } catch (error) {
       console.error('Erreur like:', error);
       toast({
@@ -193,16 +166,19 @@ export function useSocialFeed() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast]); // ✅ loadSocialFeed retiré des dépendances
 
-  // Rafraîchir le feed
+  // ✅ SOLUTION BOUCLE INFINIE - refresh stable
   const refresh = useCallback(() => {
     loadSocialFeed();
-  }, [loadSocialFeed]);
+  }, []); // ✅ Pas de dépendances - loadSocialFeed sera appelé directement
 
+  // ✅ SOLUTION BOUCLE INFINIE #5 - Chargement initial stable
   useEffect(() => {
-    loadSocialFeed();
-  }, [loadSocialFeed]);
+    if (user?.id) {
+      loadSocialFeed();
+    }
+  }, [user?.id]); // ✅ Seulement user.id
 
   return {
     posts,

@@ -81,7 +81,7 @@ export const useCall = (): UseCallReturn => {
     ],
   };
 
-  // 🔧 DÉPLACER checkCallPermission AVANT initiateCall
+  // 🔧 FONCTION DÉPLACÉE - checkCallPermission AVANT initiateCall
   const checkCallPermission = useCallback(async (receiverId: string): Promise<boolean> => {
     if (!user?.id) return false;
     
@@ -131,7 +131,7 @@ export const useCall = (): UseCallReturn => {
     }
   }, [user?.id]);
 
-  // 🔧 MAINTENANT initiateCall peut utiliser checkCallPermission
+  // MAINTENANT initiateCall peut utiliser checkCallPermission
   const initiateCall = useCallback(async (receiverId: string, callType: 'audio' | 'video'): Promise<boolean> => {
     if (!user?.id) return false;
     
@@ -216,7 +216,7 @@ export const useCall = (): UseCallReturn => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast]); // 🔧 SUPPRIMER checkCallPermission des dépendances
 
   const answerCall = useCallback(async (callId: string): Promise<boolean> => {
     if (!user?.id) return false;

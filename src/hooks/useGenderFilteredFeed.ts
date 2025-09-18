@@ -33,7 +33,7 @@ export function useGenderFilteredFeed() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
-  // Récupérer le profil utilisateur avec genre et préférences
+  // ✅ SOLUTION BOUCLE INFINIE #4 - Stabiliser les fonctions utilitaires
   const getUserProfile = useCallback(async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -72,9 +72,9 @@ export function useGenderFilteredFeed() {
       console.error('Erreur récupération profil utilisateur:', error);
       return null;
     }
-  }, []);
+  }, []); // ✅ Aucune dépendance
 
-  // ✅ CORRECTION : Requête simplifiée sans jointure complexe
+  // ✅ SOLUTION BOUCLE INFINIE #4 - getRealPosts stable
   const getRealPosts = useCallback(async () => {
     try {
       // Récupérer tous les posts
@@ -119,9 +119,9 @@ export function useGenderFilteredFeed() {
       console.error('Erreur lors de la récupération des posts:', error);
       return [];
     }
-  }, []);
+  }, []); // ✅ Aucune dépendance
 
-  // Filtrer les utilisateurs par genre et préférences
+  // ✅ SOLUTION BOUCLE INFINIE #4 - filterUsersByGenderAndPreferences stable
   const filterUsersByGenderAndPreferences = useCallback((
     allPosts: any[],
     userGender: string,
@@ -138,9 +138,9 @@ export function useGenderFilteredFeed() {
         return authorGender === seekingGender;
       }
     });
-  }, []);
+  }, []); // ✅ Aucune dépendance
 
-  // Vérifier si l'utilisateur peut contacter l'auteur du post
+  // ✅ SOLUTION BOUCLE INFINIE #4 - checkContactAbility stable
   const checkContactAbility = useCallback((
     userPlan: string,
     authorPlan: string
@@ -153,23 +153,24 @@ export function useGenderFilteredFeed() {
         restriction: "Passez au plan premium pour pouvoir contacter cette personne." 
       };
     }
-  }, []);
+  }, []); // ✅ Aucune dépendance
 
-  // ✅ NOUVELLE FONCTION : Calculer les intérêts communs
+  // ✅ SOLUTION BOUCLE INFINIE #4 - calculateCommonInterests stable
   const calculateCommonInterests = useCallback((userInterests: string[], authorInterests: string[]) => {
     if (!userInterests || !authorInterests) return [];
     return userInterests.filter(interest => authorInterests.includes(interest));
-  }, []);
+  }, []); // ✅ Aucune dépendance
 
-  // ✅ NOUVELLE FONCTION : Calculer le score de compatibilité
+  // ✅ SOLUTION BOUCLE INFINIE #4 - calculateCompatibilityScore stable (FINAL FIX)
   const calculateCompatibilityScore = useCallback((userInterests: string[], authorInterests: string[]) => {
     if (!userInterests || !authorInterests || userInterests.length === 0) return 0;
     
-    const commonInterests = calculateCommonInterests(userInterests, authorInterests);
+    // ✅ Calculer directement sans dépendance externe
+    const commonInterests = userInterests.filter(interest => authorInterests.includes(interest));
     return Math.round((commonInterests.length / userInterests.length) * 100);
-  }, [calculateCommonInterests]);
+  }, []); // ✅ Aucune dépendance
 
-  // Charger les posts filtrés
+  // ✅ SOLUTION BOUCLE INFINIE #4 - loadFilteredPosts stable
   const loadFilteredPosts = useCallback(async () => {
     try {
       setLoading(true);
@@ -207,7 +208,7 @@ export function useGenderFilteredFeed() {
       // Transformer les posts au format attendu
       const transformedPosts: FeedPost[] = compatiblePosts.map(post => {
         const authorProfile = post.profiles;
-        // ✅ CORRECTION : Utiliser les bons paramètres pour les intérêts
+        // ✅ CORRECTION : Utiliser les fonctions stables
         const commonInterests = calculateCommonInterests(profile.interests, authorProfile?.interests || []);
         const compatibilityScore = calculateCompatibilityScore(profile.interests, authorProfile?.interests || []);
         const contactCheck = checkContactAbility(profile.plan, authorProfile?.plan || 'free');
@@ -241,17 +242,17 @@ export function useGenderFilteredFeed() {
     } finally {
       setLoading(false);
     }
-  }, [getUserProfile, getRealPosts, filterUsersByGenderAndPreferences, checkContactAbility, calculateCommonInterests, calculateCompatibilityScore]);
+  }, []); // ✅ Aucune dépendance - toutes les fonctions sont stables
 
-  // Rafraîchir le feed
+  // ✅ SOLUTION BOUCLE INFINIE #4 - refresh stable
   const refresh = useCallback(() => {
     loadFilteredPosts();
-  }, [loadFilteredPosts]);
+  }, []); // ✅ Aucune dépendance - loadFilteredPosts est stable
 
-  // Charger les posts au montage
+  // ✅ SOLUTION BOUCLE INFINIE #4 - useEffect stable
   useEffect(() => {
     loadFilteredPosts();
-  }, [loadFilteredPosts]);
+  }, []); // ✅ Se déclenche une seule fois
 
   return {
     posts,

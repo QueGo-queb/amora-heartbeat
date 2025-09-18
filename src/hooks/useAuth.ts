@@ -39,7 +39,7 @@ export const useAuth = () => {
     }
   }, []);
 
-  // ✅ OPTIMISÉ: useCallback pour signOut
+  // ✅ SOLUTION BOUCLE INFINIE - signOut stable
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -59,7 +59,7 @@ export const useAuth = () => {
       logger.error('Erreur lors de la déconnexion:', error);
       trackError(error);
     }
-  }, [user, toast]);
+  }, [toast]); // ✅ Seulement toast - user sera mis à jour par l'auth state change
 
   useEffect(() => {
     getInitialSession();
@@ -79,7 +79,7 @@ export const useAuth = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, [getInitialSession, navigate]);
+  }, []); // ✅ Tableau vide - getInitialSession et navigate sont stables
 
   // ✅ OPTIMISÉ: useMemo pour les valeurs dérivées
   const authState = useMemo(() => ({

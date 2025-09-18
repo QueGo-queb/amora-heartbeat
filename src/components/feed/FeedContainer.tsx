@@ -2,7 +2,7 @@
  * Conteneur principal du feed - VERSION FINALE ULTRA-ROBUSTE
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useInterestsFeed } from '@/hooks/useInterestsFeed';
 import { FriendsSuggestions } from './FriendsSuggestions';
 import { PostCreator } from './PostCreator';
@@ -24,8 +24,14 @@ const FeedContainer = () => {
     refresh
   } = useInterestsFeed();
 
+  // ✅ SOLUTION BOUCLE INFINIE #6 - Utiliser un flag pour éviter les appels répétés
+  const [lastAuthCheck, setLastAuthCheck] = useState<number>(0);
+
   // Debug et vérification de l'état d'authentification
   useEffect(() => {
+    const now = Date.now();
+    if (now - lastAuthCheck < 1000) return; // ✅ Debounce 1 seconde
+    
     const checkAuthStatus = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -41,13 +47,14 @@ const FeedContainer = () => {
           userExists: !!user,
           canPublish: !!user && !authLoading
         });
+        setLastAuthCheck(now);
       } catch (error) {
         console.error('Erreur debug auth:', error);
       }
     };
 
     checkAuthStatus();
-  }, [user, authLoading]);
+  }, [user, authLoading, lastAuthCheck]);
 
   // Précharger les données critiques
   useEffect(() => {

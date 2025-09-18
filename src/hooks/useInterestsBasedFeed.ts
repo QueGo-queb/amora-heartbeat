@@ -107,13 +107,14 @@ export function useInterestsBasedFeed() {
 
   // Rafraîchir le feed
   const refresh = useCallback(() => {
+    console.log('🔄 Rafraîchissement du feed basé sur les intérêts...');
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Retirer loadPosts des dépendances
 
   // Charger les posts au montage
   useEffect(() => {
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Se déclenche une seule fois
 
   return {
     posts,

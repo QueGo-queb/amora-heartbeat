@@ -141,11 +141,12 @@ export function useInterestsFeed() {
   const refresh = useCallback(() => {
     console.log('🔄 Rafraîchissement du feed...');
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Retirer loadPosts des dépendances
 
+  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Se déclenche une seule fois
 
   return {
     posts,

@@ -134,9 +134,10 @@ export function useUsdtLinks() {
     return user?.email === 'clodenerc@yahoo.fr';
   }, []);
 
+  // ✅ SOLUTION BOUCLE INFINIE - Chargement initial stable
   useEffect(() => {
     loadUsdtLinks();
-  }, [loadUsdtLinks]);
+  }, []); // ✅ Se déclenche une seule fois
 
   return {
     links,
