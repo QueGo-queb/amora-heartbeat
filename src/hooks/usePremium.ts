@@ -100,7 +100,7 @@ export function usePremium() {
 
   useEffect(() => {
     checkPremiumStatus();
-  }, [checkPremiumStatus]);
+  }, []);
 
   return {
     ...premiumStatus,

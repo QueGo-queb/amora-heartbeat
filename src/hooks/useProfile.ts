@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,28 +30,39 @@ export function useProfile() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // 🔧 CORRECTION 1: Utiliser useRef pour éviter les appels multiples
+  const hasLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
-  // 🔧 CORRECTION PRINCIPALE - Requête SQL simplifiée et sécurisée
+  // 🔧 CORRECTION 2: Fonction loadProfile stable avec protection
   const loadProfile = useCallback(async () => {
-    if (!user?.id) {
+    if (!user?.id || isLoadingRef.current) {
+      setLoading(false);
+      return;
+    }
+
+    // Éviter les appels multiples
+    if (hasLoadedRef.current && profile) {
       setLoading(false);
       return;
     }
 
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       setError(null);
 
       console.log('🔍 Chargement du profil pour:', user.email);
 
-      // 🔧 CORRECTION 1: Requête simplifiée - chercher d'abord par user_id
+      // 🔧 CORRECTION 3: Requête simplifiée - chercher d'abord par user_id
       let { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle(); // maybeSingle() au lieu de single() pour éviter l'erreur si pas trouvé
+        .maybeSingle();
 
-      // 🔧 CORRECTION 2: Si pas trouvé par user_id, chercher par id
+      // Si pas trouvé par user_id, chercher par id
       if (!existingProfile && !profileError) {
         const result = await supabase
           .from('profiles')
@@ -71,10 +82,11 @@ export function useProfile() {
       if (existingProfile) {
         console.log('✅ Profil trouvé:', existingProfile.full_name);
         setProfile(existingProfile);
+        hasLoadedRef.current = true;
       } else {
         console.log('⚠️ Aucun profil trouvé, création automatique...');
         
-        // 🔧 CORRECTION 3: Vérifier d'abord si un profil existe déjà (pour éviter la contrainte unique)
+        // Vérifier d'abord si un profil existe déjà
         const { data: checkExisting } = await supabase
           .from('profiles')
           .select('id')
@@ -82,7 +94,6 @@ export function useProfile() {
           .maybeSingle();
 
         if (checkExisting) {
-          // Un profil existe déjà, le récupérer
           const { data: foundProfile } = await supabase
             .from('profiles')
             .select('*')
@@ -91,13 +102,14 @@ export function useProfile() {
           
           if (foundProfile) {
             setProfile(foundProfile);
+            hasLoadedRef.current = true;
             return;
           }
         }
 
-        // 🔧 CORRECTION 4: Création sécurisée avec UPSERT
+        // Création sécurisée avec UPSERT
         const newProfile = {
-          user_id: user.id, // Utiliser user_id au lieu de id personnalisé
+          user_id: user.id,
           email: user.email || '',
           full_name: user.user_metadata?.full_name || 'Utilisateur',
           interests: [],
@@ -111,7 +123,6 @@ export function useProfile() {
 
         console.log('📝 Création du profil:', newProfile);
 
-        // 🔧 CORRECTION 5: Utiliser UPSERT pour éviter les conflits
         const { data: createdProfile, error: createError } = await supabase
           .from('profiles')
           .upsert(newProfile, { 
@@ -128,13 +139,13 @@ export function useProfile() {
 
         console.log('✅ Profil créé avec succès:', createdProfile.full_name);
         setProfile(createdProfile);
+        hasLoadedRef.current = true;
       }
 
     } catch (error: any) {
       console.error('❌ Erreur loadProfile:', error);
       setError(error.message);
       
-      // 🔧 CORRECTION 6: Ne pas afficher le toast d'erreur si c'est juste un problème de contrainte
       if (!error.message.includes('unique constraint')) {
         toast({
           title: "Erreur de profil",
@@ -144,10 +155,10 @@ export function useProfile() {
       }
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [user?.id, toast]); // 🔧 CORRECTION 7: Dépendances minimales
+  }, [user?.id, user?.email, user?.user_metadata?.full_name, toast, profile]);
 
-  // Mettre à jour le profil
   const updateProfile = useCallback(async (updates: Partial<ProfileData>) => {
     if (!profile || !user) return;
 
@@ -160,7 +171,7 @@ export function useProfile() {
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('user_id', user.id) // 🔧 CORRECTION 8: Utiliser user_id uniquement
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -194,18 +205,41 @@ export function useProfile() {
     }
   }, [profile, user, toast]);
 
-  // 🔧 CORRECTION 9: useEffect avec protection contre les appels multiples
+  // 🔧 CORRECTION 4: useEffect optimisé avec reset sur changement d'utilisateur
   useEffect(() => {
-    if (user?.id && !profile && !loading) {
-      loadProfile();
+    if (user?.id) {
+      // Reset si changement d'utilisateur
+      if (hasLoadedRef.current && profile && profile.user_id !== user.id) {
+        hasLoadedRef.current = false;
+        setProfile(null);
+      }
+      
+      // Charger seulement si pas encore chargé
+      if (!hasLoadedRef.current && !isLoadingRef.current) {
+        loadProfile();
+      }
+    } else {
+      // Reset si pas d'utilisateur
+      hasLoadedRef.current = false;
+      setProfile(null);
+      setLoading(false);
     }
-  }, [user?.id]); // Dépendance minimale pour éviter les boucles
+  }, [user?.id]); // 🔧 CORRECTION 5: Dépendance minimale
+
+  // 🔧 CORRECTION 6: Cleanup à la destruction du composant
+  useEffect(() => {
+    return () => {
+      hasLoadedRef.current = false;
+      isLoadingRef.current = false;
+    };
+  }, []);
 
   return {
     profile,
     loading,
     error,
     loadProfile,
+    refreshProfile: loadProfile, // 🔧 AJOUT: Alias pour compatibilité
     updateProfile,
   };
 }

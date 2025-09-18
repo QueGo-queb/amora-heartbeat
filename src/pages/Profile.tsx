@@ -8,7 +8,7 @@ import ProfileEditor from '@/components/profile/ProfileEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
-  const { profile, loading, error, refreshProfile } = useProfile();
+  const { profile, loading, error, refreshProfile, updateProfile } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
@@ -36,15 +36,35 @@ const Profile = () => {
   };
 
   // Gestion des mises à jour du profil
-  const handleProfileUpdate = (updatedProfile: any) => {
-    // Debug
-    toast({
-      title: "✅ Profil mis à jour",
-      description: "Vos modifications ont été sauvegardées.",
-    });
-    setIsEditing(false);
-    // Rafraîchir le profil pour afficher les nouvelles données
-    refreshProfile();
+  const handleProfileUpdate = async (updatedProfile: any) => {
+    try {
+      console.log('🔧 Mise à jour réussie !');
+      
+      // Mettre à jour le profil via le hook
+      if (updateProfile) {
+        await updateProfile(updatedProfile);
+      }
+      
+      // Afficher le toast de succès
+      toast({
+        title: "✅ Profil mis à jour",
+        description: "Vos modifications ont été sauvegardées.",
+      });
+      
+      setIsEditing(false);
+      
+      // Rafraîchir le profil pour afficher les nouvelles données
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de sauvegarder les modifications",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancel = () => {
