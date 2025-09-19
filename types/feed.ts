@@ -1,6 +1,18 @@
 /**
- * Types TypeScript pour le système de feed
+ * Types TypeScript pour le système de feed - VERSION UNIFIÉE
+ * Supporte le nouveau système media JSONB avec fallback vers les anciennes colonnes
  */
+
+// Type pour un élément média unifié
+export interface MediaItem {
+  type: 'image' | 'video' | 'gif';
+  url: string;
+  thumbnail?: string;
+  alt?: string;
+  duration?: number; // pour les vidéos
+  width?: number;
+  height?: number;
+}
 
 export interface FeedPost {
   id: string;
@@ -12,7 +24,17 @@ export interface FeedPost {
   comments_count?: number;
   visibility?: 'public' | 'private' | 'friends';
   post_type?: 'text' | 'image' | 'video';
+  
+  // ✅ NOUVEAU: Système unifié de médias (priorité)
+  media?: MediaItem[];
+  
+  // ✅ ANCIEN: Colonnes de fallback (rétrocompatibilité)
+  image_url?: string;
+  video_url?: string;
   media_urls?: string[];
+  media_types?: string[];
+  
+  // Métadonnées du post
   target_age_min?: number;
   target_age_max?: number;
   target_countries?: string[];
@@ -20,23 +42,29 @@ export interface FeedPost {
   target_interests?: string[];
   target_genders?: string[];
   author_name?: string;
+  
+  // Informations de l'auteur
   profiles?: {
     id: string;
     full_name: string;
     avatar_url?: string;
     interests?: string[];
+    is_premium?: boolean;
   };
-  is_premium?: boolean;
-  media?: string[];
-  is_liked?: boolean;
+  
+  // Informations utilisateur (alias pour profiles)
   user?: {
     id: string;
     full_name: string;
     avatar_url?: string;
     is_premium: boolean;
   };
-  score?: number;
+  
+  // État du post
+  is_premium?: boolean;
+  is_liked?: boolean;
   user_has_liked?: boolean;
+  score?: number;
   tags?: string[];
 }
 

@@ -1,4 +1,4 @@
-// src/components/feed/PostCreator.tsx - VERSION AVEC MÉDIAS
+// src/components/feed/PostCreator.tsx - VERSION AVEC MÉDIAS ET DEBUG
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,12 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
 
     setIsPosting(true);
     try {
+      // ✅ DEBUG : Log des médias avant sauvegarde
+      console.log('�� PUBLICATION POST - Début');
+      console.log('📝 Contenu:', content);
+      console.log('📸 Médias avant sauvegarde:', media);
+      console.log('👤 Utilisateur:', user.id);
+
       // Préparer les données des médias
       const mediaData = media.map(m => ({
         type: m.type,
@@ -67,24 +73,40 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
         content_type: m.content_type
       }));
 
-      const { error } = await supabase
+      const mediaUrls = media.map(m => m.url);
+      const mediaTypes = media.map(m => m.type);
+
+      console.log(' Données à sauvegarder:', {
+        user_id: user.id,
+        content: content.trim() || null,
+        media: mediaData,
+        media_urls: mediaUrls,
+        media_types: mediaTypes,
+        visibility: 'public',
+        likes_count: 0,
+        comments_count: 0
+      });
+
+      const { data: insertedData, error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
           content: content.trim() || null,
           media: mediaData,
-          media_urls: media.map(m => m.url),
-          media_types: media.map(m => m.type),
+          media_urls: mediaUrls,
+          media_types: mediaTypes,
           visibility: 'public',
           likes_count: 0,
-          comments_count: 0,
-          shares_count: 0
-        });
+          comments_count: 0
+        })
+        .select(); // ✅ AJOUT : Récupérer les données insérées
 
       if (error) {
-        console.error('Erreur Supabase:', error);
+        console.error('❌ Erreur Supabase:', error);
         throw error;
       }
+
+      console.log('✅ POST SAUVEGARDÉ AVEC SUCCÈS:', insertedData);
 
       // Reset form
       setContent('');
@@ -99,7 +121,7 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
       onPostCreated?.();
 
     } catch (error: any) {
-      console.error('Erreur lors de la publication:', error);
+      console.error('❌ Erreur lors de la publication:', error);
       toast({
         title: "Erreur",
         description: `Impossible de publier: ${error.message}`,
@@ -117,7 +139,7 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
     <Card className="mb-6 border-2 border-green-300 bg-green-50">
       <CardContent className="p-4">
         <div className="mb-2 text-sm text-green-700 font-semibold">
-          🎯 PostCreator - {user ? `✅ Connecté: ${user.email}` : '❌ Non connecté'}
+          🎯 PostCreator - {user ? `✅ Connecté: ${user.email}` : '❌ Non connecté'} | 📸 Médias: {media.length}
         </div>
         
         {!isExpanded ? (
@@ -160,7 +182,10 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
 
             {/* Upload de médias */}
             <MediaUploader
-              onMediaUploaded={setMedia}
+              onMediaUploaded={(newMedia) => {
+                console.log('📸 MediaUploader - Nouveaux médias reçus:', newMedia);
+                setMedia(newMedia);
+              }}
               maxFiles={4}
               maxFileSize={10}
             />

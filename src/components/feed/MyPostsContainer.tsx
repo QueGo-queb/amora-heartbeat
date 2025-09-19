@@ -9,16 +9,34 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, User, Calendar, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { getPostMedia, hasMedia } from '../../../utils/mediaUtils';
+import { LazyImage } from '@/components/ui/LazyImage';
 
 const MyPostsContainer = () => {
   const { user } = useAuth();
   const { posts, loading, error, refresh } = useMyPosts();
 
+  // ✅ DEBUG : Vérifier les posts reçus
+  useEffect(() => {
+    if (posts.length > 0) {
+      console.log(' MyPostsContainer - Posts reçus:', posts.length);
+      posts.forEach((post, index) => {
+        console.log(`📝 Post ${index + 1} dans MyPostsContainer:`, {
+          id: post.id,
+          content: post.content?.substring(0, 50) + '...',
+          media: post.media,
+          mediaCount: post.media?.length || 0,
+          hasMedia: !!(post.media && post.media.length > 0)
+        });
+      });
+    }
+  }, [posts]);
+
   if (!user) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">�� Connexion requise</h3>
+          <h3 className="text-lg font-semibold mb-2"> Connexion requise</h3>
           <p className="text-gray-600">Vous devez être connecté pour voir vos publications.</p>
         </div>
       </div>
@@ -99,112 +117,137 @@ const MyPostsContainer = () => {
       {/* Liste des posts */}
       {!loading && !error && posts.length > 0 && (
         <div className="space-y-4">
-          {posts.map((post) => (
-            <Card key={post.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
-                      {post.profiles?.avatar_url ? (
-                        <img 
-                          src={post.profiles.avatar_url} 
-                          alt="" 
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-sm">
-                          {(post.profiles?.full_name || 'U').charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">
-                        {post.profiles?.full_name || 'Utilisateur'}
+          {posts.map((post) => {
+            // ✅ DEBUG : Log pour chaque post rendu
+            console.log(`🎨 Rendu post ${post.id}:`, {
+              hasMedia: !!(post.media && post.media.length > 0),
+              mediaCount: post.media?.length || 0,
+              media: post.media
+            });
+
+            return (
+              <Card key={post.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        {post.profiles?.avatar_url ? (
+                          <img 
+                            src={post.profiles.avatar_url} 
+                            alt="" 
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm">
+                            {(post.profiles?.full_name || 'U').charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(post.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                  <Badge variant={post.visibility === 'public' ? 'default' : 'secondary'}>
-                    {post.visibility === 'public' ? 'Public' : post.visibility}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-900 leading-relaxed mb-4">{post.content}</p>
-                
-                {/* ✅ AJOUT : AFFICHAGE DES MÉDIAS */}
-                {post.media && post.media.length > 0 && (
-                  <div className="mb-4">
-                    <div className="grid grid-cols-1 gap-2">
-                      {post.media.map((media, index) => (
-                        <div key={index} className="relative group">
-                          {media.type === 'image' ? (
-                            <img
-                              src={media.url}
-                              alt={`Image ${index + 1}`}
-                              className="w-full h-64 object-cover rounded-lg"
-                              loading="lazy"
-                              onError={(e) => {
-                                console.error('Erreur chargement image:', media.url);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ) : media.type === 'video' ? (
-                            <video
-                              src={media.url}
-                              controls
-                              className="w-full h-64 object-cover rounded-lg"
-                              onError={(e) => {
-                                console.error('Erreur chargement vidéo:', media.url);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            >
-                              Votre navigateur ne supporte pas la lecture vidéo.
-                            </video>
-                          ) : null}
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {post.profiles?.full_name || 'Utilisateur'}
                         </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(post.created_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant={post.visibility === 'public' ? 'default' : 'secondary'}>
+                      {post.visibility === 'public' ? 'Public' : post.visibility}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-900 leading-relaxed mb-4">{post.content}</p>
+                  
+                  {/* ✅ NOUVEAU: Médias unifiés avec fallback automatique */}
+                  {hasMedia(post) && (
+                    <div className="mb-4">
+                      <div className="grid grid-cols-1 gap-2">
+                        {getPostMedia(post).map((media, index) => (
+                          <div key={index} className="relative group">
+                            {media.type === 'image' ? (
+                              <LazyImage
+                                src={media.url}
+                                alt={media.alt || `Image ${index + 1}`}
+                                className="w-full h-64 object-cover rounded-lg"
+                                onLoad={() => console.log(`✅ Image chargée: ${media.url}`)}
+                                onError={(e) => {
+                                  console.error('❌ Erreur chargement image:', media.url);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : media.type === 'video' ? (
+                              <video
+                                src={media.url}
+                                controls
+                                className="w-full h-64 object-cover rounded-lg"
+                                poster={media.thumbnail}
+                                onLoadStart={() => console.log(`✅ Vidéo en cours de chargement: ${media.url}`)}
+                                onError={(e) => {
+                                  console.error('❌ Erreur chargement vidéo:', media.url);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              >
+                                Votre navigateur ne supporte pas la lecture vidéo.
+                              </video>
+                            ) : media.type === 'gif' ? (
+                              <LazyImage
+                                src={media.url}
+                                alt={media.alt || `GIF ${index + 1}`}
+                                className="w-full h-64 object-cover rounded-lg"
+                                onError={(e) => {
+                                  console.error('❌ Erreur chargement GIF:', media.url);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="p-4 bg-gray-100 rounded-lg">
+                                <p className="text-gray-600">Type de média non supporté: {media.type}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {post.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          #{tag}
+                        </Badge>
                       ))}
                     </div>
+                  )}
+                  
+                  {/* Statistiques */}
+                  <div className="flex items-center space-x-6 text-sm text-gray-500 pt-3 border-t">
+                    <div className="flex items-center space-x-1">
+                      <Heart className="w-4 h-4" />
+                      <span>{post.likes_count}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{post.comments_count}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Share2 className="w-4 h-4" />
+                      <span>{post.shares_count}</span>
+                    </div>
                   </div>
-                )}
-
-                {/* Tags */}
-                {post.tags && post.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {post.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Statistiques */}
-                <div className="flex items-center space-x-6 text-sm text-gray-500 pt-3 border-t">
-                  <div className="flex items-center space-x-1">
-                    <Heart className="w-4 h-4" />
-                    <span>{post.likes_count}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{post.comments_count}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Share2 className="w-4 h-4" />
-                    <span>{post.shares_count}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

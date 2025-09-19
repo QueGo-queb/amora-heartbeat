@@ -1,25 +1,33 @@
 /**
  * Client Supabase Admin avec service role pour les opérations côté serveur
  * Bypass automatiquement RLS et permet toutes les opérations
- * TODO: Protéger l'accès - ce fichier ne doit jamais être exposé côté client
+ * ⚠️ SÉCURITÉ: Ce fichier ne doit JAMAIS être exposé côté client
+ * ⚠️ La Service Role Key ne doit être utilisée que côté serveur
  */
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Missing Supabase environment variables for admin client');
+// ⚠️ SÉCURITÉ: Vérifier que nous sommes côté serveur
+if (typeof window !== 'undefined') {
+  throw new Error('supabaseAdmin ne peut pas être utilisé côté client pour des raisons de sécurité');
 }
 
-export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.warn('⚠️ Service Role Key non disponible - fonctionnalités admin désactivées');
+  // Ne pas throw d'erreur en production pour éviter de casser l'app
+}
+
+// Créer le client admin seulement si les variables sont disponibles
+export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey ? createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
   }
-});
+}) : null;
 
 // Types pour les données du feed
 export interface Profile {
@@ -77,6 +85,12 @@ export interface Advertisement {
 // Fonctions utilitaires pour l'administration
 export async function isUserAdmin(userId: string): Promise<boolean> {
   try {
+    // ⚠️ SÉCURITÉ: Vérifier que supabaseAdmin est disponible
+    if (!supabaseAdmin) {
+      console.warn('supabaseAdmin non disponible - vérification admin impossible');
+      return false;
+    }
+
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('role, email')
@@ -85,7 +99,8 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
     if (error || !profile) return false;
 
-    return profile.role === 'admin' || profile.email === 'clodenerc@yahoo.fr';
+    // ⚠️ SÉCURITÉ: Ne pas hardcoder d'emails en production
+    return profile.role === 'admin';
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
@@ -94,6 +109,12 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
 export async function getActiveAds(targetTags?: string[]): Promise<Advertisement[]> {
   try {
+    // ⚠️ SÉCURITÉ: Vérifier que supabaseAdmin est disponible
+    if (!supabaseAdmin) {
+      console.warn('supabaseAdmin non disponible - publicités non disponibles');
+      return [];
+    }
+
     let query = supabaseAdmin
       .from('ads')
       .select('*')

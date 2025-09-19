@@ -1,163 +1,256 @@
 /**
- * Hook pour gérer "Mes publications" - affiche uniquement les posts de l'utilisateur connecté
+ * Hook pour récupérer les posts de l'utilisateur connecté (Mes publications)
+ * Utilise le nouveau système de médias avec fallback
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { FeedPost, FeedFilters } from '../../types/feed';
 import { useAuth } from '@/hooks/useAuth';
+import { getPostMedia } from '../../utils/mediaUtils';
 
-interface MyPost {
-  id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  likes_count: number;
-  comments_count: number;
-  shares_count: number;
-  profiles?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-    user_id: string;
-  };
+interface UseMyPostsOptions {
+  filters?: FeedFilters;
+  pageSize?: number;
+  autoRefresh?: boolean;
 }
 
-export function useMyPosts() {
-  const [posts, setPosts] = useState<MyPost[]>([]);
+export function useMyPosts(options: UseMyPostsOptions = {}) {
+  const {
+    filters = {},
+    pageSize = 10,
+    autoRefresh = true
+  } = options;
+
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const loadMyPosts = useCallback(async () => {
-    if (!user?.id) {
-      setPosts([]);
-      setLoading(false);
-      return;
-    }
+  // Utiliser useRef pour les valeurs stables
+  const filtersRef = useRef(filters);
+  const pageSizeRef = useRef(pageSize);
+  const userRef = useRef(user);
 
+  // Mettre à jour les refs quand nécessaire
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    pageSizeRef.current = pageSize;
+  }, [pageSize]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // Fonction de scoring pour trier les posts
+  const calculatePostScore = (post: FeedPost): number => {
+    let score = 0;
+    
+    // Score de base par récence (posts récents = plus de points)
+    const hoursSinceCreation = (Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60);
+    score += Math.max(0, 100 - hoursSinceCreation * 2);
+    
+    // Bonus pour les posts premium
+    if (post.is_premium) score += 50;
+    
+    // Bonus pour l'engagement (likes, commentaires)
+    score += (post.likes_count || 0) * 2;
+    score += (post.comments_count || 0) * 3;
+    
+    // Bonus pour les médias
+    if (post.media && post.media.length > 0) score += 20;
+    
+    return score;
+  };
+
+  // Charger les posts de l'utilisateur
+  const loadPosts = useCallback(async (cursor?: string, append = false) => {
     try {
-      setLoading(true);
       setError(null);
+      if (!cursor) setLoading(true);
+      if (cursor) setLoadingMore(true);
 
-      console.log('🔍 Chargement de mes posts pour l\'utilisateur:', user.id);
+      if (!userRef.current?.id) {
+        throw new Error('Utilisateur non connecté');
+      }
 
-      // ✅ CORRECTION : Utiliser exactement les mêmes colonnes que useInterestsFeed
-      const { data: postsData, error: postsError } = await supabase
+      // ✅ Requête pour récupérer SEULEMENT les posts de l'utilisateur connecté
+      let query = supabase
         .from('posts')
         .select(`
-          id,
-          user_id,
-          content,
-          created_at,
-          image_url,
-          video_url,
-          media,
-          tags,
-          visibility,
-          likes_count,
-          comments_count
+          *,
+          profiles (
+            id,
+            full_name,
+            avatar_url,
+            interests,
+            plan
+          )
         `)
-        .eq('user_id', user.id) // ✅ SEULEMENT MES POSTS
+        .eq('user_id', userRef.current.id) // ✅ SEULEMENT les posts de l'utilisateur connecté
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(pageSizeRef.current);
 
-      console.log(' Mes posts récupérés:', postsData);
-      console.log('📊 Nombre de mes posts:', postsData?.length || 0);
-
-      if (postsError) {
-        console.error('Erreur mes posts:', postsError);
-        throw postsError;
+      // Pagination par date
+      if (cursor) {
+        query = query.lt('created_at', cursor);
       }
 
-      if (!postsData || postsData.length === 0) {
-        console.log('📭 Aucun de mes posts trouvé');
-        setPosts([]);
-        return;
+      // Filtres optionnels
+      if (filtersRef.current.media_type && filtersRef.current.media_type !== 'all') {
+        // Pour l'instant, on ne peut pas filtrer par type de média facilement
+        // car on utilise le fallback. On pourrait améliorer cela plus tard.
       }
 
-      // Charger le profil de l'utilisateur
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          avatar_url,
-          user_id
-        `)
-        .eq('user_id', user.id)
-        .single();
+      const { data, error: fetchError } = await query;
 
-      // Combiner les posts avec le profil
-      const postsWithProfileAndMedia = postsData.map(post => {
-        //  TRANSFORMATION DES MÉDIAS (même logique que useInterestsFeed)
-        let mediaArray = [];
-        
-        // Gérer l'ancien format (image_url, video_url)
-        if (post.image_url) {
-          mediaArray.push({ type: 'image', url: post.image_url });
-        }
-        if (post.video_url) {
-          mediaArray.push({ type: 'video', url: post.video_url });
-        }
-        
-        // Gérer le nouveau format (media JSONB) si disponible
-        if (post.media && Array.isArray(post.media) && post.media.length > 0) {
-          mediaArray = [...mediaArray, ...post.media];
-        }
+      if (fetchError) {
+        console.error('Erreur lors du chargement de mes posts:', fetchError);
+        throw fetchError;
+      }
+
+      // Transformer les données avec le nouveau système de médias
+      const transformedPosts: FeedPost[] = data?.map(post => {
+        const media = getPostMedia(post); // Utilise le fallback automatique
         
         return {
           id: post.id,
-          user_id: post.user_id,
           content: post.content,
+          user_id: post.user_id,
           created_at: post.created_at,
+          updated_at: post.updated_at,
           likes_count: post.likes_count || 0,
           comments_count: post.comments_count || 0,
-          shares_count: 0, // ✅ Valeur par défaut car la colonne n'existe peut-être pas
-          visibility: post.visibility || 'public',
-          tags: post.tags || [],
-          media: mediaArray,
-          profiles: profileData || {
-            id: user.id,
-            full_name: user.email || 'Utilisateur',
-            avatar_url: null,
-            user_id: user.id
-          }
+          visibility: (post.visibility as 'public' | 'private' | 'friends') || 'public',
+          
+          // ✅ NOUVEAU: Système unifié de médias
+          media,
+          
+          // ✅ ANCIEN: Colonnes de fallback (pour compatibilité)
+          image_url: (post as any).image_url,
+          video_url: (post as any).video_url,
+          media_urls: (post as any).media_urls,
+          media_types: (post as any).media_types,
+          
+          // Informations de l'auteur
+          profiles: (post as any).profiles ? {
+            id: (post as any).profiles.id,
+            full_name: (post as any).profiles.full_name,
+            avatar_url: (post as any).profiles.avatar_url,
+            interests: (post as any).profiles.interests || [],
+            is_premium: (post as any).profiles.plan === 'premium'
+          } : undefined,
+          
+          // Alias pour compatibilité
+          user: (post as any).profiles ? {
+            id: (post as any).profiles.id,
+            full_name: (post as any).profiles.full_name,
+            avatar_url: (post as any).profiles.avatar_url,
+            is_premium: (post as any).profiles.plan === 'premium'
+          } : undefined,
+          
+          // État du post
+          is_premium: (post as any).profiles?.plan === 'premium',
+          is_liked: false, // TODO: Récupérer depuis l'API
+          score: calculatePostScore({
+            id: post.id,
+            content: post.content,
+            created_at: post.created_at,
+            is_premium: (post as any).profiles?.plan === 'premium',
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0,
+            media
+          })
         };
-      });
+      }) || [];
 
-      console.log('✅ Mes posts transformés:', postsWithProfileAndMedia.length);
-      setPosts(postsWithProfileAndMedia);
+      // Trier par score si demandé
+      if (filtersRef.current.sort_by === 'popular') {
+        transformedPosts.sort((a, b) => (b.score || 0) - (a.score || 0));
+      }
+
+      // Mettre à jour l'état
+      if (append && cursor) {
+        setPosts(prev => [...prev, ...transformedPosts]);
+      } else {
+        setPosts(transformedPosts);
+      }
+
+      // Gérer la pagination
+      setHasMore(transformedPosts.length === pageSizeRef.current);
+      if (transformedPosts.length > 0) {
+        setNextCursor(transformedPosts[transformedPosts.length - 1].created_at);
+      } else {
+        setNextCursor(null);
+        setHasMore(false);
+      }
 
     } catch (err: any) {
-      console.error('Erreur chargement mes posts:', err);
-      setError(err.message || 'Erreur lors du chargement de vos posts');
-      
+      console.error('Erreur dans loadPosts:', err);
+      setError(err.message || 'Erreur lors du chargement des posts');
       toast({
-        title: "Erreur",
-        description: "Impossible de charger vos posts",
-        variant: "destructive"
+        title: 'Erreur',
+        description: err.message || 'Impossible de charger vos posts',
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [user, toast]);
+  }, [toast]);
 
+  // Charger plus de posts (pagination)
+  const loadMore = useCallback(() => {
+    if (hasMore && !loadingMore && nextCursor) {
+      loadPosts(nextCursor, true);
+    }
+  }, [hasMore, loadingMore, nextCursor, loadPosts]);
+
+  // Rafraîchir les posts
   const refresh = useCallback(() => {
-    console.log('🔄 Rafraîchissement de mes posts...');
-    loadMyPosts();
-  }, [loadMyPosts]);
+    setPosts([]);
+    setNextCursor(null);
+    setHasMore(true);
+    loadPosts();
+  }, [loadPosts]);
 
-  // ✅ Charger les posts quand l'utilisateur change
+  // Charger les posts au montage
   useEffect(() => {
-    loadMyPosts();
-  }, [loadMyPosts]);
+    if (userRef.current?.id) {
+      loadPosts();
+    }
+  }, [loadPosts]);
+
+  // Auto-refresh si activé
+  useEffect(() => {
+    if (!autoRefresh || !userRef.current?.id) return;
+
+    const interval = setInterval(() => {
+      // Vérifier s'il y a de nouveaux posts
+      refresh();
+    }, 30000); // Rafraîchir toutes les 30 secondes
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refresh]);
 
   return {
     posts,
     loading,
+    loadingMore,
+    hasMore,
     error,
-    refresh
+    loadMore,
+    refresh,
+    // Statistiques
+    totalPosts: posts.length,
+    hasPosts: posts.length > 0
   };
 }

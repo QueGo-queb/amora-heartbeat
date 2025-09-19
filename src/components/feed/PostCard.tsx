@@ -28,6 +28,7 @@ import { CallButtonGroup } from '@/components/chat/CallButton';
 import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
 import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
 import { PostActions } from './PostActions';
+import { getPostMedia, getFirstMedia, hasMedia } from '../../../utils/mediaUtils';
 
 interface PostCardProps {
   post: FeedPost;
@@ -152,13 +153,14 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="w-3 h-3" />
                 <span>{formatDate(post.created_at)}</span>
-                {post.profiles.location && (
+                {/* Location temporairement désactivée - colonne non disponible */}
+                {/* {post.profiles.location && (
                   <>
                     <span>•</span>
                     <MapPin className="w-3 h-3" />
                     <span>{post.profiles.location}</span>
                   </>
-                )}
+                )} */}
               </div>
             </div>
           </div>
@@ -322,18 +324,17 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
           </div>
         )}
 
-        {/* Médias - CORRECTION COMPLÈTE */}
-        {post.media && post.media.length > 0 && (
+        {/* ✅ NOUVEAU: Médias unifiés avec fallback automatique */}
+        {hasMedia(post) && (
           <div className="mb-4">
             <div className="grid grid-cols-1 gap-2">
-              {post.media.map((media, index) => (
+              {getPostMedia(post).map((media, index) => (
                 <div key={index} className="relative group">
                   {media.type === 'image' ? (
-                    <img
+                    <LazyImage
                       src={media.url}
-                      alt={`Media ${index + 1}`}
+                      alt={media.alt || `Image ${index + 1}`}
                       className="w-full h-64 object-cover rounded-lg"
-                      loading="lazy"
                       onError={(e) => {
                         console.error('Erreur chargement image:', media.url);
                         e.currentTarget.style.display = 'none';
@@ -344,6 +345,7 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
                       src={media.url}
                       controls
                       className="w-full h-64 object-cover rounded-lg"
+                      poster={media.thumbnail}
                       onError={(e) => {
                         console.error('Erreur chargement vidéo:', media.url);
                         e.currentTarget.style.display = 'none';
@@ -351,43 +353,17 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
                     >
                       Votre navigateur ne supporte pas la lecture vidéo.
                     </video>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Fallback pour les anciennes structures de médias */}
-        {(!post.media || post.media.length === 0) && post.media_urls && post.media_urls.length > 0 && (
-          <div className="mb-4">
-            <div className="grid grid-cols-1 gap-2">
-              {post.media_urls.map((url, index) => (
-                <div key={index} className="relative group">
-                  {post.media_types && post.media_types[index] === 'image' ? (
-                    <img
-                      src={url}
-                      alt={`Media ${index + 1}`}
+                  ) : media.type === 'gif' ? (
+                    <LazyImage
+                      src={media.url}
+                      alt={media.alt || `GIF ${index + 1}`}
                       className="w-full h-64 object-cover rounded-lg"
-                      loading="lazy"
                       onError={(e) => {
-                        console.error('Erreur chargement image (fallback):', url);
+                        console.error('Erreur chargement GIF:', media.url);
                         e.currentTarget.style.display = 'none';
                       }}
                     />
-                  ) : (
-                    <video
-                      src={url}
-                      controls
-                      className="w-full h-64 object-cover rounded-lg"
-                      onError={(e) => {
-                        console.error('Erreur chargement vidéo (fallback):', url);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    >
-                      Votre navigateur ne supporte pas la lecture vidéo.
-                    </video>
-                  )}
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -410,7 +386,7 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
         {/* Score de pertinence (optionnel, pour debug) */}
         {process.env.NODE_ENV === 'development' && (
           <Badge variant="outline" className="text-xs">
-            Score: {post.relevance_score}
+            Score: {post.score || 0}
           </Badge>
         )}
       </CardContent>
