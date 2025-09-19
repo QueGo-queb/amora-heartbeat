@@ -1,6 +1,7 @@
 /**
  * Hook pour les mises à jour en temps réel du feed
  * Utilise Supabase Realtime pour écouter les nouveaux posts
+ * ✅ CORRIGÉ : N'injecte pas les posts de l'utilisateur connecté dans son feed principal
  */
 
 import { useEffect, useState, useRef } from 'react';
@@ -28,11 +29,16 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
           event: 'INSERT',
           schema: 'public',
           table: 'posts',
-          // ✅ CORRIGÉ - Utiliser is_active au lieu de visibility
-          filter: 'is_active=eq.true'
+          filter: 'visibility=eq.public'
         },
         async (payload) => {
           try {
+            // ✅ CORRECTION : Ne pas injecter les posts de l'utilisateur connecté
+            if (payload.new.user_id === viewerProfileRef.current?.id) {
+              console.log('🚫 Post de l\'utilisateur connecté ignoré dans le feed principal');
+              return;
+            }
+
             // Récupérer les détails complets du nouveau post
             const { data: newPost, error } = await supabase
               .from('posts')
@@ -52,6 +58,7 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
             if (scoredPosts.length > 0) {
               setNewPosts(prev => [scoredPosts[0], ...prev]);
               setHasNewPosts(true);
+              console.log('✅ Nouveau post ajouté au feed principal:', newPost.id);
             }
           } catch (error) {
             console.error('Error processing new post:', error);
@@ -63,7 +70,7 @@ export function useFeedRealtime(currentPosts: FeedPost[], viewerProfile: any) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []); // ✅ Tableau vide - subscription stable
+  }, []); // ✅ Pas de dépendances pour éviter les re-souscriptions
 
   // Fonction pour intégrer les nouveaux posts dans le feed principal
   const integrateNewPosts = () => {

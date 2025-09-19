@@ -434,43 +434,102 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
 
       console.log('✅ Auth user created:', authData.user.id);
 
-      // ✅ CRÉATION PROFIL AVEC GESTION D'ERREUR AMÉLIORÉE
-      console.log('🚀 Creating profile...');
-      const profileData = {
-        user_id: authData.user.id,
-        email: formData.email,
-        full_name: formData.fullName,
-        gender: formData.gender,
-        age: parseInt(formData.age),
-        bio: formData.bio || null,
-        country: formData.country || null,
-        region: formData.region || null,
-        city: formData.city || null,
-        language: formData.primaryLanguage || 'fr',
-        seeking_gender: formData.seekingGender || 'any',
-        interests: formData.interests || [],
-        plan: 'free',
-        is_active: true,
-        // ✅ AJOUT DES CHAMPS OBLIGATOIRES MANQUANTS
-        role: 'user',
-        subscription_plan: 'free'
-      };
-
+      // ✅ CRÉATION PROFIL COMPLET AVEC INSERT DIRECT
+      console.log('🚀 Creating complete profile...');
+      
       try {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert(profileData, { onConflict: 'user_id' });
+        // Attendre un petit délai pour éviter les conflits avec le trigger
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const profileData = {
+          user_id: authData.user.id,
+          email: formData.email,
+          full_name: formData.fullName,
+          gender: formData.gender,
+          age: parseInt(formData.age),
+          bio: formData.bio || null,
+          country: formData.country || null,
+          region: formData.region || null,
+          city: formData.city || null,
+          language: formData.primaryLanguage || 'fr',
+          seeking_gender: formData.seekingGender || 'any',
+          interests: formData.interests || [],
+          seeking_country: formData.seekingCountry || [],
+          plan: 'free',
+          is_active: true,
+          role: 'user',
+          subscription_plan: 'free'
+        };
 
-        if (profileError) {
-          console.error('❌ Profile error:', profileError);
-          // ✅ NE PAS FAIRE ÉCHOUER L'INSCRIPTION SI LE PROFIL ÉCHOUE
-          console.warn('⚠️ Profile creation failed, but user is created. Will retry later.');
-        } else {
-          console.log('✅ Profile created successfully with target countries:', formData.seekingCountry);
+        // Essayer d'abord avec insert, puis avec update si le profil existe déjà
+        let profileResult;
+        try {
+          // Tentative d'insertion directe
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert(profileData);
+
+          if (insertError && insertError.code === '23505') {
+            // Conflit détecté (profil existe déjà), faire un update
+            console.log('�� Profil existe déjà, mise à jour...');
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                email: formData.email,
+                full_name: formData.fullName,
+                gender: formData.gender,
+                age: parseInt(formData.age),
+                bio: formData.bio || null,
+                country: formData.country || null,
+                region: formData.region || null,
+                city: formData.city || null,
+                language: formData.primaryLanguage || 'fr',
+                seeking_gender: formData.seekingGender || 'any',
+                interests: formData.interests || [],
+                seeking_country: formData.seekingCountry || [],
+                is_active: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', authData.user.id);
+
+            if (updateError) {
+              throw updateError;
+            }
+          } else if (insertError) {
+            throw insertError;
+          }
+
+          console.log('✅ Complete profile created/updated successfully:', {
+            user_id: authData.user.id,
+            full_name: formData.fullName,
+            country: formData.country,
+            interests: formData.interests.length,
+            seeking_country: formData.seekingCountry.length
+          });
+
+        } catch (profileError) {
+          console.error('❌ Profile creation error:', profileError);
+          
+          // En cas d'erreur, utiliser la fonction de correction
+          try {
+            const { data: correctionResult } = await supabase.rpc('ensure_profile_complete', {
+              p_user_id: authData.user.id
+            });
+            
+            if (correctionResult) {
+              console.log('✅ Profil corrigé avec la fonction utilitaire');
+            } else {
+              throw new Error('Échec de la correction du profil');
+            }
+          } catch (correctionError) {
+            console.error('❌ Erreur de correction:', correctionError);
+            throw new Error(`Erreur lors de la sauvegarde du profil: ${profileError.message}`);
+          }
         }
+
       } catch (profileError) {
         console.error('❌ Profile creation exception:', profileError);
-        // Continue même si le profil échoue
+        throw new Error(`Erreur lors de la sauvegarde du profil: ${profileError.message}`);
       }
 
       // ✅ MESSAGE DE SUCCÈS INFORMATIF

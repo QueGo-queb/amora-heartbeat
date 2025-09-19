@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Post {
   id: string;
@@ -23,6 +24,7 @@ export function useInterestsFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const loadPosts = useCallback(async () => {
     try {
@@ -31,8 +33,8 @@ export function useInterestsFeed() {
 
       console.log('🔍 Chargement des posts...');
 
-      // D'abord, charger les posts sans relation
-      const { data: postsData, error: postsError } = await supabase
+      // ✅ CORRECTION : Exclure les posts de l'utilisateur connecté du feed principal
+      let query = supabase
         .from('posts')
         .select(`
           id,
@@ -56,10 +58,18 @@ export function useInterestsFeed() {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      console.log('�� Posts récupérés:', postsData);
-      console.log('�� Nombre de posts:', postsData?.length || 0);
+      // ✅ EXCLURE LES POSTS DE L'UTILISATEUR CONNECTÉ
+      if (user?.id) {
+        query = query.neq('user_id', user.id);
+        console.log('🚫 Excluant les posts de l\'utilisateur:', user.id);
+      }
+
+      const { data: postsData, error: postsError } = await query;
+
+      console.log('📊 Posts récupérés:', postsData);
+      console.log('📊 Nombre de posts:', postsData?.length || 0);
       if (postsData && postsData.length > 0) {
-        console.log('🔍 Premier post structure:', postsData[0]);
+        console.log(' Premier post structure:', postsData[0]);
       }
 
       if (postsError) {
@@ -74,7 +84,7 @@ export function useInterestsFeed() {
       }
 
       if (!postsData || postsData.length === 0) {
-        console.log('📭 Aucun post trouvé');
+        console.log(' Aucun post trouvé (hors utilisateur connecté)');
         setPosts([]);
         return;
       }
@@ -102,7 +112,7 @@ export function useInterestsFeed() {
 
       // Combiner les posts avec leurs profils
       const postsWithProfilesAndMedia = postsData.map(post => {
-        // �� TRANSFORMATION DES MÉDIAS
+        // 🎨 TRANSFORMATION DES MÉDIAS
         let mediaArray = [];
         
         // Gérer l'ancien format (image_url, video_url)
@@ -186,17 +196,17 @@ export function useInterestsFeed() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]); // ✅ Ajouter user aux dépendances
 
   const refresh = useCallback(() => {
     console.log('🔄 Rafraîchissement du feed...');
     loadPosts();
-  }, []); // ✅ Retirer loadPosts des dépendances
+  }, [loadPosts]); // ✅ Ajouter loadPosts aux dépendances
 
   // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
   useEffect(() => {
     loadPosts();
-  }, []); // ✅ Se déclenche une seule fois
+  }, [loadPosts]); // ✅ Se déclenche quand loadPosts change (quand user change)
 
   return {
     posts,

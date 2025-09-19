@@ -27,6 +27,7 @@ import { LazyImage } from '@/components/ui/LazyImage';
 import { CallButtonGroup } from '@/components/chat/CallButton';
 import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
 import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
+import { PostActions } from './PostActions';
 
 interface PostCardProps {
   post: FeedPost;
@@ -321,25 +322,35 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
           </div>
         )}
 
-        {/* Médias */}
+        {/* Médias - CORRECTION COMPLÈTE */}
         {post.media && post.media.length > 0 && (
           <div className="mb-4">
             <div className="grid grid-cols-1 gap-2">
               {post.media.map((media, index) => (
-                <div key={index} className="relative">
+                <div key={index} className="relative group">
                   {media.type === 'image' ? (
                     <img
                       src={media.url}
                       alt={`Media ${index + 1}`}
                       className="w-full h-64 object-cover rounded-lg"
                       loading="lazy"
+                      onError={(e) => {
+                        console.error('Erreur chargement image:', media.url);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   ) : media.type === 'video' ? (
                     <video
                       src={media.url}
                       controls
                       className="w-full h-64 object-cover rounded-lg"
-                    />
+                      onError={(e) => {
+                        console.error('Erreur chargement vidéo:', media.url);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    >
+                      Votre navigateur ne supporte pas la lecture vidéo.
+                    </video>
                   ) : null}
                 </div>
               ))}
@@ -347,65 +358,64 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
           </div>
         )}
 
+        {/* Fallback pour les anciennes structures de médias */}
+        {(!post.media || post.media.length === 0) && post.media_urls && post.media_urls.length > 0 && (
+          <div className="mb-4">
+            <div className="grid grid-cols-1 gap-2">
+              {post.media_urls.map((url, index) => (
+                <div key={index} className="relative group">
+                  {post.media_types && post.media_types[index] === 'image' ? (
+                    <img
+                      src={url}
+                      alt={`Media ${index + 1}`}
+                      className="w-full h-64 object-cover rounded-lg"
+                      loading="lazy"
+                      onError={(e) => {
+                        console.error('Erreur chargement image (fallback):', url);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <video
+                      src={url}
+                      controls
+                      className="w-full h-64 object-cover rounded-lg"
+                      onError={(e) => {
+                        console.error('Erreur chargement vidéo (fallback):', url);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    >
+                      Votre navigateur ne supporte pas la lecture vidéo.
+                    </video>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={`flex items-center gap-2 ${
-                isLiked ? 'text-heart-red' : 'text-muted-foreground'
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="text-sm">{post.likes_count}</span>
-            </Button>
+        <PostActions 
+          post={post} 
+          onLikeUpdate={(postId, newLikeCount, isLiked) => {
+            // Mettre à jour l'état local si nécessaire
+            console.log(`Post ${postId} liké: ${isLiked}, nouveau compte: ${newLikeCount}`);
+          }}
+          onShareUpdate={(postId, newShareCount) => {
+            // Mettre à jour l'état local si nécessaire
+            console.log(`Post ${postId} partagé, nouveau compte: ${newShareCount}`);
+          }}
+        />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 text-muted-foreground"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm">{post.comments_count}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 text-muted-foreground"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="text-sm">Partager</span>
-            </Button>
-          </div>
-
-          {/* Score de pertinence (optionnel, pour debug) */}
-          {process.env.NODE_ENV === 'development' && (
-            <Badge variant="outline" className="text-xs">
-              Score: {post.relevance_score}
-            </Badge>
-          )}
-        </div>
-
-        {/* ✅ BOUTONS D'APPEL RÉELS (si ce n'est pas son propre post) */}
-        {!isAuthor && post.user_id && (
-          <div className="mt-4 pt-4 border-t">
-            <CallButtonGroup
-              userId={post.user_id}
-              userName={post.profiles?.full_name || 'Utilisateur'}
-              size="sm"
-              variant="outline"
-              onCallInitiated={(callType) => {
-                console.log(`🎥 Appel ${callType} initié depuis le feed`);
-              }}
-            />
-          </div>
+        {/* Score de pertinence (optionnel, pour debug) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Badge variant="outline" className="text-xs">
+            Score: {post.relevance_score}
+          </Badge>
         )}
       </CardContent>
 
-      {/* �� AJOUT: Modal d'incitation Premium */}
+      {/*  AJOUT: Modal d'incitation Premium */}
       <PremiumFeatureModal
         open={showPremiumModal}
         onClose={closePremiumModal}

@@ -1,20 +1,30 @@
-// src/components/feed/PostCreator.tsx - VERSION ULTRA-SIMPLE
+// src/components/feed/PostCreator.tsx - VERSION AVEC MÉDIAS
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, PenTool } from 'lucide-react';
+import { Send, PenTool, Image } from 'lucide-react';
+import { MediaUploader } from './MediaUploader';
 
 interface PostCreatorProps {
   onPostCreated?: () => void;
   forceExpanded?: boolean;
 }
 
+interface MediaFile {
+  type: 'image' | 'video' | 'file';
+  url: string;
+  path: string;
+  content_type: string;
+  file: File;
+}
+
 export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreatorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [content, setContent] = useState('');
+  const [media, setMedia] = useState<MediaFile[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [user, setUser] = useState<any>(null);
   
@@ -38,10 +48,10 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
   }, [forceExpanded, user]);
 
   const handleSubmit = async () => {
-    if (!content.trim() || !user) {
+    if ((!content.trim() && media.length === 0) || !user) {
       toast({
         title: "Erreur",
-        description: "Vous devez être connecté et saisir du contenu.",
+        description: "Vous devez être connecté et saisir du contenu ou ajouter des médias.",
         variant: "destructive"
       });
       return;
@@ -49,14 +59,26 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
 
     setIsPosting(true);
     try {
+      // Préparer les données des médias
+      const mediaData = media.map(m => ({
+        type: m.type,
+        url: m.url,
+        path: m.path,
+        content_type: m.content_type
+      }));
+
       const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          content: content.trim(),
+          content: content.trim() || null,
+          media: mediaData,
+          media_urls: media.map(m => m.url),
+          media_types: media.map(m => m.type),
           visibility: 'public',
           likes_count: 0,
-          comments_count: 0
+          comments_count: 0,
+          shares_count: 0
         });
 
       if (error) {
@@ -64,12 +86,14 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
         throw error;
       }
 
+      // Reset form
       setContent('');
+      setMedia([]);
       setIsExpanded(false);
 
       toast({
         title: "Post publié !",
-        description: "Votre publication a été ajoutée au fil d'actualité.",
+        description: `Votre publication a été ajoutée au fil d'actualité${media.length > 0 ? ` avec ${media.length} média(s)` : ''}.`,
       });
 
       onPostCreated?.();
@@ -85,6 +109,8 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
       setIsPosting(false);
     }
   };
+
+  const hasContent = content.trim().length > 0 || media.length > 0;
 
   // Toujours afficher le composant pour le debug
   return (
@@ -132,20 +158,37 @@ export function PostCreator({ onPostCreated, forceExpanded = false }: PostCreato
               autoFocus={forceExpanded}
             />
 
+            {/* Upload de médias */}
+            <MediaUploader
+              onMediaUploaded={setMedia}
+              maxFiles={4}
+              maxFileSize={10}
+            />
+
             <div className="flex items-center justify-between pt-3 border-t">
-              <span className="text-xs text-gray-500">
-                {content.length}/5000
-              </span>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>{content.length}/5000</span>
+                {media.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Image className="w-3 h-3" />
+                    {media.length} média(s)
+                  </span>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setIsExpanded(false)}
+                  onClick={() => {
+                    setIsExpanded(false);
+                    setContent('');
+                    setMedia([]);
+                  }}
                 >
                   Annuler
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!content.trim() || isPosting || !user}
+                  disabled={!hasContent || isPosting || !user}
                   className="gap-2"
                 >
                   {isPosting ? (
