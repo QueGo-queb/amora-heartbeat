@@ -82,20 +82,29 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
         throw new Error('Utilisateur non connecté');
       }
 
-      // ✅ Requête pour récupérer SEULEMENT les posts de l'utilisateur connecté
+      // ✅ CORRECTION: Requête sans relation, puis récupération séparée des profils
       let query = supabase
         .from('posts')
         .select(`
-          *,
-          profiles (
-            id,
-            full_name,
-            avatar_url,
-            interests,
-            plan
-          )
+          id,
+          user_id,
+          content,
+          created_at,
+          updated_at,
+          image_url,
+          video_url,
+          media,
+          tags,
+          visibility,
+          likes_count,
+          comments_count,
+          post_type,
+          phone_number,
+          target_countries,
+          target_genders,
+          target_interests
         `)
-        .eq('user_id', userRef.current.id) // ✅ SEULEMENT les posts de l'utilisateur connecté
+        .eq('user_id', userRef.current.id)
         .order('created_at', { ascending: false })
         .limit(pageSizeRef.current);
 
@@ -104,22 +113,38 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
         query = query.lt('created_at', cursor);
       }
 
-      // Filtres optionnels
-      if (filtersRef.current.media_type && filtersRef.current.media_type !== 'all') {
-        // Pour l'instant, on ne peut pas filtrer par type de média facilement
-        // car on utilise le fallback. On pourrait améliorer cela plus tard.
-      }
-
-      const { data, error: fetchError } = await query;
+      const { data: postsData, error: fetchError } = await query;
 
       if (fetchError) {
         console.error('Erreur lors du chargement de mes posts:', fetchError);
         throw fetchError;
       }
 
-      // Transformer les données avec le nouveau système de médias
-      const transformedPosts: FeedPost[] = data?.map(post => {
-        const media = getPostMedia(post); // Utilise le fallback automatique
+      if (!postsData || postsData.length === 0) {
+        console.log('📭 Aucun post trouvé pour cet utilisateur');
+        setPosts([]);
+        setHasMore(false);
+        setNextCursor(null);
+        return;
+      }
+
+      // ✅ RÉCUPÉRER LE PROFIL DE L'UTILISATEUR SÉPARÉMENT
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          avatar_url,
+          interests,
+          plan,
+          user_id
+        `)
+        .eq('user_id', userRef.current.id)
+        .single();
+
+      // ✅ TRANSFORMER LES DONNÉES AVEC LE NOUVEAU SYSTÈME DE MÉDIAS
+      const transformedPosts: FeedPost[] = postsData.map(post => {
+        const media = getPostMedia(post);
         
         return {
           id: post.id,
@@ -135,42 +160,53 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
           media,
           
           // ✅ ANCIEN: Colonnes de fallback (pour compatibilité)
-          image_url: (post as any).image_url,
-          video_url: (post as any).video_url,
-          media_urls: (post as any).media_urls,
-          media_types: (post as any).media_types,
+          image_url: post.image_url,
+          video_url: post.video_url,
+          media_urls: post.media_urls,
+          media_types: post.media_types,
           
-          // Informations de l'auteur
-          profiles: (post as any).profiles ? {
-            id: (post as any).profiles.id,
-            full_name: (post as any).profiles.full_name,
-            avatar_url: (post as any).profiles.avatar_url,
-            interests: (post as any).profiles.interests || [],
-            is_premium: (post as any).profiles.plan === 'premium'
-          } : undefined,
+          // Informations de l'auteur (l'utilisateur connecté)
+          profiles: profileData ? {
+            id: profileData.id,
+            full_name: profileData.full_name,
+            avatar_url: profileData.avatar_url,
+            interests: profileData.interests || [],
+            is_premium: profileData.plan === 'premium'
+          } : {
+            id: userRef.current.id,
+            full_name: 'Utilisateur',
+            avatar_url: null,
+            interests: [],
+            is_premium: false
+          },
           
           // Alias pour compatibilité
-          user: (post as any).profiles ? {
-            id: (post as any).profiles.id,
-            full_name: (post as any).profiles.full_name,
-            avatar_url: (post as any).profiles.avatar_url,
-            is_premium: (post as any).profiles.plan === 'premium'
-          } : undefined,
+          user: profileData ? {
+            id: profileData.id,
+            full_name: profileData.full_name,
+            avatar_url: profileData.avatar_url,
+            is_premium: profileData.plan === 'premium'
+          } : {
+            id: userRef.current.id,
+            full_name: 'Utilisateur',
+            avatar_url: null,
+            is_premium: false
+          },
           
           // État du post
-          is_premium: (post as any).profiles?.plan === 'premium',
+          is_premium: profileData?.plan === 'premium',
           is_liked: false, // TODO: Récupérer depuis l'API
           score: calculatePostScore({
             id: post.id,
             content: post.content,
             created_at: post.created_at,
-            is_premium: (post as any).profiles?.plan === 'premium',
+            is_premium: profileData?.plan === 'premium',
             likes_count: post.likes_count || 0,
             comments_count: post.comments_count || 0,
             media
           })
         };
-      }) || [];
+      });
 
       // Trier par score si demandé
       if (filtersRef.current.sort_by === 'popular') {
@@ -212,34 +248,31 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
     if (hasMore && !loadingMore && nextCursor) {
       loadPosts(nextCursor, true);
     }
-  }, [hasMore, loadingMore, nextCursor, loadPosts]);
+  }, [hasMore, loadingMore, nextCursor]);
 
-  // Rafraîchir les posts
+  // ✅ CORRECTION: Rendre refresh stable
   const refresh = useCallback(() => {
     setPosts([]);
     setNextCursor(null);
     setHasMore(true);
     loadPosts();
-  }, [loadPosts]);
+  }, []); // ✅ Dépendances vides pour stabilité
 
-  // Charger les posts au montage
+  // ✅ CORRECTION: Se déclencher seulement quand user change
   useEffect(() => {
-    if (userRef.current?.id) {
-      loadPosts();
-    }
-  }, [loadPosts]);
+    loadPosts();
+  }, [user]); // ✅ Seulement user au lieu de loadPosts
 
-  // Auto-refresh si activé
+  // Auto-refresh si activé - CORRECTION FINALE
   useEffect(() => {
     if (!autoRefresh || !userRef.current?.id) return;
 
     const interval = setInterval(() => {
-      // Vérifier s'il y a de nouveaux posts
       refresh();
-    }, 30000); // Rafraîchir toutes les 30 secondes
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refresh]);
+  }, [autoRefresh, refresh]); // ✅ Ajouter refresh aux dépendances
 
   return {
     posts,

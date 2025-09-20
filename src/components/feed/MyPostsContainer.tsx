@@ -2,7 +2,7 @@
  * Conteneur pour "Mes publications" - affiche uniquement les posts de l'utilisateur
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useMyPosts } from '@/hooks/useMyPosts';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,13 @@ import { getPostMedia, hasMedia } from '../../../utils/mediaUtils';
 import { LazyImage } from '@/components/ui/LazyImage';
 
 const MyPostsContainer = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { posts, loading, error, refresh } = useMyPosts();
 
-  // ✅ DEBUG : Vérifier les posts reçus
+  // ✅ CORRECTION: Déplacer useEffect AVANT les conditions de retour
   useEffect(() => {
     if (posts.length > 0) {
-      console.log(' MyPostsContainer - Posts reçus:', posts.length);
+      console.log('📝 MyPostsContainer - Posts reçus:', posts.length);
       posts.forEach((post, index) => {
         console.log(`📝 Post ${index + 1} dans MyPostsContainer:`, {
           id: post.id,
@@ -32,12 +32,30 @@ const MyPostsContainer = () => {
     }
   }, [posts]);
 
+  // ✅ CONDITIONS DE RETOUR APRÈS TOUS LES HOOKS
+  if (authLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+          <p className="text-blue-600">🔄 Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2"> Connexion requise</h3>
-          <p className="text-gray-600">Vous devez être connecté pour voir vos publications.</p>
+          <h3 className="text-lg font-semibold mb-2">🔒 Connexion requise</h3>
+          <p className="text-gray-600 mb-4">Vous devez être connecté pour voir vos publications.</p>
+          <Button
+            onClick={() => window.location.href = '/auth'}
+            className="bg-gradient-to-r from-[#E63946] to-[#52B788] hover:from-[#D62828] hover:to-[#40916C] text-white"
+          >
+            Se connecter
+          </Button>
         </div>
       </div>
     );

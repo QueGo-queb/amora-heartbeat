@@ -198,15 +198,16 @@ export function useInterestsFeed() {
     }
   }, [toast, user]); // ✅ Ajouter user aux dépendances
 
+  // ✅ CORRECTION - Retirer loadPosts des dépendances
   const refresh = useCallback(() => {
     console.log('🔄 Rafraîchissement du feed...');
     loadPosts();
-  }, [loadPosts]); // ✅ Ajouter loadPosts aux dépendances
+  }, []); // ✅ Dépendances vides
 
-  // ✅ SOLUTION BOUCLE INFINIE - useEffect stable
+  // ✅ CORRECTION - Se déclencher seulement quand user change
   useEffect(() => {
     loadPosts();
-  }, [loadPosts]); // ✅ Se déclenche quand loadPosts change (quand user change)
+  }, [user]); // ✅ Seulement user
 
   return {
     posts,

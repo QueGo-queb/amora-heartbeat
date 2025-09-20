@@ -106,11 +106,12 @@ export const useMatching = (criteria?: MatchingCriteria) => {
     }
   };
 
+  // ✅ CORRECTION: Sérialiser l'objet criteria pour éviter les re-renders
   useEffect(() => {
     if (criteria) {
       findMatches(criteria);
     }
-  }, [criteria]);
+  }, [JSON.stringify(criteria)]); // ✅ Sérialiser l'objet criteria
 
   return {
     matches,
