@@ -12,10 +12,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileImage, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { useSecureCajaVecina } from '@/hooks/useSecureCajaVecina';
 import { useCajaVecina } from '@/hooks/useCajaVecina';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 export function SecureCajaVecinaForm() {
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [amount, setAmount] = useState('29.99');
+  const [amount, setAmount] = useState(AMORA_PRICING.premium.monthly.usd.toString()); // ✅ CORRECTION: "9.99"
   const [transactionRef, setTransactionRef] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,8 +64,8 @@ export function SecureCajaVecinaForm() {
     }
 
     const numAmount = parseFloat(amount);
-    if (numAmount < 29.99) {
-      setError('Le montant minimum est de $29.99 USD');
+    if (numAmount < AMORA_PRICING.minimum.usd) { // ✅ CORRECTION: 9.99
+      setError(`Le montant minimum est de ${formatPrice(AMORA_PRICING.minimum.usd)}`);
       return;
     }
 

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useCajaVecina } from '@/hooks/useCajaVecina';
 import { useToast } from '@/hooks/use-toast';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 interface CajaVecinaPaymentProps {
   onBack: () => void;
@@ -44,7 +45,7 @@ export const CajaVecinaPayment = ({ onBack }: CajaVecinaPaymentProps) => {
     if (!selectedAccount) return;
 
     try {
-      await submitPayment(selectedAccount, 29.99, receiptFile || undefined, transactionRef);
+      await submitPayment(selectedAccount, AMORA_PRICING.premium.monthly.usd, receiptFile || undefined, transactionRef);
       setStep('success');
     } catch (error) {
       console.error('Erreur soumission:', error);
@@ -100,7 +101,7 @@ export const CajaVecinaPayment = ({ onBack }: CajaVecinaPaymentProps) => {
                 <div><strong>Titulaire:</strong> {account.account_name}</div>
                 <div><strong>Numéro de compte:</strong> {account.account_number}</div>
                 <div><strong>RUT:</strong> {account.rut}</div>
-                <div><strong>Montant:</strong> $29.99 USD (≈ 29,000 CLP)</div>
+                <div><strong>Montant:</strong> {formatPrice(AMORA_PRICING.premium.monthly.usd)} (≈ 9,500 CLP)</div>
               </div>
             </div>
           )}

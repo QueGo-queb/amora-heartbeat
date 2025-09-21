@@ -20,6 +20,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 interface PremiumFeatureModalProps {
   open: boolean;
@@ -123,7 +124,9 @@ export function PremiumFeatureModal({ open, onClose, feature, userName }: Premiu
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="w-5 h-5 text-yellow-500" />
-              <span className="text-lg font-bold">29.99 USD/mois</span>
+              <span className="text-lg font-bold">
+                {formatPrice(AMORA_PRICING.premium.monthly.usd)} USD/mois
+              </span>
             </div>
             <p className="text-sm text-gray-600">Annulable à tout moment</p>
           </div>

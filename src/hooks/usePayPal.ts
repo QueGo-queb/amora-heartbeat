@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentPricing } from '@/hooks/useCurrentPricing';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 export interface PayPalConfig {
   id: string;
@@ -155,7 +156,7 @@ export const usePayPal = () => {
       }
 
       // Utiliser le prix du système de pricing ou la valeur fournie
-      const finalAmount = amount || pricing?.price_usd || 29.99;
+      const finalAmount = amount || pricing?.price_usd || AMORA_PRICING.premium.monthly.usd;
 
       // Créer l'enregistrement de paiement avec gestion d'erreur
       let paymentId = 'temp_' + Date.now();

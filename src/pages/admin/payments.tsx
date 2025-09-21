@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import HeaderAdmin from '@/components/admin/HeaderAdmin';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 interface Subscription {
   id: string;
@@ -142,7 +143,7 @@ const AdminPayments = () => {
 
   const premiumUsers = subscriptions.filter(s => s.plan === 'premium').length;
   const freeUsers = subscriptions.filter(s => s.plan === 'free').length;
-  const totalRevenue = premiumUsers * 29.99; // Estimation basée sur le prix premium
+  const totalRevenue = premiumUsers * AMORA_PRICING.premium.monthly.usd; // ✅ CORRECTION: 9.99
 
   const exportData = () => {
     const csvContent = [

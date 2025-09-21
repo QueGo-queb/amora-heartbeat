@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { AMORA_PRICING } from '../src/constants/pricing';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -39,7 +40,7 @@ export default async function handler(
 
     // Créer le PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 2999, // $29.99 en centimes
+      amount: AMORA_PRICING.premium.monthly.usd_cents, // ✅ CORRECTION: 999 centimes ($9.99)
       currency: 'usd',
       metadata: {
         userId: userId,
@@ -49,12 +50,12 @@ export default async function handler(
       receipt_email: user.email,
     });
 
-    // Enregistrer la transaction en "created"
+    // Enregistrer la transaction
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: user.id,
-        amount_cents: 2999,
+        amount_cents: AMORA_PRICING.premium.monthly.usd_cents, // ✅ CORRECTION: 999
         currency: 'usd',
         stripe_payment_intent_id: paymentIntent.id,
         status: 'created'

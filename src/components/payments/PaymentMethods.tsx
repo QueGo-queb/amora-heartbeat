@@ -9,6 +9,7 @@ import { CreditCard, Smartphone, DollarSign, Upload, Crown, Bitcoin, Copy } from
 import { useToast } from '@/hooks/use-toast';
 import { usePremium } from '@/hooks/usePremium';
 import { useUsdtLinks } from '@/hooks/useUsdtLinks'; // 🔧 AJOUT MANQUANT
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 interface PaymentMethodsProps {
   onPaymentSuccess?: () => void;
@@ -26,7 +27,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
   const [cajaVecinaData, setCajaVecinaData] = useState({
     rut: '',
     receipt: null as File | null,
-    amount: '29.99'
+    amount: AMORA_PRICING.premium.monthly.usd.toString() // ✅ CORRECTION: "9.99"
   });
   const { toast } = useToast();
   const { upgradeToPremium } = usePremium();
@@ -100,7 +101,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
     usdt: {
       trc20: 'TXYZabc123456789...',
       erc20: '0x1234567890abcdef...',
-      amount: '29.99'
+      amount: AMORA_PRICING.premium.monthly.usd.toString() // ✅ CORRECTION: "9.99"
     }
   };
 
@@ -140,12 +141,12 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
           setCajaVecinaData(prev => ({ ...prev, rut }));
           toast({
             title: "Instructions Caja Vecina",
-            description: `Utilisez le RUT: ${rut} pour effectuer le paiement de $29.99 USD`,
+            description: `Utilisez le RUT: ${rut} pour effectuer le paiement de ${formatPrice(AMORA_PRICING.premium.monthly.usd)}`,
           });
           break;
           
         case 'paypal':
-          window.open('https://paypal.me/amora/29.99', '_blank');
+          window.open(`https://paypal.me/amora/${AMORA_PRICING.premium.monthly.usd}`, '_blank');
           break;
           
         case 'usdt':
@@ -377,7 +378,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
                   <h4 className="font-semibold text-amber-800 mb-2">Instructions de paiement USDT</h4>
                   <ol className="list-decimal list-inside space-y-2 text-sm text-amber-700">
                     <li>Copiez l'adresse USDT ci-dessous</li>
-                    <li>Envoyez exactement <strong>29.99 USDT</strong></li>
+                    <li>Envoyez exactement <strong>{AMORA_PRICING.premium.monthly.usd} USDT</strong></li>
                     <li>Utilisez le réseau <strong>{usdtLinks.trc20_address ? 'TRC20 (TRON)' : 'ERC20 (Ethereum)'}</strong></li>
                     <li>Collez le hash de transaction ci-dessous</li>
                     <li>Votre compte sera activé après vérification</li>
@@ -476,7 +477,7 @@ export function PaymentMethods({ onPaymentSuccess }: PaymentMethodsProps) {
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>Rendez-vous dans un point Caja Vecina</li>
                 <li>Utilisez le RUT : <strong>{cajaVecinaData.rut}</strong></li>
-                <li>Payez le montant : <strong>$29.99 USD</strong></li>
+                <li>Payez le montant : <strong>{formatPrice(AMORA_PRICING.premium.monthly.usd)}</strong></li>
                 <li>Conservez le reçu et téléchargez-le ci-dessous</li>
               </ol>
             </div>

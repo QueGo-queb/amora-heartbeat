@@ -8,6 +8,7 @@ import { Heart, Shield, CreditCard, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentPricing } from '@/hooks/useCurrentPricing';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -62,7 +63,7 @@ export function StripeCardForm() {
         },
         body: JSON.stringify({
           userId: user.id,
-          amount: 2999
+          amount: AMORA_PRICING.premium.monthly.usd_cents
         }),
       });
 
@@ -135,7 +136,7 @@ export function StripeCardForm() {
         {/* Prix */}
         <div className="text-center p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-lg border">
           <div className="text-3xl font-bold text-gray-900">
-            {formatPrice(pricing.premium.monthly)}
+            {formatPrice(AMORA_PRICING.premium.monthly.usd)}
           </div>
           <div className="text-sm text-gray-600">par mois</div>
         </div>
@@ -185,7 +186,7 @@ export function StripeCardForm() {
             ) : (
               <>
                 <CreditCard className="w-4 h-4 mr-2" />
-                Payer {formatPrice(pricing.premium.monthly)}
+                Payer {formatPrice(AMORA_PRICING.premium.monthly.usd)}
               </>
             )}
           </Button>

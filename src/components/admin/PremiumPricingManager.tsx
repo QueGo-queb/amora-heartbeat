@@ -24,6 +24,7 @@ import {
 import { usePremiumPricing } from '@/hooks/usePremiumPricing';
 import { convertPriceFromUSD, formatPrice } from '@/lib/currencyConverter';
 import { useToast } from '@/hooks/use-toast';
+import { AMORA_PRICING, formatPrice as pricingFormat } from '@/constants/pricing';
 
 interface PremiumPricingManagerProps {
   open: boolean;
@@ -213,7 +214,7 @@ export const PremiumPricingManager = ({ open, onClose }: PremiumPricingManagerPr
                       min="0.01"
                       value={formData.price_usd}
                       onChange={(e) => handleUSDPriceChange(e.target.value)}
-                      placeholder="Ex: 29.99"
+                      placeholder={`Ex: ${AMORA_PRICING.premium.monthly.usd}`}
                       required
                       className="text-lg"
                     />

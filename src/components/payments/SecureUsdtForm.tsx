@@ -13,11 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Coins, Copy, ExternalLink, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useSecureUsdtPayments } from '@/hooks/useSecureUsdtPayments';
 import { useUsdtLinks } from '@/hooks/useUsdtLinks';
+import { AMORA_PRICING, formatPrice } from '@/constants/pricing';
 
 export function SecureUsdtForm() {
   const [network, setNetwork] = useState<'TRC20' | 'ERC20'>('TRC20');
   const [txHash, setTxHash] = useState('');
-  const [amount] = useState(29.99); // Prix fixe Premium
+  const [amount] = useState(AMORA_PRICING.premium.monthly.usd); // ✅ CORRECTION: 9.99
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'payment' | 'verification'>('payment');
 
