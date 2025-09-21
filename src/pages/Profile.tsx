@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProfile } from '@/hooks/useProfile';
 import ProfileEditor from '@/components/profile/ProfileEditor';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Profile = () => {
   const { profile, loading, error, refreshProfile, updateProfile } = useProfile();
@@ -13,6 +14,7 @@ const Profile = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Fonction de rafraîchissement avec indicateur visuel
   const handleRefresh = async () => {
@@ -20,14 +22,14 @@ const Profile = () => {
     try {
       await refreshProfile();
       toast({
-        title: "✅ Profil actualisé",
-        description: "Les données ont été rechargées avec succès.",
+        title: t.profileUpdated,
+        description: t.profileUpdatedDesc,
       });
     } catch (error) {
       console.error('Erreur lors du rafraîchissement:', error);
       toast({
-        title: "❌ Erreur",
-        description: "Impossible de rafraîchir le profil.",
+        title: t.profileError,
+        description: t.profileErrorDesc,
         variant: "destructive",
       });
     } finally {
@@ -75,9 +77,9 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-purple-300 border-t-transparent rounded-full animate-spin" />
-          <span>Chargement du profil...</span>
+          <span>{t.loadingProfile}</span>
         </div>
       </div>
     );
@@ -92,9 +94,9 @@ const Profile = () => {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Erreur lors du chargement du profil</h3>
+            <h3 className="text-lg font-semibold mb-2">{t.profileLoadError}</h3>
             <p className="text-muted-foreground mb-4">
-              {error || 'Impossible de récupérer les données de votre profil.'}
+              <span data-translate="notranslate">{error}</span> || Impossible de récupérer les données de votre profil.
             </p>
             <div className="flex flex-col gap-2">
               <Button onClick={handleRefresh} variant="outline" disabled={refreshing}>
@@ -175,7 +177,7 @@ const Profile = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <User className="w-5 h-5" />
-                    Mon Profil
+                    {t.myProfile}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -241,7 +243,7 @@ const Profile = () => {
               <div className="text-center">
                 <Button onClick={() => setIsEditing(true)} className="px-6">
                   <Settings className="w-4 h-4 mr-2" />
-                  Modifier mon profil
+                  {t.editProfile}
                 </Button>
               </div>
             </div>

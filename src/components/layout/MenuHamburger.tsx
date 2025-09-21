@@ -3,7 +3,7 @@
  * Contient tous les liens vers les différentes sections de l'app
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, 
@@ -38,6 +38,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useNotifications } from '@/hooks/useNotifications';
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface MenuItem {
   id: string;
@@ -64,44 +65,45 @@ const MenuHamburger = () => {
   const { unreadCount: unreadNotifications } = useNotifications();
 
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   // Menu items
-  const menuItems: MenuItem[] = [
+  const menuItems: MenuItem[] = useMemo(() => [
     {
       id: 'feed',
-      label: '📱 Fil d\'actualité',
+      label: `📱 ${t.home}`, // ou créer une traduction spécifique "Fil d'actualité"
       icon: Home,
       href: '/feed'
     },
     {
       id: 'messages',
-      label: 'Messages',
+      label: t.messages,
       icon: MessageCircle,
       href: '/messages',
       badge: unreadMessages || undefined // ✅ Déjà corrigé
     },
     {
       id: 'matching',
-      label: 'Matching',
+      label: t.search, // ou "Matching"
       icon: Heart,
       href: '/matching'
     },
     {
       id: 'profile',
-      label: 'Mon Profil',
+      label: t.profile,
       icon: User,
       href: '/profile'
     },
     // ✅ AJOUT - Mes Publications
     {
       id: 'my-posts',
-      label: 'Mes Publications',
+      label: t.myPosts,
       icon: Edit3,
       href: '/my-posts'
     },
     {
       id: 'favorites',
-      label: 'Favoris',
+      label: t.favorites,
       icon: Star,
       href: '/favorites'
     },
@@ -121,7 +123,7 @@ const MenuHamburger = () => {
     },
     {
       id: 'settings',
-      label: 'Paramètres',
+      label: t.settings,
       icon: Settings,
       href: '/settings'
     },
@@ -144,7 +146,7 @@ const MenuHamburger = () => {
         />
       )
     }
-  ];
+  ], [t, unreadMessages, unreadNotifications]); // ✅ Dépendances
 
   // Vérifier si l'utilisateur est admin
   const isAdmin = user?.email === 'clodenerc@yahoo.fr';

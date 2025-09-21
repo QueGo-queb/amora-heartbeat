@@ -33,6 +33,7 @@ import { PremiumUpgradeModal } from '@/components/settings/PremiumUpgradeModal';
 import { AccountDeletionModal } from '@/components/settings/AccountDeletionModal';
 import { LanguageSelector } from '@/components/ui/language-selector';
 import { DeleteAccountForm } from '@/components/settings/DeleteAccountForm';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Settings = () => {
   const [user, setUser] = useState<any>(null);
@@ -55,6 +56,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPremium, plan, loading: premiumLoading } = usePremium();
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadUserData();
@@ -137,8 +139,8 @@ const Settings = () => {
       if (settingsError) throw settingsError;
 
       toast({
-        title: "Paramètres sauvegardés",
-        description: "Vos modifications ont été enregistrées avec succès",
+        title: t.settingsSaved,
+        description: t.settingsSavedDesc,
       });
 
     } catch (error) {
@@ -261,7 +263,7 @@ const Settings = () => {
             </Button>
             <div className="flex items-center gap-3">
               <SettingsIcon className="w-6 h-6 text-purple-600" />
-              <h1 className="text-2xl font-bold">Paramètres</h1>
+              <h1 className="text-2xl font-bold">{t.settings}</h1>
             </div>
           </div>
         </div>
@@ -473,8 +475,8 @@ const Settings = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Notifications push</Label>
-                  <p className="text-sm text-gray-500">Recevoir des notifications sur votre appareil</p>
+                  <Label>{t.pushNotifications}</Label>
+                  <p className="text-sm text-gray-500">{t.pushNotificationsDesc}</p>
                 </div>
                 <Switch
                   checked={settings.notifications}
@@ -484,8 +486,8 @@ const Settings = () => {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Notifications par email</Label>
-                  <p className="text-sm text-gray-500">Recevoir des emails pour les événements importants</p>
+                  <Label>{t.emailNotifications}</Label>
+                  <p className="text-sm text-gray-500">{t.emailNotificationsDesc}</p>
                 </div>
                 <Switch
                   checked={settings.emailNotifications}

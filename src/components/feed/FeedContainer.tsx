@@ -11,9 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePerformanceOptimization } from '@/hooks/usePerformanceOptimization';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit3 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const FeedContainer = () => {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [debugInfo, setDebugInfo] = useState<any>({});
   const [forceExpandPostCreator, setForceExpandPostCreator] = useState(false);
   const { preloadCriticalData } = usePerformanceOptimization();
@@ -103,8 +105,8 @@ const FeedContainer = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">📱 Fil d'actualité</h1>
-              <p className="text-gray-600 mt-1">Découvrez les dernières publications</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t.feedTitle}</h1>
+              <p className="text-gray-600 mt-1">{t.feedSubtitle}</p>
             </div>
             
             {/* DEBUG: Affichage des conditions */}
@@ -121,11 +123,11 @@ const FeedContainer = () => {
                 className="bg-gradient-to-r from-[#E63946] to-[#52B788] hover:from-[#D62828] hover:to-[#40916C] text-white shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Nouvelle publication
+                {t.newPost}
               </Button>
             ) : (
               <div className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
-                {authLoading ? 'Chargement...' : 'Non connecté'}
+                {authLoading ? t.loading : t.notConnected}
               </div>
             )}
           </div>

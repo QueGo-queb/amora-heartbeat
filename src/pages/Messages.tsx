@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CallButtonGroup } from "@/components/chat/CallButton"; // ✅ AJOUT
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Messages = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // ✅ DONNÉES RÉELLES - Remplacer par vraies conversations depuis Supabase
@@ -45,12 +47,12 @@ const Messages = () => {
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour au fil d'actualité
+          {t.backToFeed}
         </Button>
       </div>
 
       <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Messages</h1>
+        <h1 className="text-3xl font-bold mb-6">{t.messages}</h1>
 
         {/* Liste des conversations */}
         <div className="space-y-4">

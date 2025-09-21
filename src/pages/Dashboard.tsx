@@ -10,6 +10,7 @@ import DashboardMenu from '@/components/dashboard/DashboardMenu';
 import { FeedSection } from '@/components/dashboard/FeedSection';
 import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
 import { CreatePostModal } from '@/components/feed/CreatePostModal';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -39,8 +40,8 @@ const Dashboard = () => {
     console.log('🎯 Post créé avec succès depuis Dashboard');
     setShowCreatePostModal(false);
     toast({
-      title: "Publication créée !",
-      description: "Votre post a été publié avec succès.",
+      title: t.postCreated,
+      description: t.postCreatedDesc,
     });
   };
 
@@ -75,6 +76,9 @@ const Dashboard = () => {
     }
   };
 
+  // Ajouter le hook de traduction
+  const { t, translate } = useTranslation();
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -93,10 +97,10 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">
-            Bienvenue, {user?.user_metadata?.full_name || user?.email} ! 👋
+            {translate('welcomeUser', { user: user?.user_metadata?.full_name || user?.email })}
           </h1>
           <p className="text-muted-foreground text-lg mb-6">
-            Découvrez votre communauté multiculturelle et trouvez l'amour sans frontières.
+            {t.discoverCommunity}
           </p>
           
           {/* BOUTON DE CRÉATION */}
@@ -106,7 +110,7 @@ const Dashboard = () => {
             size="lg"
           >
             <Plus className="w-5 h-5" />
-            Créer une publication
+            {t.createPost}
           </Button>
         </div>
 
@@ -118,14 +122,14 @@ const Dashboard = () => {
           <div className="mb-8">
             <Card className="culture-card bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-dashed border-purple-200 hover:border-purple-300 transition-colors">
               <CardHeader className="text-center">
-                <CardTitle className="text-purple-700">🎭 Espace Culturel</CardTitle>
+                <CardTitle className="text-purple-700">{t.culturalSpace}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-purple-600 mb-4">
-                  Découvrez les événements culturels près de chez vous
+                  {t.discoverEvents}
                 </p>
                 <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
-                  Explorer les événements
+                  {t.exploreEvents}
                 </Button>
               </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
@@ -33,6 +33,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -48,6 +49,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   // ✅ AJOUT: Hook pour les messages non lus
   const { unreadCount: unreadMessages } = useUnreadMessages();
@@ -123,16 +125,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       await signOut();
       navigate('/');
       toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès",
+        title: t.logoutSuccess, // ✅ TRADUIT
+        description: t.logoutSuccessDesc, // ✅ TRADUIT
       });
     } catch (error) {
-      console.error('Erreur déconnexion:', error);
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la déconnexion",
-        variant: "destructive",
-      });
+      console.error('Erreur lors de la déconnexion:', error);
     }
   };
 
@@ -160,31 +157,29 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   };
 
   // Navigation
-  const navigationItems = [
-    { name: 'Accueil', icon: Home, path: '/dashboard' },
-    { name: 'Recherche', icon: Search, path: '/matching' },
+  const navigationItems = useMemo(() => [
+    { name: t.home, icon: Home, path: '/dashboard' },
+    { name: t.search, icon: Search, path: '/matching' },
     { 
-      name: 'Messages', 
+      name: t.messages, 
       icon: MessageCircle, 
       path: '/messages', 
       badge: unreadMessages || undefined
     },
-    { name: 'Visites', icon: Eye, path: '/profile-views' },
-    { name: 'J\'aime', icon: Heart, path: '/likes' },
-    { name: 'Favoris', icon: Star, path: '/favorites' },
-    // ✅ UNIFICATION - Un seul bouton "Chat en ligne" fonctionnel
-    { name: 'Chat en ligne', icon: MessageSquare, path: '/chat-live' },
-    { name: 'Correspondances', icon: Users, path: '/new-matches' },
-    { name: 'Profil', icon: User, path: '/profile' },
-    { name: 'Mes Publications', icon: Edit3, path: '/my-posts' },
-    { name: 'Paramètres', icon: Settings, path: '/settings' }
-  ];
+    { name: t.visits, icon: Eye, path: '/profile-views' },
+    { name: t.likes, icon: Heart, path: '/likes' },
+    { name: t.favorites, icon: Star, path: '/favorites' },
+    { name: t.chatOnline, icon: MessageSquare, path: '/chat-live' },
+    { name: t.matches, icon: Users, path: '/new-matches' },
+    { name: t.profile, icon: User, path: '/profile' },
+    { name: t.myPosts, icon: Edit3, path: '/my-posts' },
+    { name: t.settings, icon: Settings, path: '/settings' }
+  ], [t, unreadMessages]); // ✅ Dépendances : traductions + badge
 
-  const supportItems = [
-    { name: 'Centre d\'aide', icon: HelpCircle, path: '/help' },
-    { name: 'Support par email', icon: Mail, path: 'mailto:support@amora.com' }
-    // ✅ SUPPRIMÉ - Doublon "Chat en ligne" retiré des supports
-  ];
+  const supportItems = useMemo(() => [
+    { name: t.helpCenter, icon: HelpCircle, path: '/help' },
+    { name: t.emailSupport, icon: Mail, path: 'mailto:support@amora.com' }
+  ], [t]); // ✅ Dépendance : traductions
 
   // Fonctions helper
   const getAvatarUrl = () => {
@@ -346,7 +341,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               onClick={handleLogout}
             >
               <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
-              <span>Déconnexion</span>
+              <span>{t.logout}</span>
             </Button>
           </div>
         </div>

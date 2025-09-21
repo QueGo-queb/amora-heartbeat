@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { X, Camera, Video, Image, Globe, Users, Eye, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface CreatePostModalProps {
   open: boolean;
@@ -119,6 +120,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   // ✅ AJOUT - Réinitialiser les états quand editPost change
   useEffect(() => {
@@ -420,7 +422,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Globe className="w-5 h-5 text-[#E91E63]" />
             {/* ✅ MODIFICATION - Titre dynamique */}
-            {editPost ? 'Modifier la publication' : 'Créer une publication'}
+            {editPost ? t.editPost : t.createPost}
           </h2>
           <Button
             variant="ghost"
@@ -441,7 +443,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </Label>
             <Textarea
               id="content"
-              placeholder="Que voulez-vous partager avec la communauté ?"
+              placeholder={t.postPlaceholder}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="min-h-[120px] text-base"
@@ -671,7 +673,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               onClick={handleClose}
               disabled={loading}
             >
-              Annuler
+              {t.cancel}
             </Button>
             <Button
               type="submit"
@@ -679,7 +681,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               className="bg-[#E91E63] hover:bg-[#C2185B] disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {/* ✅ MODIFICATION - Texte dynamique */}
-              {loading ? 'Enregistrement...' : editPost ? 'Mettre à jour' : 'Publier'}
+              {loading ? 'Enregistrement...' : editPost ? t.update : t.publish}
             </Button>
           </div>
         </form>
