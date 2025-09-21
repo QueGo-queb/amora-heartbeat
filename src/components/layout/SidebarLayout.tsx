@@ -31,6 +31,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { LanguageSelector } from "@/components/ui/language-selector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -45,6 +47,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
 
   // ✅ AJOUT: Hook pour les messages non lus
   const { unreadCount: unreadMessages } = useUnreadMessages();
@@ -371,6 +374,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Desktop Layout */}
       <div className="hidden lg:flex">
         <aside className="w-80 bg-white rounded-lg m-4 flex flex-col shadow-lg">
+          <div className="flex items-center gap-4">
+            <LanguageSelector 
+              selectedLanguage={selectedLanguage}
+              onLanguageChange={setSelectedLanguage}
+            />
+          </div>
           <MenuContent />
         </aside>
         <main className="flex-1 p-6">
@@ -397,6 +406,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0">
+                <div className="px-4 py-2 border-b">
+                  <LanguageSelector 
+                    selectedLanguage={selectedLanguage}
+                    onLanguageChange={setSelectedLanguage}
+                  />
+                </div>
                 <MenuContent />
               </SheetContent>
             </Sheet>

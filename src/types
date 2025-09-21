@@ -34,3 +34,12 @@ export interface UpdateFooterRequest {
   newsletter_text?: string;
   copyright?: string;
 }
+
+// Types pour Google Translate
+declare global {
+  interface Window {
+    google: any;
+    changeLanguage: (langCode: string) => void;
+    googleTranslateElementInit: () => void;
+  }
+}

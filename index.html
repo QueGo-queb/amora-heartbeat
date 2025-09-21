@@ -51,6 +51,49 @@
     <meta name="twitter:title" content="Amora - L'amour sans frontières" />
     <meta name="twitter:description" content="Plateforme de rencontre multiculturelle pour la diaspora mondiale" />
     <meta name="twitter:image" content="/icons/icon-512x512.png" />
+
+    <!-- Ajouter avant </head> -->
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'fr',
+          includedLanguages: 'fr,en,es,pt,ht',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false,
+          multilanguagePage: true
+        }, 'google_translate_element');
+        
+        console.log('✅ Google Translate initialized');
+      }
+      
+      // Fonction globale pour changer de langue
+      window.changeLanguage = function(langCode) {
+        if (window.google && window.google.translate) {
+          const googleLangCodes = {
+            'fr': 'fr',
+            'en': 'en',
+            'es': 'es', 
+            'pt': 'pt',
+            'ptBR': 'pt',
+            'ht': 'ht'
+          };
+          
+          const googleLang = googleLangCodes[langCode] || 'fr';
+          console.log('🌐 Changing to language:', googleLang);
+          
+          // Déclencher la traduction Google
+          const selectElement = document.querySelector('.goog-te-combo');
+          if (selectElement) {
+            selectElement.value = googleLang;
+            selectElement.dispatchEvent(new Event('change'));
+          }
+        }
+      };
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <!-- Élément caché pour Google Translate -->
+    <div id="google_translate_element" style="display: none;"></div>
   </head>
 
   <body>

@@ -42,15 +42,26 @@ export function LanguageSelector({ selectedLanguage, onLanguageChange }: Languag
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
+      <DropdownMenuContent align="end" className="w-48">
+        <div className="px-2 py-1 text-xs text-gray-500 border-b">
+          🌐 Sélectionnez votre langue
+        </div>
         {languages.map((language) => (
           <DropdownMenuItem
             key={language.code}
-            onClick={() => onLanguageChange(language.code)}
-            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              console.log('🌐 Language selected:', language.code, language.name);
+              onLanguageChange(language.code);
+            }}
+            className={`flex items-center gap-2 cursor-pointer ${
+              selectedLanguage === language.code ? 'bg-blue-50' : ''
+            }`}
           >
             <span>{language.flag}</span>
             <span>{language.name}</span>
+            {selectedLanguage === language.code && (
+              <span className="ml-auto text-blue-600">✓</span>
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

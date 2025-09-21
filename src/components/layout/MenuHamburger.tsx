@@ -36,6 +36,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useNotifications } from '@/hooks/useNotifications';
+import { LanguageSelector } from "@/components/ui/language-selector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MenuItem {
   id: string;
@@ -45,6 +47,7 @@ interface MenuItem {
   badge?: number;
   premium?: boolean;
   admin?: boolean;
+  component?: React.ReactNode; // ✅ AJOUT pour les composants complexes
 }
 
 const MenuHamburger = () => {
@@ -59,6 +62,8 @@ const MenuHamburger = () => {
 
   // ✅ AJOUT: Hook pour les notifications
   const { unreadCount: unreadNotifications } = useNotifications();
+
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
 
   // Menu items
   const menuItems: MenuItem[] = [
@@ -126,6 +131,18 @@ const MenuHamburger = () => {
       icon: Users,
       href: '/admin',
       admin: true
+    },
+    {
+      id: 'language',
+      label: 'Langue / Language',
+      icon: Globe,
+      href: '#', // Pas de navigation, juste le sélecteur
+      component: (
+        <LanguageSelector 
+          selectedLanguage={selectedLanguage}
+          onLanguageChange={setSelectedLanguage}
+        />
+      )
     }
   ];
 

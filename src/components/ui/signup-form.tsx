@@ -1,22 +1,34 @@
-/**
- * ✅ FORMULAIRE D'INSCRIPTION OPTIMISÉ avec corrections complètes
- */
-
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Heart, User, Mail, MapPin, Calendar, FileText, Users, Globe, Languages, Lock, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useLoader } from "@/hooks/use-loader";
-import { useNavigate } from "react-router-dom";
-import { Loader, LoaderOverlay } from "@/components/ui/loader";
+import { 
+  User, 
+  Mail, 
+  Lock, 
+  Calendar, 
+  MapPin, 
+  Globe, 
+  Heart, 
+  FileText, 
+  Languages,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useLoader } from '@/hooks/use-loader';
 import { LoadingButton } from "@/components/ui/loading-button";
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { CountryMultiSelect } from '@/components/ui/country-multi-select';
@@ -62,6 +74,11 @@ const translations = {
     passwordPlaceholder: "Minimum 6 caractères",
     bioPlaceholder: "Parlez-nous un peu de vous...",
     cityPlaceholder: "Votre ville",
+    agePlaceholder: "Ex: 25",
+    genderPlaceholder: "Sélectionnez votre genre",
+    countryPlaceholder: "Sélectionnez votre pays",
+    seekingCountryPlaceholder: "Sélectionnez les pays où vous souhaitez rencontrer des personnes...",
+    interestsDescription: "Sélectionnez vos centres d'intérêt",
     
     // Options
     male: "Homme",
@@ -123,8 +140,9 @@ const translations = {
       review: "Review"
     },
     
+    // Champs
     fullName: "Full Name",
-    email: "Email",
+    email: "Email", 
     password: "Password",
     confirmPassword: "Confirm Password",
     age: "Age",
@@ -137,34 +155,44 @@ const translations = {
     seekingGender: "Looking for",
     targetCountry: "Target Countries",
     
+    // Placeholders
     fullNamePlaceholder: "Your full name",
     emailPlaceholder: "your@email.com",
     passwordPlaceholder: "Minimum 6 characters",
     bioPlaceholder: "Tell us a bit about yourself...",
     cityPlaceholder: "Your city",
+    agePlaceholder: "Ex: 25",
+    genderPlaceholder: "Select your gender",
+    countryPlaceholder: "Select your country",
+    seekingCountryPlaceholder: "Select countries where you want to meet people...",
+    interestsDescription: "Select your interests",
     
+    // Options
     male: "Male",
     female: "Female",
     any: "Any",
     
+    // Boutons
     createAccount: "Create my account",
     continue: "Continue",
     previous: "Previous",
-    finish: "Finish registration",
+    finish: "Complete registration",
     
+    // Messages de validation
     validation: {
       required: "This field is required",
       emailInvalid: "Invalid email format",
-      passwordWeak: "Password must be at least 6 characters",
+      passwordWeak: "Password must contain at least 6 characters",
       passwordMismatch: "Passwords do not match",
       ageInvalid: "Age must be between 18 and 100",
       bioTooLong: "Biography cannot exceed 500 characters",
       countryRequired: "Please select at least one country"
     },
     
+    // Messages d'erreur
     errors: {
       emailAlreadyExists: "This email address is already in use.",
-      weakPassword: "Password must be at least 6 characters.",
+      weakPassword: "Password must contain at least 6 characters.",
       invalidEmail: "Please enter a valid email address.",
       passwordMismatch: "Passwords do not match.",
       networkError: "Connection error. Please try again.",
@@ -185,6 +213,267 @@ const translations = {
       step2: "✅ Preferences saved",
       step3: "✅ Interests selected",
       final: "🎉 Your account has been created successfully!"
+    }
+  },
+  
+  ht: {
+    title: "Rejoj AMORA",
+    subtitle: "Trouvez l'amour nan vòn multikultural",
+    
+    steps: {
+      personal: "Nonm pwopriye",
+      preferences: "Prevezions",
+      interests: "Interes",
+      review: "Revizyon"
+    },
+    
+    // Champs
+    fullName: "Nonm dwat",
+    email: "E-mal",
+    password: "Mot de passe",
+    confirmPassword: "Konfime mot de passe",
+    age: "An",
+    gender: "Gen",
+    bio: "Biografi",
+    country: "Pays",
+    region: "Rezyon",
+    city: "Ville",
+    primaryLanguage: "Lang la pwincipal",
+    seekingGender: "Chèche",
+    targetCountry: "Pays ciblé",
+    
+    // Placeholders
+    fullNamePlaceholder: "Nonm dwat ou",
+    emailPlaceholder: "ou@e-mal.com",
+    passwordPlaceholder: "Minimum 6 karaktèr",
+    bioPlaceholder: "Parlman nan kèlke nan ou...",
+    cityPlaceholder: "Ville ou",
+    agePlaceholder: "Ex: 25",
+    genderPlaceholder: "Sélectionné gen",
+    countryPlaceholder: "Sélectionné pwòl ou",
+    seekingCountryPlaceholder: "Sélectionné pwòl kote ou ou vle rencontrer moun...",
+    interestsDescription: "Sélectionné vòs interes",
+    
+    // Options
+    male: "Moun",
+    female: "Femm",
+    any: "Kèlke",
+    
+    // Boutons
+    createAccount: "Kreye moun kont",
+    continue: "Kontinye",
+    previous: "Anvan",
+    finish: "Konplète rejistrasyon",
+    
+    // Messages de validation
+    validation: {
+      required: "Nonm pwopriye sa a",
+      emailInvalid: "Fòmat e-mal pa valab",
+      passwordWeak: "Mot de passe dwe konte a min 6 karaktèr",
+      passwordMismatch: "Mot de passe pa koresponde",
+      ageInvalid: "An dwe ant 18 ak 100",
+      bioTooLong: "Biografi pa ka depase 500 karaktèr",
+      countryRequired: "Tanpri sélectionné a min 1 pwòl"
+    },
+    
+    // Messages d'erreur
+    errors: {
+      emailAlreadyExists: "Adrès e-mal sa a deja itilize.",
+      weakPassword: "Mot de passe dwe konte a min 6 karaktèr.",
+      invalidEmail: "Tanpri tape yon adrès e-mal valab.",
+      passwordMismatch: "Mot de passe pa koresponde.",
+      networkError: "Erè koneksyon. Tanpri retye.",
+      generalError: "Non yon erè nan rejistrasyon.",
+      success: "Rejistrasyon reyèl! Tanpri chèk e-mal ou pou konfime kont ou.",
+      unexpectedFailure: "Non yon erè anpatik, tanpri chèk enfòmasyon ou epi retye.",
+      signupDisabled: "Rejistrasyon la se temporèman desaktive. Tanpri retye apre.",
+      rateLimitExceeded: "Trop de tèt rejistrasyon. Tanpri attend 2-3 minit.",
+      invalidRequest: "Non dantè sa pa valab. Tanpri chèk enfòmasyon ou.",
+      emailNotConfirmed: "Tanpri konfime e-mal ou anvan ou konekte.",
+      duplicateEmail: "Adrès e-mal sa a deja itilize.",
+      validationError: "Erè valide dantè.",
+      connectionError: "Problèm koneksyon. Tanpri chèk koneksyon ou internet."
+    },
+    
+    success: {
+      step1: "✅ Nonm pwopriye valide",
+      step2: "✅ Prevezions sauvegardé",
+      step3: "✅ Interes sélectionné",
+      final: "�� Kont ou a kreye reyèl!"
+    }
+  },
+  
+  es: {
+    title: "Únete a AMORA",
+    subtitle: "Encuentra el amor en tu comunidad multicultural",
+    
+    steps: {
+      personal: "Información personal",
+      preferences: "Preferencias",
+      interests: "Intereses",
+      review: "Revisión"
+    },
+    
+    // Champs
+    fullName: "Nombre completo",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    confirmPassword: "Confirmar contraseña",
+    age: "Edad",
+    gender: "Género",
+    bio: "Biografía",
+    country: "País",
+    region: "Región",
+    city: "Ciudad",
+    primaryLanguage: "Idioma principal",
+    seekingGender: "Buscando",
+    targetCountry: "Países objetivo",
+    
+    // Placeholders
+    fullNamePlaceholder: "Tu nombre completo",
+    emailPlaceholder: "tu@correo.com",
+    passwordPlaceholder: "Mínimo 6 caracteres",
+    bioPlaceholder: "Cuéntanos algo sobre ti...",
+    cityPlaceholder: "Tu ciudad",
+    agePlaceholder: "Ej: 25",
+    genderPlaceholder: "Selecciona tu género",
+    countryPlaceholder: "Selecciona tu país",
+    seekingCountryPlaceholder: "Selecciona países donde quieres conocer personas...",
+    interestsDescription: "Selecciona tus intereses",
+    
+    // Options
+    male: "Hombre",
+    female: "Mujer",
+    any: "Cualquiera",
+    
+    // Boutons
+    createAccount: "Crear mi cuenta",
+    continue: "Continuar",
+    previous: "Anterior",
+    finish: "Completar registro",
+    
+    // Messages de validación
+    validation: {
+      required: "Este campo es requerido",
+      emailInvalid: "Formato de correo electrónico inválido",
+      passwordWeak: "La contraseña debe contener al menos 6 caracteres",
+      passwordMismatch: "Las contraseñas no coinciden",
+      ageInvalid: "La edad debe estar entre 18 y 100 años",
+      bioTooLong: "La biografía no puede exceder los 500 caracteres",
+      countryRequired: "Por favor, selecciona al menos un país"
+    },
+    
+    // Mensajes de error
+    errors: {
+      emailAlreadyExists: "Este correo electrónico ya está en uso.",
+      weakPassword: "La contraseña debe contener al menos 6 caracteres.",
+      invalidEmail: "Por favor, ingresa un correo electrónico válido.",
+      passwordMismatch: "Las contraseñas no coinciden.",
+      networkError: "Error de conexión. Por favor, inténtalo de nuevo.",
+      generalError: "Ocurrió un error durante el registro.",
+      success: "Registro exitoso! Verifica tu correo electrónico para confirmar tu cuenta.",
+      unexpectedFailure: "Ocurrió un error inesperado. Por favor, revisa tu información y vuelve a intentarlo.",
+      signupDisabled: "El registro está temporalmente desactivado. Por favor, inténtalo más tarde.",
+      rateLimitExceeded: "Demasiados intentos de registro. Por favor, espera unos minutos.",
+      invalidRequest: "Datos inválidos. Por favor, revisa tu información.",
+      emailNotConfirmed: "Por favor, confirma tu correo electrónico antes de iniciar sesión.",
+      duplicateEmail: "Este correo electrónico ya está en uso.",
+      validationError: "Error de validación de datos.",
+      connectionError: "Problema de conexión. Verifica tu conexión a internet."
+    },
+    
+    success: {
+      step1: "✅ Información personal validada",
+      step2: "✅ Preferencias guardadas",
+      step3: "✅ Intereses seleccionados",
+      final: "�� ¡Tu cuenta ha sido creada con éxito!"
+    }
+  },
+  
+  ptBR: {
+    title: "Únase a AMORA",
+    subtitle: "Encontre o amor na sua comunidade multicultural",
+    
+    steps: {
+      personal: "Informações pessoais",
+      preferences: "Preferências",
+      interests: "Interesses",
+      review: "Revisão"
+    },
+    
+    // Campos
+    fullName: "Nome completo",
+    email: "E-mail",
+    password: "Senha",
+    confirmPassword: "Confirmar senha",
+    age: "Idade",
+    gender: "Gênero",
+    bio: "Biografia",
+    country: "País",
+    region: "Região",
+    city: "Cidade",
+    primaryLanguage: "Idioma principal",
+    seekingGender: "Procurando",
+    targetCountry: "Países alvo",
+    
+    // Placeholders
+    fullNamePlaceholder: "Seu nome completo",
+    emailPlaceholder: "seu@email.com",
+    passwordPlaceholder: "Mínimo 6 caracteres",
+    bioPlaceholder: "Conte-nos um pouco sobre você...",
+    cityPlaceholder: "Sua cidade",
+    agePlaceholder: "Ex: 25",
+    genderPlaceholder: "Selecione seu gênero",
+    countryPlaceholder: "Selecione seu país",
+    seekingCountryPlaceholder: "Selecione países onde você quer conhecer pessoas...",
+    interestsDescription: "Selecione seus interesses",
+    
+    // Opções
+    male: "Homem",
+    female: "Mulher",
+    any: "Qualquer",
+    
+    // Botões
+    createAccount: "Criar minha conta",
+    continue: "Continuar",
+    previous: "Anterior",
+    finish: "Completar registro",
+    
+    // Mensagens de validação
+    validation: {
+      required: "Este campo é obrigatório",
+      emailInvalid: "Formato de e-mail inválido",
+      passwordWeak: "A senha deve conter pelo menos 6 caracteres",
+      passwordMismatch: "As senhas não coincidem",
+      ageInvalid: "A idade deve estar entre 18 e 100 anos",
+      bioTooLong: "A biografia não pode exceder 500 caracteres",
+      countryRequired: "Por favor, selecione pelo menos um país"
+    },
+    
+    // Mensagens de erro
+    errors: {
+      emailAlreadyExists: "Este endereço de e-mail já está em uso.",
+      weakPassword: "A senha deve conter pelo menos 6 caracteres.",
+      invalidEmail: "Por favor, insira um endereço de e-mail válido.",
+      passwordMismatch: "As senhas não coincidem.",
+      networkError: "Erro de conexão. Por favor, tente novamente.",
+      generalError: "Ocorreu um erro durante o registro.",
+      success: "Registro bem-sucedido! Verifique seu e-mail para confirmar sua conta.",
+      unexpectedFailure: "Ocorreu um erro inesperado. Por favor, verifique suas informações e tente novamente.",
+      signupDisabled: "O registro está temporariamente desativado. Por favor, tente novamente mais tarde.",
+      rateLimitExceeded: "Muitos tentativas de registro. Por favor, aguarde alguns minutos.",
+      invalidRequest: "Dados inválidos. Por favor, verifique suas informações.",
+      emailNotConfirmed: "Por favor, confirme seu e-mail antes de fazer login.",
+      duplicateEmail: "Este endereço de e-mail já está em uso.",
+      validationError: "Erro de validação de dados.",
+      connectionError: "Problema de conexão. Verifique sua conexão com a internet."
+    },
+    
+    success: {
+      step1: "✅ Informações pessoais validadas",
+      step2: "✅ Preferências salvas",
+      step3: "✅ Interesses selecionados",
+      final: "🎉 Sua conta foi criada com sucesso!"
     }
   }
 };
@@ -681,7 +970,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                   type="number"
                   min="18"
                   max="100"
-                  placeholder="25"
+                  placeholder={t.agePlaceholder}
                   value={formData.age}
                   onChange={(e) => handleFieldChange('age', e.target.value)}
                   className={validationErrors.age ? 'border-red-500' : ''}
@@ -698,7 +987,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </Label>
                 <Select value={formData.gender} onValueChange={(value) => handleFieldChange('gender', value)}>
                   <SelectTrigger className={validationErrors.gender ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Sélectionnez votre genre" />
+                    <SelectValue placeholder={t.genderPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">{t.male}</SelectItem>
@@ -750,7 +1039,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                 </Label>
                 <Select value={formData.country} onValueChange={(value) => handleFieldChange('country', value)}>
                   <SelectTrigger className={validationErrors.country ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Sélectionnez votre pays" />
+                    <SelectValue placeholder={t.countryPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HT"> Haïti</SelectItem>
@@ -816,7 +1105,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
               <CountryMultiSelect
                 selectedCountries={formData.seekingCountry}
                 onCountriesChange={(countries) => handleFieldChange('seekingCountry', countries)}
-                placeholder="Sélectionnez les pays où vous souhaitez rencontrer des personnes..."
+                placeholder={t.seekingCountryPlaceholder}
                 maxSelections={10}
                 className={validationErrors.seekingCountry ? 'border-red-500' : ''}
               />
@@ -832,7 +1121,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.interests}</h2>
-              <p className="text-gray-600">Sélectionnez vos centres d'intérêt</p>
+              <p className="text-gray-600">{t.interestsDescription}</p>
             </div>
 
             <EnhancedInterestsSelector

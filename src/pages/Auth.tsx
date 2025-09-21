@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useLoader } from "@/hooks/use-loader";
 import { analytics } from '@/lib/analytics';
+import { authTranslations } from '@/lib/authTranslations';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSelector } from "@/components/ui/language-selector";
 
 const Auth = () => {
   const [loginData, setLoginData] = useState({
@@ -26,6 +29,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const t = authTranslations[selectedLanguage as keyof typeof authTranslations] || authTranslations.fr;
 
   useEffect(() => {
     // Check if user is already logged in
@@ -47,7 +52,7 @@ const Auth = () => {
       const refreshToken = searchParams.get('refresh_token');
       
       if (accessToken && refreshToken) {
-        showLoader("Confirmation de votre email...", "heart");
+        showLoader(t.emailConfirming, "heart");
         
         try {
           // Échanger les tokens pour obtenir une session
@@ -58,14 +63,14 @@ const Auth = () => {
 
           if (error) {
             toast({
-              title: "Erreur",
-              description: "Impossible de confirmer votre email. Veuillez réessayer.",
+              title: t.error,
+              description: t.emailConfirmError,
               variant: "destructive",
             });
           } else if (data.session) {
             toast({
-              title: "Email confirmé",
-              description: "Votre compte a été activé avec succès !",
+              title: t.emailConfirmed,
+              description: t.emailConfirmedDesc,
             });
 
             // Rediriger vers le dashboard
@@ -77,8 +82,8 @@ const Auth = () => {
           }
         } catch (error) {
           toast({
-            title: "Erreur",
-            description: "Une erreur est survenue lors de la confirmation.",
+            title: t.error,
+            description: t.generalError,
             variant: "destructive",
           });
         } finally {
@@ -90,13 +95,13 @@ const Auth = () => {
     };
 
     checkEmailConfirmation();
-  }, [navigate, searchParams, showLoader, hideLoader, toast]);
+  }, [navigate, searchParams, showLoader, hideLoader, toast, t]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setLoginError(null);
-    showLoader("Connexion en cours...", "heart");
+    showLoader(t.loginLoading, "heart");
     
     try {
       const { error, data } = await supabase.auth.signInWithPassword({
@@ -107,9 +112,9 @@ const Auth = () => {
       if (error) {
         // Gestion spécifique des erreurs
         if (error.message.includes("Invalid login credentials")) {
-          setLoginError("Email ou mot de passe incorrect.");
+          setLoginError(t.invalidCredentials);
         } else if (error.message.includes("Email not confirmed")) {
-          setLoginError("Veuillez confirmer votre email avant de vous connecter.");
+          setLoginError(t.emailNotConfirmed);
         } else if (error.message.includes("Too many requests")) {
           setLoginError("Trop de tentatives. Veuillez réessayer plus tard.");
         } else {
@@ -118,8 +123,8 @@ const Auth = () => {
       } else {
         // Connexion réussie
         toast({
-          title: "Connexion réussie",
-          description: "Vous êtes maintenant connecté.",
+          title: t.loginSuccess,
+          description: t.loginSuccessDesc,
         });
         
         // Rediriger selon le type d'utilisateur
@@ -149,6 +154,23 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+      {/* ✅ AJOUT: Sélecteur de langue en haut à droite */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSelector 
+          selectedLanguage={selectedLanguage}
+          onLanguageChange={setSelectedLanguage}
+        />
+      </div>
+
+      {/* Bouton de retour */}
+      <Link 
+        to="/" 
+        className="absolute top-4 left-4 z-10 flex items-center gap-2 text-[#212529] hover:text-[#E63946] transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="hidden sm:inline">Retour à l'accueil</span>
+      </Link>
+
       <div className="w-full max-w-md">
         {/* Header - Mobile optimized */}
         <div className="text-center mb-6">
@@ -163,10 +185,10 @@ const Auth = () => {
           <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Heart className="w-6 h-6 text-[#E63946]" />
-              <CardTitle className="text-xl md:text-2xl text-[#212529]">Connexion</CardTitle>
+              <CardTitle className="text-xl md:text-2xl text-[#212529]">{t.loginTitle}</CardTitle>
             </div>
             <CardDescription className="text-[#CED4DA]">
-              Connectez-vous à votre compte Amora
+              {t.loginDescription}
             </CardDescription>
           </CardHeader>
           
@@ -177,13 +199,13 @@ const Auth = () => {
                   value="login"
                   className="data-[state=active]:bg-[#E63946] data-[state=active]:text-white text-[#212529] rounded-md"
                 >
-                  Connexion
+                  {t.loginTab}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup"
                   className="data-[state=active]:bg-[#E63946] data-[state=active]:text-white text-[#212529] rounded-md"
                 >
-                  Inscription
+                  {t.signupTab}
                 </TabsTrigger>
               </TabsList>
               
@@ -192,7 +214,7 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
                       <Mail className="w-4 h-4 text-[#E63946]" />
-                      Email
+                      {t.email}
                     </Label>
                     <Input
                       id="email"
@@ -207,12 +229,12 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
                       <Lock className="w-4 h-4 text-[#E63946]" />
-                      Mot de passe
+                      {t.password}
                     </Label>
                     <PasswordInput
                       value={loginData.password}
                       onChange={(value) => handleInputChange("password", value)}
-                      placeholder="Votre mot de passe"
+                      placeholder={t.passwordPlaceholder}
                       required
                       className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                     />
@@ -229,14 +251,14 @@ const Auth = () => {
                     loading={loading}
                     className="w-full bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
                   >
-                    Se connecter
+                    {t.loginButton}
                   </LoadingButton>
                 </form>
               </TabsContent>
               
               <TabsContent value="signup" className="mt-6">
                 <div className="max-h-[70vh] overflow-y-auto">
-                  <SignupForm language="fr" onClose={() => setActiveTab("login")} />
+                  <SignupForm language={selectedLanguage} onClose={() => setActiveTab("login")} />
                 </div>
               </TabsContent>
             </Tabs>
