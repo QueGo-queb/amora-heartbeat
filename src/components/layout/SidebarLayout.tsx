@@ -164,12 +164,13 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       name: 'Messages', 
       icon: MessageCircle, 
       path: '/messages', 
-      badge: unreadMessages || undefined // ✅ Compteur dynamique au lieu de 10
+      badge: unreadMessages || undefined
     },
     { name: 'Visites', icon: Eye, path: '/profile-views' },
     { name: 'J\'aime', icon: Heart, path: '/likes' },
     { name: 'Favoris', icon: Star, path: '/favorites' },
-    { name: 'Chat vidéo', icon: Camera, path: '/chat-live' }, // ✅ CORRIGÉ - /chat-live au lieu de /video-chat
+    // ✅ UNIFICATION - Un seul bouton "Chat en ligne" fonctionnel
+    { name: 'Chat en ligne', icon: MessageSquare, path: '/chat-live' },
     { name: 'Correspondances', icon: Users, path: '/new-matches' },
     { name: 'Profil', icon: User, path: '/profile' },
     { name: 'Mes Publications', icon: Edit3, path: '/my-posts' },
@@ -178,9 +179,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
   const supportItems = [
     { name: 'Centre d\'aide', icon: HelpCircle, path: '/help' },
-    { name: 'Support par email', icon: Mail, path: 'mailto:support@amora.com' },
-    { name: 'Chat en ligne', icon: MessageSquare, path: '/chat-live' }
-    // ✅ SUPPRIMÉ - Support dédié
+    { name: 'Support par email', icon: Mail, path: 'mailto:support@amora.com' }
+    // ✅ SUPPRIMÉ - Doublon "Chat en ligne" retiré des supports
   ];
 
   // Fonctions helper

@@ -268,7 +268,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
-        {/* ✅ AJOUT - Route pour Chat en ligne */}
+        {/* ✅ AJOUT - Route pour Chat en ligne (contacts existants) */}
         <Route path="/chat-live" element={
           <ProtectedRoute>
             <ConditionalLayout>
@@ -382,6 +382,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
 
+        {/* ✅ OPTIONNEL - Garder VideoChat pour les appels vidéo réels */}
         <Route path="/video-chat" element={
           <ProtectedRoute>
             <ConditionalLayout>
