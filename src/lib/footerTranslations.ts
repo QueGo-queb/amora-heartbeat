@@ -245,9 +245,52 @@ export const footerTranslations = {
 export const translateDatabaseLink = (linkName: string, language: string): string => {
   const t = footerTranslations[language as keyof typeof footerTranslations] || footerTranslations.fr;
   
-  // Mapper les noms de liens de la base de données vers les traductions
+  // Normaliser le nom du lien (enlever espaces, accents, casse)
+  const normalizedName = linkName.toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[ñ]/g, 'n')
+    .trim();
+
+  // Mapper avec recherche flexible
+  if (normalizedName.includes('support') || normalizedName.includes('aide') || normalizedName.includes('assistance')) {
+    return t.supportLinks.support;
+  }
+  
+  if (normalizedName.includes('faq') || normalizedName.includes('question')) {
+    return t.supportLinks.faq;
+  }
+  
+  if (normalizedName.includes('help') || normalizedName.includes('centre') || normalizedName.includes('center')) {
+    return t.supportLinks.helpCenter;
+  }
+  
+  if (normalizedName.includes('contact')) {
+    return t.supportLinks.contact;
+  }
+  
+  if (normalizedName.includes('condition') || normalizedName.includes('terme') || normalizedName.includes('terms')) {
+    return t.legalLinks.termsOfService;
+  }
+  
+  if (normalizedName.includes('confidentialite') || normalizedName.includes('privacy') || normalizedName.includes('privacidad')) {
+    return t.legalLinks.privacyPolicy;
+  }
+  
+  if (normalizedName.includes('cookie')) {
+    return t.legalLinks.cookiePolicy;
+  }
+  
+  if (normalizedName.includes('mention') || normalizedName.includes('legal') || normalizedName.includes('notice')) {
+    return t.legalLinks.legalNotice;
+  }
+  
+  // Mapping exact comme avant (pour compatibilité)
   const linkMappings: Record<string, string> = {
-    // Support links
     'Support': t.supportLinks.support,
     'FAQ': t.supportLinks.faq,
     'Centre d\'aide': t.supportLinks.helpCenter,
@@ -255,8 +298,6 @@ export const translateDatabaseLink = (linkName: string, language: string): strin
     'Contact': t.supportLinks.contact,
     'Aide': t.supportLinks.helpCenter,
     'Assistance': t.supportLinks.support,
-    
-    // Legal links  
     'Légal': t.legalLinks.legal,
     'Legal': t.legalLinks.legal,
     'Conditions d\'utilisation': t.legalLinks.termsOfService,
@@ -289,4 +330,175 @@ export const translateCompanyDescription = (description: string, language: strin
   
   // Sinon, retourner la description originale (peut-être déjà traduite)
   return description || t.companyDescriptionFallback;
+};
+
+export const generateMultilingualUrl = (originalHref: string, language: string): string => {
+  // Normaliser le code de langue
+  const langCode = language === 'ptBR' ? 'pt' : language;
+  
+  // Si c'est déjà une URL externe, la retourner telle quelle
+  if (originalHref.startsWith('http') || originalHref.startsWith('mailto:')) {
+    return originalHref;
+  }
+  
+  // Mapping des URLs vers les slugs multilingues
+  const urlMappings: Record<string, string> = {
+    '/support': '/help-center', // Support redirige vers help-center
+    '/faq': '/faq',
+    '/help': '/help-center',
+    '/help-center': '/help-center',
+    '/contact': '/contact',
+    '/terms': '/terms-of-service',
+    '/terms-of-service': '/terms-of-service',
+    '/privacy': '/privacy-policy',
+    '/privacy-policy': '/privacy-policy',
+    '/cookies': '/cookies-policy',
+    '/cookies-policy': '/cookies-policy',
+    '/legal': '/legal-notices',
+    '/legal-notices': '/legal-notices',
+    '/about': '/about'
+  };
+  
+  // Obtenir le slug correct
+  const slug = urlMappings[originalHref] || originalHref;
+  
+  // Générer l'URL multilingue
+  if (langCode === 'fr') {
+    return slug; // Français = URL par défaut
+  } else {
+    return `/${langCode}${slug}`;
+  }
+};
+
+export const footerLinks = {
+  fr: {
+    faq: "/faq",
+    contact: "/contact", 
+    support: "/help-center",
+    helpCenter: "/help-center",
+    terms: "/terms-of-service",
+    privacy: "/privacy-policy",
+    cookies: "/cookies-policy",
+    legal: "/legal-notices",
+    about: "/about"
+  },
+  en: {
+    faq: "/en/faq",
+    contact: "/en/contact",
+    support: "/en/help-center", 
+    helpCenter: "/en/help-center",
+    terms: "/en/terms-of-service",
+    privacy: "/en/privacy-policy",
+    cookies: "/en/cookies-policy",
+    legal: "/en/legal-notices",
+    about: "/en/about"
+  },
+  es: {
+    faq: "/es/faq",
+    contact: "/es/contact",
+    support: "/es/help-center",
+    helpCenter: "/es/help-center", 
+    terms: "/es/terms-of-service",
+    privacy: "/es/privacy-policy",
+    cookies: "/es/cookies-policy",
+    legal: "/es/legal-notices",
+    about: "/es/about"
+  },
+  pt: {
+    faq: "/pt/faq",
+    contact: "/pt/contact",
+    support: "/pt/help-center",
+    helpCenter: "/pt/help-center",
+    terms: "/pt/terms-of-service", 
+    privacy: "/pt/privacy-policy",
+    cookies: "/pt/cookies-policy",
+    legal: "/pt/legal-notices",
+    about: "/pt/about"
+  },
+  ptBR: {
+    faq: "/pt/faq",
+    contact: "/pt/contact",
+    support: "/pt/help-center",
+    helpCenter: "/pt/help-center",
+    terms: "/pt/terms-of-service",
+    privacy: "/pt/privacy-policy", 
+    cookies: "/pt/cookies-policy",
+    legal: "/pt/legal-notices",
+    about: "/pt/about"
+  },
+  ht: {
+    faq: "/ht/faq",
+    contact: "/ht/contact",
+    support: "/ht/help-center",
+    helpCenter: "/ht/help-center",
+    terms: "/ht/terms-of-service",
+    privacy: "/ht/privacy-policy",
+    cookies: "/ht/cookies-policy", 
+    legal: "/ht/legal-notices",
+    about: "/ht/about"
+  }
+};
+
+// Fonction pour obtenir le bon lien selon la langue
+export const getFooterLink = (linkType: string, language: string): string => {
+  const langCode = language as keyof typeof footerLinks;
+  const links = footerLinks[langCode] || footerLinks.fr;
+  
+  // Mapping des types de liens
+  const linkTypeMapping: Record<string, keyof typeof links> = {
+    'faq': 'faq',
+    'contact': 'contact',
+    'support': 'support',
+    'help-center': 'helpCenter',
+    'help': 'helpCenter',
+    'terms-of-service': 'terms',
+    'terms': 'terms',
+    'privacy-policy': 'privacy',
+    'privacy': 'privacy',
+    'cookies-policy': 'cookies',
+    'cookies': 'cookies',
+    'legal-notices': 'legal',
+    'legal': 'legal',
+    'about': 'about'
+  };
+  
+  const mappedType = linkTypeMapping[linkType] || 'faq';
+  return links[mappedType];
+};
+
+// Fonction pour détecter le type de lien et générer l'URL
+export const detectLinkTypeAndGenerateUrl = (linkName: string, originalHref: string, language: string): string => {
+  // Détecter le type de lien basé sur le nom
+  const normalizedName = linkName.toLowerCase();
+  
+  if (normalizedName.includes('faq') || normalizedName.includes('question')) {
+    return getFooterLink('faq', language);
+  }
+  
+  if (normalizedName.includes('contact')) {
+    return getFooterLink('contact', language);
+  }
+  
+  if (normalizedName.includes('support') || normalizedName.includes('aide') || normalizedName.includes('help')) {
+    return getFooterLink('support', language);
+  }
+  
+  if (normalizedName.includes('condition') || normalizedName.includes('terme') || normalizedName.includes('terms')) {
+    return getFooterLink('terms', language);
+  }
+  
+  if (normalizedName.includes('confidentialite') || normalizedName.includes('privacy')) {
+    return getFooterLink('privacy', language);
+  }
+  
+  if (normalizedName.includes('cookie')) {
+    return getFooterLink('cookies', language);
+  }
+  
+  if (normalizedName.includes('mention') || normalizedName.includes('legal') || normalizedName.includes('notice')) {
+    return getFooterLink('legal', language);
+  }
+  
+  // Si aucun type détecté, utiliser l'URL originale avec préfixe langue
+  return generateMultilingualUrl(originalHref, language);
 };

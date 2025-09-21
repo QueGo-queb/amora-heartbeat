@@ -412,6 +412,14 @@ const AppWithHooks = () => {
           </ProtectedRoute>
         } />
 
+        {/* Routes multilingues pour les pages légales */}
+        <Route path="/fr/:slug" element={<LegalPage />} />
+        <Route path="/en/:slug" element={<LegalPage />} />
+        <Route path="/es/:slug" element={<LegalPage />} />
+        <Route path="/pt/:slug" element={<LegalPage />} />
+        <Route path="/ht/:slug" element={<LegalPage />} />
+
+        {/* Route par défaut (français) */}
         <Route path="/:slug" element={<LegalPage />} />
 
         {/* Route 404 */}

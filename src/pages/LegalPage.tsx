@@ -17,7 +17,7 @@ interface LegalPageData {
 }
 
 const LegalPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, lang } = useParams<{ slug: string; lang?: string }>();
   const navigate = useNavigate();
   const [page, setPage] = useState<LegalPageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,11 +25,11 @@ const LegalPage = () => {
 
   useEffect(() => {
     if (slug) {
-      loadPage(slug);
+      loadPage(slug, lang);
     }
-  }, [slug]);
+  }, [slug, lang]);
 
-  const loadPage = async (pageSlug: string) => {
+  const loadPage = async (pageSlug: string, language?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -309,6 +309,37 @@ Notre équipe support est disponible 24h/7j pour vous aider.
 
 *Nous sommes là pour faire de votre expérience Amora un succès !*`,
           meta_description: 'Centre d\'aide Amora - Guides, conseils et support pour optimiser votre expérience de rencontre',
+          category: 'support',
+          updated_at: new Date().toISOString()
+        },
+        'support': {
+          id: '9',
+          slug: 'support',
+          title: 'Support',
+          content: `# Support Amora
+
+## Comment nous contacter
+
+### 📧 Email
+Pour toute question ou assistance, contactez-nous à : **support@amora.ca**
+
+### 💬 Chat en ligne
+Utilisez notre système de chat intégré pour une assistance immédiate.
+
+### 📞 Assistance téléphonique
+Disponible du lundi au vendredi de 9h à 17h (EST)
+
+### 🆘 Urgences
+Pour les problèmes urgents liés à la sécurité, contactez-nous immédiatement.
+
+## Temps de réponse
+- Email : 24-48 heures
+- Chat : Immédiat pendant les heures d'ouverture
+- Téléphone : Immédiat pendant les heures d'ouverture
+
+## FAQ
+Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
+          meta_description: 'Contactez le support Amora pour toute assistance technique ou question.',
           category: 'support',
           updated_at: new Date().toISOString()
         }

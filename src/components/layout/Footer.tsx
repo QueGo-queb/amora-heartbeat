@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Facebook, Instagram, Twitter, Linkedin, Youtube, MapPin, Phone, Clock, Shield, Heart, Users, Globe, ArrowRight } from 'lucide-react';
 import { useFooter } from '@/hooks/useFooter';
-import { footerTranslations, translateDatabaseLink, translateCompanyDescription } from '@/lib/footerTranslations';
+import { footerTranslations, translateDatabaseLink, translateCompanyDescription, generateMultilingualUrl, getFooterLink, detectLinkTypeAndGenerateUrl } from '@/lib/footerTranslations';
 
 // Ajouter une prop pour la langue
 interface FooterProps {
@@ -14,8 +14,15 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
   const [currentYear] = useState(new Date().getFullYear());
   const { content, links, socials, loading } = useFooter();
   
-  // ✅ AJOUT: Traductions
-  const t = footerTranslations[language as keyof typeof footerTranslations] || footerTranslations.fr;
+  // ✅ FORCE RE-RENDER when language changes
+  const [currentLanguage, setCurrentLanguage] = useState(language);
+  
+  useEffect(() => {
+    setCurrentLanguage(language);
+  }, [language]);
+  
+  // Utiliser currentLanguage au lieu de language partout
+  const t = footerTranslations[currentLanguage as keyof typeof footerTranslations] || footerTranslations.fr;
 
   // Gestion de l'inscription à la newsletter
   const handleNewsletterSubscribe = async (e: React.FormEvent) => {
@@ -81,6 +88,42 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
   console.log('Legal links:', linksByCategory.legal);
   console.log('Support links:', linksByCategory.support);
 
+  console.log('�� === NOMS DES LIENS ===');
+  linksByCategory.support.forEach(link => {
+    console.log('Support link name:', `"${link.name}"`);
+  });
+  linksByCategory.legal.forEach(link => {
+    console.log('Legal link name:', `"${link.name}"`);
+  });
+  console.log('Current language:', currentLanguage);
+
+  console.log(' === LANGUE ET URLs ===');
+  console.log('Current language:', currentLanguage);
+  console.log('Language type:', typeof currentLanguage);
+
+  // Test des URLs générées
+  if (linksByCategory.support.length > 0) {
+    console.log('�� URLs Support générées:');
+    linksByCategory.support.forEach(link => {
+      const generatedUrl = detectLinkTypeAndGenerateUrl(link.name, link.href, currentLanguage);
+      console.log(`  "${link.name}" (${link.href}) → ${generatedUrl}`);
+    });
+  }
+
+  if (linksByCategory.legal.length > 0) {
+    console.log('🔗 URLs Legal générées:');
+    linksByCategory.legal.forEach(link => {
+      const generatedUrl = detectLinkTypeAndGenerateUrl(link.name, link.href, currentLanguage);
+      console.log(`  "${link.name}" (${link.href}) → ${generatedUrl}`);
+    });
+  }
+
+  // Test des liens fallback
+  console.log('�� URLs Fallback générées:');
+  console.log('  FAQ fallback:', getFooterLink('faq', currentLanguage));
+  console.log('  Contact fallback:', getFooterLink('contact', currentLanguage));
+  console.log('  Terms fallback:', getFooterLink('terms', currentLanguage));
+
   if (loading) {
     return (
       <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -93,6 +136,66 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
       </footer>
     );
   }
+
+  // Ajouter cette fonction helper dans le composant Footer
+  const getLocalizedHref = (linkType: string): string => {
+    const langCode = language === 'ptBR' ? 'pt' : language;
+    
+    const urls: Record<string, Record<string, string>> = {
+      fr: {
+        support: '/help-center',
+        faq: '/faq', 
+        helpCenter: '/help-center',
+        contact: '/contact',
+        terms: '/terms-of-service',
+        privacy: '/privacy-policy',
+        cookies: '/cookies-policy',
+        legal: '/legal-notices'
+      },
+      en: {
+        support: '/en/help-center',
+        faq: '/en/faq',
+        helpCenter: '/en/help-center', 
+        contact: '/en/contact',
+        terms: '/en/terms-of-service',
+        privacy: '/en/privacy-policy',
+        cookies: '/en/cookies-policy',
+        legal: '/en/legal-notices'
+      },
+      es: {
+        support: '/es/help-center',
+        faq: '/es/faq',
+        helpCenter: '/es/help-center',
+        contact: '/es/contact', 
+        terms: '/es/terms-of-service',
+        privacy: '/es/privacy-policy',
+        cookies: '/es/cookies-policy',
+        legal: '/es/legal-notices'
+      },
+      pt: {
+        support: '/pt/help-center',
+        faq: '/pt/faq',
+        helpCenter: '/pt/help-center',
+        contact: '/pt/contact',
+        terms: '/pt/terms-of-service',
+        privacy: '/pt/privacy-policy', 
+        cookies: '/pt/cookies-policy',
+        legal: '/pt/legal-notices'
+      },
+      ht: {
+        support: '/ht/help-center',
+        faq: '/ht/faq',
+        helpCenter: '/ht/help-center',
+        contact: '/ht/contact',
+        terms: '/ht/terms-of-service',
+        privacy: '/ht/privacy-policy',
+        cookies: '/ht/cookies-policy',
+        legal: '/ht/legal-notices'
+      }
+    };
+    
+    return urls[langCode]?.[linkType] || urls.fr[linkType] || '/';
+  };
 
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
@@ -120,7 +223,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
                 </span>
               </div>
               <p className="text-gray-300 leading-relaxed mb-8 text-sm">
-                {translateCompanyDescription(content?.company_description, language)}
+                {translateCompanyDescription(content?.company_description, currentLanguage)}
               </p>
               {/* Statistiques */}
               {content?.company_stats && (
@@ -219,79 +322,51 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
               </div>
             </div>
 
-            {/* Support - Colonne séparée */}
+            {/* Support - TOUJOURS utiliser les liens traduits */}
             <div>
               <h3 className="text-xl font-semibold mb-6 text-white">{t.support}</h3>
               <ul className="space-y-3">
-                {linksByCategory.support.map((link) => (
-                  <li key={link.id}>
-                    <a 
-                      href={link.href} 
-                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
-                    >
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {translateDatabaseLink(link.name, language)}
-                    </a>
-                  </li>
-                ))}
-                {linksByCategory.support.length === 0 && (
-                  <>
-                    <li><a href="/support" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.supportLinks.support}
-                    </a></li>
-                    <li><a href="/faq" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.supportLinks.faq}
-                    </a></li>
-                    <li><a href="/help" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.supportLinks.helpCenter}
-                    </a></li>
-                    <li><a href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.supportLinks.contact}
-                    </a></li>
-                  </>
-                )}
+                {/* ✅ SOLUTION: Utiliser TOUJOURS les liens traduits au lieu de la DB */}
+                <li><a href={getLocalizedHref('support')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.supportLinks.support}
+                </a></li>
+                <li><a href={getLocalizedHref('faq')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.supportLinks.faq}
+                </a></li>
+                <li><a href={getLocalizedHref('help-center')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.supportLinks.helpCenter}
+                </a></li>
+                <li><a href={getLocalizedHref('contact')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.supportLinks.contact}
+                </a></li>
               </ul>
             </div>
 
-            {/* Légal - Colonne séparée */}
+            {/* Legal - TOUJOURS utiliser les liens traduits */}
             <div>
               <h3 className="text-xl font-semibold mb-6 text-white">{t.legal}</h3>
               <ul className="space-y-3">
-                {linksByCategory.legal.map((link) => (
-                  <li key={link.id}>
-                    <a 
-                      href={link.href} 
-                      className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
-                    >
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {translateDatabaseLink(link.name, language)}
-                    </a>
-                  </li>
-                ))}
-                {linksByCategory.legal.length === 0 && (
-                  <>
-                    <li><a href="/terms" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.legalLinks.termsOfService}
-                    </a></li>
-                    <li><a href="/privacy" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.legalLinks.privacyPolicy}
-                    </a></li>
-                    <li><a href="/cookies" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.legalLinks.cookiePolicy}
-                    </a></li>
-                    <li><a href="/legal" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {t.legalLinks.legalNotice}
-                    </a></li>
-                  </>
-                )}
+                {/* ✅ SOLUTION: Utiliser TOUJOURS les liens traduits au lieu de la DB */}
+                <li><a href={getLocalizedHref('terms')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.legalLinks.termsOfService}
+                </a></li>
+                <li><a href={getLocalizedHref('privacy')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.legalLinks.privacyPolicy}
+                </a></li>
+                <li><a href={getLocalizedHref('cookies')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.legalLinks.cookiePolicy}
+                </a></li>
+                <li><a href={getLocalizedHref('legal')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {t.legalLinks.legalNotice}
+                </a></li>
               </ul>
             </div>
           </div>

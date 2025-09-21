@@ -20,7 +20,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
-  const [showSignupForm, setShowSignupForm] = useState(false);
   const { isVisible: adSpaceVisible, toggleAdSpaceVisibility, loading: adSpaceLoading } = useAdSpaceVisibility();
   const { toast } = useToast();
 
@@ -217,7 +216,7 @@ const Index = () => {
             <AnimatedSlogan language={selectedLanguage} />
             
             <div className="mt-8">
-              <Dialog open={showSignupForm} onOpenChange={setShowSignupForm}>
+              <Dialog open={false} onOpenChange={() => {}}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-[#E63946] to-[#E63946]/90 hover:from-[#E63946]/90 hover:to-[#E63946] text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                     {t.cta}
@@ -225,7 +224,7 @@ const Index = () => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <SignupForm language={selectedLanguage} onClose={() => setShowSignupForm(false)} />
+                  <SignupForm language={selectedLanguage} onClose={() => {}} />
                 </DialogContent>
               </Dialog>
             </div>
