@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import Footer from './Footer';
 import SidebarLayout from './SidebarLayout';
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ AJOUT
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -8,6 +9,7 @@ interface ConditionalLayoutProps {
 
 const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { selectedLanguage } = useLanguage(); // ✅ AJOUT
   
   // Pages qui utilisent le nouveau layout avec menu latéral
   const useDatingLayout = location.pathname.startsWith('/dashboard') ||
@@ -55,7 +57,7 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   return (
     <>
       {children}
-      {shouldShowFooter && <Footer />}
+      {shouldShowFooter && <Footer language={selectedLanguage} />} {/* ✅ CORRECTION */}
     </>
   );
 };

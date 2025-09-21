@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Mail, Facebook, Instagram, Twitter, Linkedin, Youtube, MapPin, Phone, Clock, Shield, Heart, Users, Globe, ArrowRight } from 'lucide-react';
 import { useFooter } from '@/hooks/useFooter';
+import { footerTranslations, translateDatabaseLink, translateCompanyDescription } from '@/lib/footerTranslations';
 
-const Footer = () => {
+// Ajouter une prop pour la langue
+interface FooterProps {
+  language?: string;
+}
+
+const Footer = ({ language = 'fr' }: FooterProps) => {
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [currentYear] = useState(new Date().getFullYear());
   const { content, links, socials, loading } = useFooter();
+  
+  // ✅ AJOUT: Traductions
+  const t = footerTranslations[language as keyof typeof footerTranslations] || footerTranslations.fr;
 
   // Gestion de l'inscription à la newsletter
   const handleNewsletterSubscribe = async (e: React.FormEvent) => {
@@ -18,11 +27,10 @@ const Footer = () => {
       // Simulation d'une requête API
       await new Promise(resolve => setTimeout(resolve, 2000));
       setEmail('');
-      // Notification de succès (remplacer par votre système de notification)
-      alert('Merci ! Vous êtes maintenant abonné à notre newsletter.');
+      alert(t.newsletterSuccess); // ✅ TRADUIT
     } catch (error) {
-      console.error('Erreur inscription newsletter:', error);
-      alert('Une erreur s\'est produite. Veuillez réessayer.');
+      console.error('Newsletter subscription error:', error);
+      alert(t.newsletterError); // ✅ TRADUIT
     } finally {
       setSubscribing(false);
     }
@@ -79,7 +87,7 @@ const Footer = () => {
         <div className="container mx-auto px-6 py-16">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p>Chargement du footer...</p>
+            <p>{t.loadingFooter}</p> {/* ✅ TRADUIT */}
           </div>
         </div>
       </footer>
@@ -112,7 +120,7 @@ const Footer = () => {
                 </span>
               </div>
               <p className="text-gray-300 leading-relaxed mb-8 text-sm">
-                {content?.company_description || 'La plateforme de rencontres qui transcende les frontières.'}
+                {translateCompanyDescription(content?.company_description, language)}
               </p>
               {/* Statistiques */}
               {content?.company_stats && (
@@ -137,11 +145,11 @@ const Footer = () => {
               {/* ✅ CORRECTION: Réseaux sociaux ACTIFS seulement */}
               {activeSocials.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold mb-4 text-white">Suivez-nous</h4>
+                  <h4 className="text-lg font-semibold mb-4 text-white">{t.followUs}</h4>
                   <div className="flex space-x-4">
                     {activeSocials.map((social) => {
                       const Icon = getSocialIcon(social.icon_name);
-                      console.log('🔗 Affichage réseau social:', social.name, social.is_active);
+                      console.log('🔗 Displaying social network:', social.name, social.is_active);
                       return (
                         <a 
                           key={social.id}
@@ -157,7 +165,7 @@ const Footer = () => {
                     })}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">
-                    {activeSocials.length} réseau{activeSocials.length > 1 ? 'x' : ''} actif{activeSocials.length > 1 ? 's' : ''}
+                    {activeSocials.length} {activeSocials.length > 1 ? t.activeNetworksPlural : t.activeNetworks}
                   </p>
                 </div>
               )}
@@ -165,9 +173,9 @@ const Footer = () => {
               {/* ✅ DEBUG: Afficher si aucun réseau actif */}
               {activeSocials.length === 0 && socials.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold mb-4 text-white">Suivez-nous</h4>
+                  <h4 className="text-lg font-semibold mb-4 text-white">{t.followUs}</h4>
                   <p className="text-sm text-gray-400">
-                    Aucun réseau social actif ({socials.length} désactivé{socials.length > 1 ? 's' : ''})
+                    {t.noActiveNetworks} ({socials.length} {socials.length > 1 ? t.disabledPlural : t.disabled})
                   </p>
                 </div>
               )}
@@ -175,15 +183,15 @@ const Footer = () => {
 
             {/* Newsletter */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Newsletter</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">{t.newsletter}</h3>
               <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-                Recevez nos dernières actualités, conseils de rencontre et histoires de succès directement dans votre boîte mail.
+                {t.newsletterDesc}
               </p>
               <div className="space-y-4">
                 <div className="relative">
                   <input 
                     type="email" 
-                    placeholder="Votre adresse email" 
+                    placeholder={t.emailPlaceholder}
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
@@ -199,12 +207,12 @@ const Footer = () => {
                   {subscribing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Inscription...
+                      {t.subscribing}
                     </>
                   ) : (
                     <>
                       <Mail className="w-4 h-4" />
-                      S'abonner
+                      {t.subscribe}
                     </>
                   )}
                 </button>
@@ -213,7 +221,7 @@ const Footer = () => {
 
             {/* Support - Colonne séparée */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Support</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">{t.support}</h3>
               <ul className="space-y-3">
                 {linksByCategory.support.map((link) => (
                   <li key={link.id}>
@@ -222,16 +230,36 @@ const Footer = () => {
                       className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {link.name}
+                      {translateDatabaseLink(link.name, language)}
                     </a>
                   </li>
                 ))}
+                {linksByCategory.support.length === 0 && (
+                  <>
+                    <li><a href="/support" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.supportLinks.support}
+                    </a></li>
+                    <li><a href="/faq" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.supportLinks.faq}
+                    </a></li>
+                    <li><a href="/help" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.supportLinks.helpCenter}
+                    </a></li>
+                    <li><a href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.supportLinks.contact}
+                    </a></li>
+                  </>
+                )}
               </ul>
             </div>
 
             {/* Légal - Colonne séparée */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">Légal</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">{t.legal}</h3>
               <ul className="space-y-3">
                 {linksByCategory.legal.map((link) => (
                   <li key={link.id}>
@@ -240,10 +268,30 @@ const Footer = () => {
                       className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {link.name}
+                      {translateDatabaseLink(link.name, language)}
                     </a>
                   </li>
                 ))}
+                {linksByCategory.legal.length === 0 && (
+                  <>
+                    <li><a href="/terms" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.legalLinks.termsOfService}
+                    </a></li>
+                    <li><a href="/privacy" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.legalLinks.privacyPolicy}
+                    </a></li>
+                    <li><a href="/cookies" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.legalLinks.cookiePolicy}
+                    </a></li>
+                    <li><a href="/legal" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {t.legalLinks.legalNotice}
+                    </a></li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -255,10 +303,10 @@ const Footer = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                <span>© {currentYear} Amora. Tous droits réservés.</span>
+                <span>© {currentYear} Amora. {t.copyright}</span>
               </div>
               <div className="flex items-center gap-4">
-                <span>Créé avec Amour</span>
+                <span>{t.madeWithLove}</span>
                 <Heart className="w-4 h-4 text-red-500" />
               </div>
             </div>

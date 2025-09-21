@@ -68,14 +68,31 @@ import Onboarding from "./pages/Onboarding";
 import { CallModal } from "@/components/chat/CallModal";
 import { useCall } from "@/hooks/useCall";
 
+// Ajouter ces imports en haut du fichier (SANS MODIFIER LE RESTE)
+import { HreflangTags } from '@/components/seo/HreflangTags';
+import { MultilingualMeta } from '@/components/seo/MultilingualMeta';
+import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
+
 // Initialiser Sentry au démarrage
 initSentry();
 
 // 🔧 COMPOSANT INTERNE QUI UTILISE LES HOOKS ROUTER
 const AppRoutes = () => {
+  return (
+    <Router>
+      {/* ✅ AJOUT SEO - Composants invisibles pour le SEO */}
+      <HreflangTags />
+      <AppWithHooks />
+    </Router>
+  );
+};
+
+const AppWithHooks = () => {
+  const { selectedLanguage } = useLanguage(); // ✅ UTILISER LE CONTEXTE
+  const [showCallModal, setShowCallModal] = useState(false);
+
   // ✅ MAINTENANT DANS LE CONTEXTE ROUTER - Hook useCall
   const { currentCall, incomingCall } = useCall();
-  const [showCallModal, setShowCallModal] = useState(false);
 
   // ✅ Modal d'appel
   useEffect(() => {
@@ -88,24 +105,28 @@ const AppRoutes = () => {
 
   return (
     <>
+      <MultilingualMeta language={selectedLanguage} />
+      
       <Routes>
         {/* Routes publiques */}
         <Route path="/" element={<Index />} />
+        
+        {/* Route d'authentification */}
         <Route path="/auth" element={<Auth />} />
         
-        {/* Route onboarding - protégée mais accessible avec compte pending */}
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <Onboarding />
-          </ProtectedRoute>
-        } />
-
         {/* Routes protégées */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <ConditionalLayout>
               <Dashboard />
             </ConditionalLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* Route onboarding - protégée mais accessible avec compte pending */}
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <Onboarding />
           </ProtectedRoute>
         } />
 
@@ -285,7 +306,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
 
-        {/* Routes admin - 🔧 AJOUT requireAdmin */}
+        {/* Routes admin -  AJOUT requireAdmin */}
         <Route path="/admin" element={
           <ProtectedRoute requireAdmin={true}>
             <ConditionalLayout>
@@ -397,11 +418,18 @@ const AppRoutes = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* ✅ RÉACTIVÉ - Modal d'appel global */}
-      <CallModal 
-        open={showCallModal} 
-        onOpenChange={setShowCallModal} 
-      />
+      {/* ✅ MODAL D'APPEL */}
+      {showCallModal && (currentCall || incomingCall) && (
+        <CallModal
+          call={currentCall || incomingCall!}
+          onClose={() => setShowCallModal(false)}
+        />
+      )}
+
+      {/* Notifications PWA */}
+      <InstallPrompt />
+      <UpdateNotification />
+      <NetworkStatus />
     </>
   );
 };
@@ -421,27 +449,19 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <QueryProvider>
-        <LoaderProvider>
-          <Router>
-            <div className="min-h-screen bg-background">
-              
-              {/* Notification de mise à jour PWA */}
-              <UpdateNotification />
-              
-              {/* 🔧 COMPOSANT AVEC HOOKS ROUTER */}
-              <AppRoutes />
+      <LanguageProvider>
+        <QueryProvider>
+          <LoaderProvider>
+            <AppRoutes />
 
-              {/* Composants PWA globaux */}
-              <InstallPrompt />
-              <NetworkStatus />
-              
-              {/* Toast notifications */}
-              <Toaster />
-            </div>
-          </Router>
-        </LoaderProvider>
-      </QueryProvider>
+            {/* Composants PWA globaux */}
+            {/* InstallPrompt and NetworkStatus are now inside AppContent */}
+            
+            {/* Toast notifications */}
+            <Toaster />
+          </LoaderProvider>
+        </QueryProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

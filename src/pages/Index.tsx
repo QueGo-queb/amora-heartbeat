@@ -15,9 +15,11 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAdSpaceVisibility } from '@/hooks/useAdSpaceVisibility';
 import { AdSpace } from '@/components/advertising/AdSpace';
+import { footerTranslations } from '@/lib/footerTranslations';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState("fr");
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const [showSignupForm, setShowSignupForm] = useState(false);
   const { isVisible: adSpaceVisible, toggleAdSpaceVisibility, loading: adSpaceLoading } = useAdSpaceVisibility();
   const { toast } = useToast();
@@ -328,7 +330,7 @@ const Index = () => {
       </section>
 
       {/* Footer dynamique */}
-      <Footer />
+      <Footer language={selectedLanguage} />
     </div>
   );
 };
