@@ -41,6 +41,9 @@ import { useCajaVecina } from '@/hooks/useCajaVecina';
 import { usePayPal } from '@/hooks/usePayPal';
 import { useCurrentPricing } from '@/hooks/useCurrentPricing';
 import { useMonCash } from '@/hooks/useMonCash';
+import { SecureCajaVecinaForm } from '@/components/payments/SecureCajaVecinaForm';
+import { SecureUsdtForm } from '@/components/payments/SecureUsdtForm';
+import { TemporaryPaymentForm } from '@/components/payments/TemporaryPaymentForm';
 
 interface PremiumUpgradeModalProps {
   open: boolean;

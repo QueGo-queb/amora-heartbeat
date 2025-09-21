@@ -29,6 +29,7 @@ import { usePremiumRestriction } from '@/hooks/usePremiumRestriction';
 import { PremiumFeatureModal } from '@/components/ui/PremiumFeatureModal';
 import { PostActions } from './PostActions';
 import { getPostMedia, getFirstMedia, hasMedia } from '../../../utils/mediaUtils';
+import { PremiumGate } from '@/components/premium/PremiumGate';
 
 interface PostCardProps {
   post: FeedPost;
@@ -123,7 +124,7 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
     : post.content.slice(0, 200) + (shouldTruncate ? '...' : '');
 
   return (
-    <Card className="culture-card hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -176,71 +177,99 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
             
             {/* Bouton Message simplifié */}
             {!isAuthor && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  if (isPremium) {
-                    // Action normale
-                    console.log('Message envoyé à', post.profiles.full_name);
-                  } else {
-                    // Incitation Premium
-                    checkPremiumFeature('messages', () => {
-                      console.log('Message envoyé à', post.profiles.full_name);
-                    }, post.profiles.full_name);
-                  }
-                }}
-                className="flex items-center gap-1"
+              <PremiumGate 
+                feature="Messages"
+                description="Envoyez des messages illimités avec Premium"
+                fallback={
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      checkPremiumFeature('messages', () => {
+                        console.log('Message envoyé à', post.profiles.full_name);
+                      }, post.profiles.full_name);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Message
+                  </Button>
+                }
               >
-                <MessageCircle className="w-4 h-4" />
-                Message
-              </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => console.log('Message envoyé à', post.profiles.full_name)}
+                  className="flex items-center gap-1"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Message
+                </Button>
+              </PremiumGate>
             )}
             
             {/* Bouton Appel Audio simplifié */}
             {!isAuthor && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  if (isPremium) {
-                    // Action normale
-                    console.log('Appel audio à', post.profiles.full_name);
-                  } else {
-                    // Incitation Premium
-                    checkPremiumFeature('audio_call', () => {
-                      console.log('Appel audio à', post.profiles.full_name);
-                    }, post.profiles.full_name);
-                  }
-                }}
-                className="flex items-center gap-1"
+              <PremiumGate 
+                feature="Appels Audio"
+                fallback={
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      checkPremiumFeature('audio_call', () => {
+                        console.log('Appel audio à', post.profiles.full_name);
+                      }, post.profiles.full_name);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Appel
+                  </Button>
+                }
               >
-                <Phone className="w-4 h-4" />
-                Appel
-              </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => console.log('Appel audio à', post.profiles.full_name)}
+                  className="flex items-center gap-1"
+                >
+                  <Phone className="w-4 h-4" />
+                  Appel
+                </Button>
+              </PremiumGate>
             )}
             
             {/* Bouton Appel Vidéo simplifié */}
             {!isAuthor && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  if (isPremium) {
-                    // Action normale
-                    console.log('Appel vidéo à', post.profiles.full_name);
-                  } else {
-                    // Incitation Premium
-                    checkPremiumFeature('video_call', () => {
-                      console.log('Appel vidéo à', post.profiles.full_name);
-                    }, post.profiles.full_name);
-                  }
-                }}
-                className="flex items-center gap-1"
+              <PremiumGate 
+                feature="Appels Vidéo"
+                fallback={
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      checkPremiumFeature('video_call', () => {
+                        console.log('Appel vidéo à', post.profiles.full_name);
+                      }, post.profiles.full_name);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <Video className="w-4 h-4" />
+                    Vidéo
+                  </Button>
+                }
               >
-                <Video className="w-4 h-4" />
-                Vidéo
-              </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => console.log('Appel vidéo à', post.profiles.full_name)}
+                  className="flex items-center gap-1"
+                >
+                  <Video className="w-4 h-4" />
+                  Vidéo
+                </Button>
+              </PremiumGate>
             )}
 
             {/* Bouton de contact avec restriction */}

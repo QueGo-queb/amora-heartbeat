@@ -79,7 +79,9 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
       if (cursor) setLoadingMore(true);
 
       if (!userRef.current?.id) {
-        throw new Error('Utilisateur non connecté');
+        console.log('🔄 Utilisateur pas encore chargé, attente...');
+        setLoading(false);
+        return; // ✅ Ne pas lancer d'erreur
       }
 
       // ✅ CORRECTION: Requête sans relation, puis récupération séparée des profils

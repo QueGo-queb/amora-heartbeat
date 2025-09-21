@@ -30,6 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -44,6 +45,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+
+  // ✅ AJOUT: Hook pour les messages non lus
+  const { unreadCount: unreadMessages } = useUnreadMessages();
 
   // Charger le profil utilisateur
   useEffect(() => {
@@ -156,7 +160,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const navigationItems = [
     { name: 'Accueil', icon: Home, path: '/dashboard' },
     { name: 'Recherche', icon: Search, path: '/matching' },
-    { name: 'Messages', icon: MessageCircle, path: '/messages', badge: 10 },
+    { 
+      name: 'Messages', 
+      icon: MessageCircle, 
+      path: '/messages', 
+      badge: unreadMessages || undefined // ✅ Compteur dynamique au lieu de 10
+    },
     { name: 'Visites', icon: Eye, path: '/profile-views' },
     { name: 'J\'aime', icon: Heart, path: '/likes' },
     { name: 'Favoris', icon: Star, path: '/favorites' },

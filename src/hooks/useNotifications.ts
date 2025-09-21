@@ -1,199 +1,178 @@
-import { useState, useEffect } from 'react';
+/**
+ * Hook pour gérer les notifications utilisateur
+ * Récupère et met à jour en temps réel le nombre de notifications non lues
+ */
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-interface NotificationSubscription {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-interface NotificationPayload {
+export interface Notification {
+  id: string;
+  type: 'like' | 'comment' | 'message' | 'match' | 'premium' | 'system';
   title: string;
-  body: string;
-  icon?: string;
-  badge?: string;
-  tag?: string;
-  url?: string;
-  type?: 'message' | 'match' | 'like' | 'premium' | 'general';
+  content?: string;
   data?: any;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+  expires_at?: string;
 }
 
-export const useNotifications = () => {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+export function useNotifications() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    // Vérifier le support des notifications
-    const checkSupport = () => {
-      const supported = 'Notification' in window && 
-                       'serviceWorker' in navigator && 
-                       'PushManager' in window;
-      setIsSupported(supported);
-      
-      if (supported) {
-        setPermission(Notification.permission);
-        getExistingSubscription();
-      }
-    };
+  // Récupérer les notifications
+  const fetchNotifications = useCallback(async () => {
+    if (authLoading) return;
 
-    checkSupport();
-  }, []);
-
-  // Récupérer l'abonnement existant
-  const getExistingSubscription = async () => {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const existingSubscription = await registration.pushManager.getSubscription();
-      setSubscription(existingSubscription);
-    } catch (error) {
-      console.error('Erreur récupération abonnement:', error);
-    }
-  };
-
-  // Demander la permission pour les notifications
-  const requestPermission = async (): Promise<boolean> => {
-    if (!isSupported) {
-      toast({
-        title: "Non supporté",
-        description: "Les notifications ne sont pas supportées sur ce navigateur",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    try {
-      const permission = await Notification.requestPermission();
-      setPermission(permission);
-
-      if (permission === 'granted') {
-        toast({
-          title: "✅ Notifications activées",
-          description: "Vous recevrez maintenant les notifications AMORA",
-        });
-        return true;
-      } else if (permission === 'denied') {
-        toast({
-          title: "Notifications refusées",
-          description: "Vous pouvez les réactiver dans les paramètres du navigateur",
-          variant: "destructive",
-        });
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Erreur demande permission:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de demander la permission pour les notifications",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  // S'abonner aux notifications push
-  const subscribeUser = async (): Promise<boolean> => {
-    if (!isSupported || permission !== 'granted') {
-      const granted = await requestPermission();
-      if (!granted) return false;
-    }
-
-    setLoading(true);
-
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      
-      // Clé publique VAPID (à remplacer par votre vraie clé)
-      const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM9f8HtLlVLVWjSrOgAVmYTtQNUriAGemHCw0k1YPB7zNym6LkBDQU';
-      
-      const pushSubscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-      });
-
-      setSubscription(pushSubscription);
-
-      toast({
-        title: "🔔 Abonnement réussi",
-        description: "Vous recevrez maintenant les notifications push",
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Erreur abonnement push:', error);
-      toast({
-        title: "Erreur d'abonnement",
-        description: "Impossible de s'abonner aux notifications push",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
+    if (!user?.id) {
+      setNotifications([]);
+      setUnreadCount(0);
       setLoading(false);
-    }
-  };
-
-  // Envoyer une notification de test
-  const sendTestNotification = async () => {
-    if (permission !== 'granted') {
-      toast({
-        title: "Permission requise",
-        description: "Veuillez d'abord autoriser les notifications",
-        variant: "destructive",
-      });
       return;
     }
 
     try {
-      const notification = new Notification('🎉 AMORA Test', {
-        body: 'Les notifications fonctionnent parfaitement !',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-72x72.png',
-        tag: 'test-notification',
-        requireInteraction: false,
-        silent: false
-      });
+      setLoading(true);
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      // Récupérer les notifications récentes (30 derniers jours)
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      setTimeout(() => notification.close(), 5000);
+      if (error) {
+        // ✅ FALLBACK: Si table notifications n'existe pas
+        if (error.message?.includes('relation "notifications" does not exist')) {
+          console.log('📝 Table notifications non trouvée, utilisation du fallback');
+          setNotifications([]);
+          setUnreadCount(0);
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
+
+      const notificationsList = data || [];
+      setNotifications(notificationsList);
+      
+      // Compter les non lues
+      const unread = notificationsList.filter(n => !n.is_read).length;
+      setUnreadCount(unread);
+      
+      console.log(`🔔 Notifications: ${notificationsList.length} total, ${unread} non lues`);
+
     } catch (error) {
-      console.error('Erreur notification test:', error);
+      console.error('Erreur lors de la récupération des notifications:', error);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user?.id, authLoading]);
+
+  // Marquer une notification comme lue
+  const markAsRead = useCallback(async (notificationId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Mettre à jour l'état local
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === notificationId 
+            ? { ...n, is_read: true, read_at: new Date().toISOString() }
+            : n
+        )
+      );
+      
+      setUnreadCount(prev => Math.max(0, prev - 1));
+
+    } catch (error) {
+      console.error('Erreur marquage notification lue:', error);
+    }
+  }, [user?.id]);
+
+  // Marquer toutes comme lues
+  const markAllAsRead = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      // Mettre à jour l'état local
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+      );
+      
+      setUnreadCount(0);
+
+    } catch (error) {
+      console.error('Erreur marquage toutes notifications lues:', error);
+    }
+  }, [user?.id]);
+
+  // Écouter les nouvelles notifications en temps réel
+  useEffect(() => {
+    if (authLoading || !user?.id) {
+      setLoading(!authLoading);
+      return;
+    }
+
+    fetchNotifications();
+
+    // ✅ Écouter les nouvelles notifications en temps réel
+    const channel = supabase
+      .channel('user-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('🔔 Nouvelle notification reçue !');
+          const newNotification = payload.new as Notification;
+          
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, authLoading, fetchNotifications]);
 
   return {
-    permission,
-    subscription,
-    isSupported,
+    notifications,
+    unreadCount,
     loading,
-    isSubscribed: !!subscription,
-    requestPermission,
-    subscribeUser,
-    sendTestNotification
+    refresh: fetchNotifications,
+    markAsRead,
+    markAllAsRead
   };
-};
-
-// Fonction utilitaire pour convertir la clé VAPID
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }

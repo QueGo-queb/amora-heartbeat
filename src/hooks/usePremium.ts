@@ -25,18 +25,36 @@ export function usePremium() {
         return;
       }
 
-      // Vérifier le statut premium depuis la table profiles
-      const { data: profile } = await supabase
-        .from('profiles')
+      // ✅ CORRECTION: Utiliser la table users unifiée
+      const { data: userProfile } = await supabase
+        .from('users')
         .select('plan, premium_since')
         .eq('user_id', user.id)
         .single();
 
-      if (profile) {
+      // ✅ FALLBACK: Si pas trouvé avec user_id, essayer avec id
+      if (!userProfile) {
+        const { data: fallbackProfile } = await supabase
+          .from('users')
+          .select('plan, premium_since')
+          .eq('id', user.id)
+          .single();
+
+        if (fallbackProfile) {
+          setPremiumStatus({
+            isPremium: fallbackProfile.plan === 'premium',
+            plan: fallbackProfile.plan || 'free',
+            premiumSince: fallbackProfile.premium_since
+          });
+          return;
+        }
+      }
+
+      if (userProfile) {
         setPremiumStatus({
-          isPremium: profile.plan === 'premium',
-          plan: profile.plan || 'free',
-          premiumSince: profile.premium_since
+          isPremium: userProfile.plan === 'premium',
+          plan: userProfile.plan || 'free',
+          premiumSince: userProfile.premium_since
         });
       }
     } catch (error) {
@@ -52,16 +70,27 @@ export function usePremium() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Utilisateur non connecté');
 
-      // Mettre à jour le profil vers premium
+      // ✅ CORRECTION: Mettre à jour la table users
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
           plan: 'premium',
           premium_since: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      // ✅ FALLBACK: Si échec avec user_id, essayer avec id
+      if (error) {
+        const { error: fallbackError } = await supabase
+          .from('users')
+          .update({
+            plan: 'premium',
+            premium_since: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (fallbackError) throw fallbackError;
+      }
 
       setPremiumStatus({
         isPremium: true,
@@ -100,7 +129,7 @@ export function usePremium() {
 
   useEffect(() => {
     checkPremiumStatus();
-  }, []);
+  }, [checkPremiumStatus]);
 
   return {
     ...premiumStatus,

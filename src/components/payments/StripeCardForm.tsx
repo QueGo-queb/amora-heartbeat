@@ -54,122 +54,128 @@ export function StripeCardForm() {
         return;
       }
 
-      // Simuler la création du PaymentIntent (à remplacer par votre API)
-      // Pour l'instant, on simule un paiement réussi
-      const cardElement = elements.getElement(CardElement);
-      
-      if (!cardElement) {
-        setError('Élément de carte non trouvé');
-        setLoading(false);
-        return;
-      }
-
-      // Créer le token de paiement
-      const { error: tokenError, token } = await stripe.createToken(cardElement);
-
-      if (tokenError) {
-        setError(tokenError.message || 'Erreur lors de la création du token');
-        setLoading(false);
-        return;
-      }
-
-      // Mettre à jour le plan utilisateur
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          plan: 'premium',
-          premium_since: new Date().toISOString(),
-          payment_method: 'stripe'
-        })
-        .eq('id', user.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Créer la transaction
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          amount_cents: 2999, // $29.99
-          currency: 'usd',
-          status: 'succeeded',
-          stripe_payment_intent_id: token.id
-        });
-
-      if (transactionError) {
-        console.error('Erreur transaction:', transactionError);
-      }
-
-      toast({
-        title: "Paiement réussi !",
-        description: "Votre compte est maintenant Premium.",
+      // ✅ CORRECTION: URL du backend séparé
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          amount: 2999
+        }),
       });
 
-      navigate('/premium-success');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la création du paiement');
+      }
 
-    } catch (err) {
+      const { clientSecret, paymentIntentId } = await response.json();
+
+      // Confirmer le paiement avec Stripe
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+            billing_details: {
+              email: user.email,
+            },
+          },
+        }
+      );
+
+      if (confirmError) {
+        setError(confirmError.message || 'Erreur lors du paiement');
+        setLoading(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // ✅ Paiement réussi
+        toast({
+          title: "Paiement réussi !",
+          description: "Votre abonnement Premium a été activé.",
+        });
+
+        // Rediriger vers la page de succès
+        navigate('/premium-success');
+      }
+
+    } catch (err: any) {
       console.error('Erreur paiement:', err);
-      setError('Une erreur inattendue est survenue');
-      navigate('/premium-fail');
+      setError(err.message || 'Une erreur est survenue lors du paiement');
+      
+      toast({
+        title: "Erreur de paiement",
+        description: err.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto culture-card">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2">
-          <CreditCard className="w-5 h-5" />
-          Paiement sécurisé
+        <div className="mx-auto w-12 h-12 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center mb-4">
+          <Heart className="w-6 h-6 text-white" />
+        </div>
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+          Abonnement Premium
         </CardTitle>
+        <p className="text-gray-600">
+          Débloquez toutes les fonctionnalités d'Amora
+        </p>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informations de prix */}
-          <div className="p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-pink-500" />
-                <span className="font-medium">Plan Premium</span>
-              </div>
-              <span className="text-2xl font-bold text-purple-600">
-                {formatPrice('USD')}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Accès illimité à toutes les fonctionnalités
-            </p>
+
+      <CardContent className="space-y-6">
+        {/* Prix */}
+        <div className="text-center p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-lg border">
+          <div className="text-3xl font-bold text-gray-900">
+            {formatPrice(pricing.premium.monthly)}
+          </div>
+          <div className="text-sm text-gray-600">par mois</div>
+        </div>
+
+        {/* Fonctionnalités Premium */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-green-500" />
+            <span className="text-sm">Messages illimités</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-green-500" />
+            <span className="text-sm">Appels audio et vidéo</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-green-500" />
+            <span className="text-sm">Profil mis en avant</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-green-500" />
+            <span className="text-sm">Filtres avancés</span>
+          </div>
+        </div>
+
+        {/* Formulaire de paiement */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="p-4 border rounded-lg bg-white">
+            <CardElement options={CARD_ELEMENT_OPTIONS} />
           </div>
 
-          {/* Élément de carte Stripe */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Informations de carte</label>
-            <div className="p-3 border rounded-lg bg-white">
-              <CardElement options={CARD_ELEMENT_OPTIONS} />
-            </div>
-          </div>
-
-          {/* Sécurité */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Shield className="w-4 h-4" />
-            <span>Paiement sécurisé par Stripe</span>
-          </div>
-
-          {/* Erreur */}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {/* Bouton de paiement */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={!stripe || loading}
-            className="w-full btn-hero"
+            className="w-full bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700"
           >
             {loading ? (
               <>
@@ -179,11 +185,15 @@ export function StripeCardForm() {
             ) : (
               <>
                 <CreditCard className="w-4 h-4 mr-2" />
-                Payer {formatPrice('USD')}
+                Payer {formatPrice(pricing.premium.monthly)}
               </>
             )}
           </Button>
         </form>
+
+        <p className="text-xs text-gray-500 text-center">
+          Paiement sécurisé par Stripe. Annulation possible à tout moment.
+        </p>
       </CardContent>
     </Card>
   );

@@ -57,6 +57,7 @@ import { InteracManager } from '@/components/admin/InteracManager';
 import { StripeManager } from '@/components/admin/StripeManager';
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { MoneyTransferButton } from '@/components/admin/MoneyTransferButton';
+import { BankAccountSecurityMonitor } from '@/components/admin/BankAccountSecurityMonitor';
 
 interface AdminStats {
   totalUsers: number;
@@ -88,6 +89,7 @@ const AdminDashboard = () => {
   const [showAdminBankAccountManager, setShowAdminBankAccountManager] = useState(false);
   const [showInteracManager, setShowInteracManager] = useState(false);
   const [showStripeManager, setShowStripeManager] = useState(false);
+  const [showSecurityMonitor, setShowSecurityMonitor] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -874,6 +876,38 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Monitoring Sécurité Bancaire */}
+          <Card 
+            className="culture-card hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={() => setShowSecurityMonitor(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setShowSecurityMonitor(true);
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Accéder au monitoring de sécurité bancaire"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Shield className="w-5 h-5 text-red-600" />
+                Monitoring Sécurité Bancaire
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-4">
+                Surveiller les tentatives d'accès non autorisées aux comptes bancaires.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+              >
+                Gérer
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
@@ -912,6 +946,14 @@ const AdminDashboard = () => {
         open={showStripeManager}
         onClose={() => setShowStripeManager(false)}
       />
+
+      {showSecurityMonitor && (
+        <Dialog open={showSecurityMonitor} onOpenChange={setShowSecurityMonitor}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <BankAccountSecurityMonitor />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

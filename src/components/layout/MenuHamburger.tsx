@@ -34,6 +34,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface MenuItem {
   id: string;
@@ -51,6 +53,12 @@ const MenuHamburger = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  
+  // ✅ NOUVEAU: Hook pour les messages non lus
+  const { unreadCount: unreadMessages } = useUnreadMessages();
+
+  // ✅ AJOUT: Hook pour les notifications
+  const { unreadCount: unreadNotifications } = useNotifications();
 
   // Menu items
   const menuItems: MenuItem[] = [
@@ -65,7 +73,7 @@ const MenuHamburger = () => {
       label: 'Messages',
       icon: MessageCircle,
       href: '/messages',
-      badge: 3 // TODO: Récupérer depuis l'API
+      badge: unreadMessages || undefined // ✅ Déjà corrigé
     },
     {
       id: 'matching',
@@ -97,7 +105,7 @@ const MenuHamburger = () => {
       label: 'Notifications',
       icon: Bell,
       href: '/notifications',
-      badge: 5 // TODO: Récupérer depuis l'API
+      badge: unreadNotifications || undefined // ✅ CORRECTION: Compteur dynamique
     },
     {
       id: 'premium',
