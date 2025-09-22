@@ -240,17 +240,70 @@ const AdminUsers = () => {
       }
 
       if (action === 'delete') {
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
+        console.log('🗑️ Tentative de suppression utilisateur:', userId);
         
-        if (error) throw error;
+        // ✅ NOUVELLE APPROCHE: Suppression simple mais avec vérification
+        let deletionSuccessful = false;
         
-        toast({
-          title: "Succès",
-          description: "Utilisateur supprimé avec succès",
-        });
+        try {
+          // Tentative de suppression directe du profil
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
+          
+          if (profileError) {
+            console.error('❌ Erreur suppression profil:', profileError);
+            
+            // ✅ FALLBACK: Si suppression échoue, désactiver l'utilisateur
+            console.log('🔄 Suppression échouée, désactivation de l\'utilisateur...');
+            
+            const { error: deactivateError } = await supabase
+              .from('profiles')
+              .update({ 
+                is_active: false,
+                role: 'deleted',
+                full_name: '[UTILISATEUR SUPPRIMÉ]',
+                bio: null,
+                avatar_url: null
+              })
+              .eq('id', userId);
+            
+            if (deactivateError) {
+              throw new Error(`Impossible de supprimer ou désactiver l'utilisateur: ${profileError.message}`);
+            }
+            
+            toast({
+              title: "Utilisateur désactivé",
+              description: "L'utilisateur a été désactivé (suppression complète non autorisée)",
+              variant: "default",
+            });
+            
+            deletionSuccessful = true;
+          } else {
+            console.log('✅ Profil supprimé avec succès');
+            
+            toast({
+              title: "Succès",
+              description: "Utilisateur supprimé avec succès",
+            });
+            
+            deletionSuccessful = true;
+          }
+          
+          // ✅ MISE À JOUR IMMÉDIATE DE LA LISTE LOCALE
+          if (deletionSuccessful) {
+            setUsers(prevUsers => {
+              const newUsers = prevUsers.filter(user => user.id !== userId);
+              console.log('🔄 Liste mise à jour:', prevUsers.length, '→', newUsers.length, 'utilisateurs');
+              return newUsers;
+            });
+          }
+          
+        } catch (deleteError) {
+          console.error('❌ Erreur lors de la suppression:', deleteError);
+          throw deleteError;
+        }
       } else {
         const updateData: any = { plan: action };
         
@@ -270,9 +323,21 @@ const AdminUsers = () => {
           title: "Succès",
           description: `Utilisateur mis à jour: ${action}`,
         });
+        
+        // ✅ MISE À JOUR IMMÉDIATE DE LA LISTE POUR LES MODIFICATIONS
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? { ...user, plan: action, ...(action === 'admin' ? { role: 'admin' } : {}) }
+              : user
+          )
+        );
       }
 
-      loadUsers();
+      // ✅ RECHARGEMENT OPTIONNEL EN ARRIÈRE-PLAN (seulement pour les modifications)
+      if (action !== 'delete') {
+        setTimeout(() => loadUsers(), 1000);
+      }
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
@@ -349,6 +414,20 @@ const AdminUsers = () => {
             </div>
             
             <div className="flex gap-2">
+              {/* ✅ BOUTON DE RECHARGEMENT */}
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  console.log('🔄 Rechargement manuel de la liste...');
+                  loadUsers();
+                }}
+                disabled={loading}
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </Button>
+              
               {/* Bouton pour créer un nouvel admin (création de compte) */}
               <Dialog open={showCreateAdminDialog} onOpenChange={setShowCreateAdminDialog}>
                 <DialogTrigger asChild>

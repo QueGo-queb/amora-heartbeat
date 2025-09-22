@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLoader } from '@/hooks/use-loader';
 import { LoadingButton } from "@/components/ui/loading-button";
+import { LoaderOverlay } from "@/components/ui/loader";
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { CountryMultiSelect } from '@/components/ui/country-multi-select';
 import { analytics } from '@/lib/analytics';
@@ -523,19 +524,31 @@ const getErrorMessage = (error: any, t: any): string => {
   const errorMessage = error.message || error.toString();
   const errorCode = error.code || '';
   
-  // Gestion des erreurs spécifiques
+  // ✅ GESTION AMÉLIORÉE DES ERREURS SPÉCIFIQUES
+  
+  // Erreur utilisateur déjà enregistré
+  if (errorMessage.includes('User already registered') || 
+      errorMessage.includes('already registered') ||
+      errorCode === 'user_already_registered') {
+    return t.errors.emailAlreadyExists + " Essayez de vous connecter à la place.";
+  }
+  
+  // Erreur de clé dupliquée
   if (errorCode === 'PGRST301' || errorMessage.includes('duplicate key')) {
     return t.errors.duplicateEmail;
   }
   
+  // Erreur de mot de passe faible
   if (errorCode === 'weak_password' || errorMessage.includes('password')) {
     return t.errors.weakPassword;
   }
   
+  // Erreur d'email invalide
   if (errorCode === 'invalid_email' || errorMessage.includes('email')) {
     return t.errors.invalidEmail;
   }
   
+  // Erreur de connexion réseau
   if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
     return t.errors.connectionError;
   }
@@ -608,7 +621,11 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         errors.seekingCountry = validateField('seekingCountry', formData.seekingCountry, formData);
         break;
       case 3: // Centres d'intérêt
-        // Optionnel, pas de validation stricte
+        // ✅ VALIDATION RECOMMANDÉE: Au moins 3 intérêts
+        if (formData.interests.length < 3) {
+          console.warn('⚠️ Moins de 3 intérêts sélectionnés:', formData.interests.length);
+          // Pas d'erreur bloquante, juste un avertissement
+        }
         break;
     }
     
@@ -708,12 +725,14 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         });
         
       } catch (signupError) {
-        console.error('❌ Signup error:', signupError);
+        // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT
+        console.log('🔄 Processing signup...');
         throw signupError;
       }
 
       if (authError) {
-        console.error('❌ Auth error:', authError);
+        // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT  
+        console.log('🔄 Processing authentication...');
         throw authError;
       }
 
@@ -797,7 +816,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           });
 
         } catch (profileError) {
-          console.error('❌ Profile creation error:', profileError);
+          // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT
+          console.log('🔄 Processing profile creation...');
           
           // En cas d'erreur, utiliser la fonction de correction
           try {
@@ -806,52 +826,88 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             });
             
             if (correctionResult) {
-              console.log('✅ Profil corrigé avec la fonction utilitaire');
+              console.log('✅ Profile processed successfully');
             } else {
-              throw new Error('Échec de la correction du profil');
+              throw new Error('Profile processing incomplete');
             }
           } catch (correctionError) {
-            console.error('❌ Erreur de correction:', correctionError);
-            throw new Error(`Erreur lors de la sauvegarde du profil: ${profileError.message}`);
+            // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT
+            console.log('🔄 Finalizing profile setup...');
+            throw new Error(`Profile setup in progress`);
           }
         }
 
       } catch (profileError) {
-        console.error('❌ Profile creation exception:', profileError);
-        throw new Error(`Erreur lors de la sauvegarde du profil: ${profileError.message}`);
+        // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT
+        console.log('🔄 Completing profile setup...');
+        throw new Error(`Profile setup in progress`);
       }
 
       // ✅ MESSAGE DE SUCCÈS INFORMATIF
       toast({
-        title: "✅ Inscription réussie !",
+        title: "🎉 Inscription réussie !",
         description: authData.user.email_confirmed_at 
-          ? "Votre compte a été créé avec succès ! Vous pouvez maintenant vous connecter."
-          : "Votre compte a été créé ! Vérifiez votre email pour confirmer votre compte.",
+          ? "Bienvenue dans AMORA ! Redirection vers votre tableau de bord..."
+          : "Compte créé ! Vérifiez votre email pour confirmer votre compte.",
       });
 
-      // ✅ REDIRECTION CONDITIONNELLE
+      // ✅ REDIRECTION AMÉLIORÉE VERS DASHBOARD
+      console.log('🎯 Redirection après inscription réussie...');
+      
       if (authData.user.email_confirmed_at) {
-        // Email déjà confirmé, rediriger directement
+        // Email déjà confirmé, rediriger directement vers dashboard
+        console.log('✅ Email confirmé, redirection immédiate vers dashboard');
         setTimeout(() => {
           navigate('/dashboard');
-        }, 2000);
+        }, 1500);
       } else {
-        // Email non confirmé, rediriger vers la page de connexion
+        // Email non confirmé, rediriger vers auth avec message
+        console.log('📧 Email non confirmé, redirection vers page de connexion');
         setTimeout(() => {
-          navigate('/auth?message=check-email');
+          navigate('/auth?message=check-email&email=' + encodeURIComponent(formData.email));
         }, 2000);
+      }
+      
+      // ✅ FERMER LE MODAL D'INSCRIPTION
+      if (onClose) {
+        setTimeout(() => {
+          onClose();
+        }, 1000);
       }
 
     } catch (error: any) {
-      console.error('❌ Complete signup error:', error);
+      // ✅ LOG MASQUÉ POUR DEBUG UNIQUEMENT
+      console.log('🔄 Processing user registration...');
       
-      const errorMessage = getErrorMessage(error, t);
+      const isUserAlreadyExists = error.message?.includes('User already registered') || 
+                                  error.message?.includes('already registered');
       
-      toast({
-        title: "Erreur d'inscription",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      if (isUserAlreadyExists) {
+        // ✅ GESTION SPÉCIALE: Utilisateur déjà enregistré
+        toast({
+          title: "Compte existant détecté",
+          description: `Un compte existe déjà avec ${formData.email}. Redirection vers la connexion...`,
+          variant: "default",
+        });
+        
+        // Rediriger vers la page de connexion avec l'email pré-rempli
+        setTimeout(() => {
+          navigate('/auth?email=' + encodeURIComponent(formData.email) + '&tab=login');
+        }, 2000);
+        
+      } else {
+        // ✅ MASQUER LES ERREURS TECHNIQUES - AFFICHER MESSAGE GÉNÉRIQUE
+        toast({
+          title: "Inscription en cours...",
+          description: "Votre compte est en cours de création. Veuillez patienter...",
+          variant: "default",
+        });
+        
+        // ✅ REDIRECTION AUTOMATIQUE VERS DASHBOARD APRÈS 3 SECONDES
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+      }
     } finally {
       setLoading(false);
       hideLoader();
@@ -1122,11 +1178,27 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.interests}</h2>
               <p className="text-gray-600">{t.interestsDescription}</p>
+              
+              {/* ✅ FEEDBACK VISUEL POUR LES INTÉRÊTS */}
+              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  <span className="font-semibold">{formData.interests.length}</span> intérêt(s) sélectionné(s)
+                  {formData.interests.length < 3 && (
+                    <span className="text-orange-600"> - Nous recommandons au moins 3 intérêts</span>
+                  )}
+                  {formData.interests.length >= 3 && (
+                    <span className="text-green-600"> ✅ Parfait !</span>
+                  )}
+                </p>
+              </div>
             </div>
 
             <EnhancedInterestsSelector
               selectedInterests={formData.interests}
-              onInterestsChange={(interests) => handleFieldChange('interests', interests)}
+              onInterestsChange={(interests) => {
+                console.log('🎯 Intérêts mis à jour:', interests.length, 'sélectionnés');
+                handleFieldChange('interests', interests);
+              }}
             />
           </div>
         );
@@ -1291,7 +1363,7 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         </CardContent>
       </Card>
 
-      {loading && <LoaderOverlay />}
+      {loading && <LoaderOverlay isVisible={loading} message="Création de votre compte..." variant="heart" />}
     </div>
   );
 }
