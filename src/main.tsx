@@ -2,8 +2,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Enregistrement du Service Worker avec mise à jour automatique
-if ('serviceWorker' in navigator) {
+// ✅ CORRECTION LOVABLE: Enregistrement conditionnel du Service Worker
+if ('serviceWorker' in navigator && !window.location.hostname.includes('lovableproject.com')) {
   window.addEventListener('load', async () => {
     try {
       // Désinscrire tous les anciens service workers
@@ -16,11 +16,19 @@ if ('serviceWorker' in navigator) {
       // Attendre un peu pour que la désinscription soit effective
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Enregistrer le nouveau service worker
+      // ✅ CORRECTION LOVABLE: Enregistrement plus tolérant
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
+        scope: './',
         updateViaCache: 'none' // ⚠️ IMPORTANT : Force la vérification de mise à jour
+      }).catch(error => {
+        console.warn('⚠️ Service Worker non disponible dans cet environnement:', error);
+        return null;
       });
+      
+      if (!registration) {
+        console.log('📱 Application fonctionnant sans Service Worker');
+        return;
+      }
       
       console.log('✅ Service Worker enregistré avec succès:', registration.scope);
       
@@ -68,6 +76,51 @@ if ('serviceWorker' in navigator) {
       console.error('❌ Erreur enregistrement Service Worker:', error);
     }
   });
+} else {
+  console.log('🌐 Environnement Lovable détecté - Service Worker désactivé');
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// ✅ CORRECTION LOVABLE: Gestion d'erreur pour le rendu
+try {
+  const rootElement = document.getElementById("root");
+  if (!rootElement) {
+    throw new Error("Élément root non trouvé");
+  }
+  
+  createRoot(rootElement).render(<App />);
+  console.log('✅ Application Amora chargée avec succès');
+} catch (error) {
+  console.error('❌ Erreur lors du chargement de l\'application:', error);
+  
+  // Fallback d'affichage d'erreur
+  document.body.innerHTML = `
+    <div style="
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      height: 100vh; 
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #8B1538 0%, #A91B5C 100%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    ">
+      <h1 style="font-size: 2rem; margin-bottom: 1rem;">🚀 AMORA</h1>
+      <p style="font-size: 1.2rem; margin-bottom: 2rem;">Chargement en cours...</p>
+      <p style="font-size: 0.9rem; opacity: 0.8;">Si cette page persiste, rechargez la page</p>
+      <button onclick="window.location.reload()" style="
+        background: white; 
+        color: #8B1538; 
+        border: none; 
+        padding: 12px 24px; 
+        border-radius: 8px; 
+        font-size: 1rem; 
+        cursor: pointer; 
+        margin-top: 1rem;
+      ">
+        Recharger
+      </button>
+    </div>
+  `;
+}

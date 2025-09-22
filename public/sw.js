@@ -4,15 +4,15 @@ const STATIC_CACHE = `amora-static-${VERSION}`;
 const DYNAMIC_CACHE = `amora-dynamic-${VERSION}`;
 const IMAGE_CACHE = `amora-images-${VERSION}`;
 
-// Ressources essentielles à mettre en cache immédiatement
+// ✅ CORRECTION LOVABLE: Ressources adaptées à l'environnement
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/offline.html'
+  './',
+  './index.html',
+  './favicon.ico',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
+  './offline.html'
+  // ✅ Retirer manifest.json qui cause des problèmes CORS
 ];
 
 // Installation du Service Worker - Mise à jour automatique
@@ -91,15 +91,25 @@ self.addEventListener('fetch', (event) => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   
+  // ✅ CORRECTION LOVABLE: Ignorer les requêtes auth-bridge et problématiques
+  if (url.href.includes('auth-bridge') || 
+      url.href.includes('lovable.dev') ||
+      url.href.includes('manifest.json')) {
+    console.log('🚫 Requête ignorée par SW:', url.href);
+    return fetch(request);
+  }
+  
   try {
     // 1. Essayer d'abord le réseau pour les mises à jour immédiates
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      // 2. Mettre à jour le cache en arrière-plan
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
-      console.log('💾 Cache mis à jour:', request.url);
+      // 2. Mettre à jour le cache en arrière-plan (seulement pour les ressources valides)
+      if (!url.href.includes('lovableproject.com')) {
+        const cache = await caches.open(STATIC_CACHE);
+        cache.put(request, networkResponse.clone());
+        console.log('💾 Cache mis à jour:', request.url);
+      }
       
       return networkResponse;
     }
