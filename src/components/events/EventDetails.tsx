@@ -394,7 +394,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({ event, onClose }) =>
               {event.organizer ? (
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={event.organizer.avatar_url} />
+                    <AvatarImage src={event.organizer.avatar_url ?? ''} />
                     <AvatarFallback>
                       {event.organizer.full_name?.[0] || event.organizer.email[0].toUpperCase()}
                     </AvatarFallback>
