@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AMORA</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #8B1538 0%, #A91B5C 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 500px;
+        }
+        .btn {
+            background: white;
+            color: #8B1538;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AMORA - Test de Fonctionnement</h1>
+        <p>Si vous voyez cette page, l'affichage fonctionne !</p>
+        
+        <div style="margin: 20px 0;">
+            <button class="btn" onclick="testSupabase()">Tester Supabase</button>
+            <button class="btn" onclick="testApp()">Charger l'App</button>
+        </div>
+        
+        <div id="status" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            Status: En attente de test...
+        </div>
+        
+        <div id="console-output" style="margin-top: 20px; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+            Console de debug...
+        </div>
+    </div>
+
+    <script>
+        // Rediriger les console.log vers notre affichage
+        const originalLog = console.log;
+        const originalError = console.error;
+        const outputDiv = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'log') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : '#4ecdc4';
+            outputDiv.innerHTML += `<div style="color: ${color};">[${time}] ${message}</div>`;
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        function updateStatus(message, success = true) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `Status: ${message}`;
+            statusDiv.style.background = success ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)';
+        }
+        
+        async function testSupabase() {
+            updateStatus('Test Supabase en cours...');
+            console.log('🔧 Test de connexion Supabase...');
+            
+            try {
+                // Test avec vos vraies clés
+                const supabaseUrl = 'https://szxbxvwknhrtxmfyficn.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6eGJ4dndrbmhydHhtZnlmaWNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjYxNzksImV4cCI6MjA3MjE0MjE3OX0.-h8eeR3STS4ZqdjoobIcvYAVv07_SIomGVKKWxUTHSA';
+                
+                const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    }
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Supabase connecté avec succès !');
+                    updateStatus('✅ Supabase fonctionne !', true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Erreur Supabase:', error);
+                updateStatus('❌ Erreur Supabase: ' + error.message, false);
+            }
+        }
+        
+        function testApp() {
+            updateStatus('Chargement de l\'application...');
+            console.log('🚀 Tentative de chargement de l\'application principale...');
+            
+            // Rediriger vers l'app principale
+            window.location.href = './index.html';
+        }
+        
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            console.log('📱 Page de test chargée avec succès');
+            updateStatus('Page de test chargée - Prêt pour les tests');
+        });
+    </script>
+</body>
+</html>
