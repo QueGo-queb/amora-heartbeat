@@ -6,9 +6,15 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: '/', // ✅ CORRIGÉ: Base path flexible selon l'environnement
   server: {
     host: "::",
     port: 8080,
+  },
+  
+  // ✅ AJOUT: Optimisations pour la production
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.3'),
   },
   plugins: [
     react(),
@@ -28,26 +34,12 @@ export default defineConfig(({ mode }) => ({
     }
   },
   
-  // ✅ OPTIMISÉ: Suppression automatique des console.log en production
-  define: {
-    ...(mode === 'production' && {
-      'console.log': '(() => {})',
-      'console.debug': '(() => {})',
-      'console.warn': '(() => {})',
-      'console.info': '(() => {})',
-      'console.trace': '(() => {})',
-      'console.table': '(() => {})',
-      'console.group': '(() => {})',
-      'console.groupEnd': '(() => {})',
-      'console.time': '(() => {})',
-      'console.timeEnd': '(() => {})',
-      'console.count': '(() => {})',
-      'console.clear': '(() => {})'
-    }),
-  },
   
   build: {
     minify: 'terser',
+    sourcemap: mode === 'production' ? false : true, // ✅ OPTIMISÉ: Pas de sourcemap en prod
+    target: 'es2015', // ✅ OPTIMISÉ: Support navigateurs modernes
+    chunkSizeWarningLimit: 1000, // ✅ OPTIMISÉ: Limite de taille de chunk
     rollupOptions: {
       output: {
         manualChunks: {
@@ -59,6 +51,10 @@ export default defineConfig(({ mode }) => ({
           charts: ['recharts'],
           animations: ['framer-motion', 'react-spring'],
         },
+        // ✅ OPTIMISÉ: Noms de fichiers avec hash pour le cache
+        entryFileNames: mode === 'production' ? 'assets/[name].[hash].js' : '[name].js',
+        chunkFileNames: mode === 'production' ? 'assets/[name].[hash].js' : '[name].js',
+        assetFileNames: mode === 'production' ? 'assets/[name].[hash].[ext]' : '[name].[ext]',
       },
     },
     terserOptions: {
@@ -66,6 +62,9 @@ export default defineConfig(({ mode }) => ({
         drop_console: mode === 'production',
         drop_debugger: mode === 'production',
         pure_funcs: mode === 'production' ? ['console.log', 'console.debug', 'console.warn', 'console.info'] : [],
+      },
+      mangle: {
+        safari10: true, // ✅ OPTIMISÉ: Support Safari 10+
       },
     },
   },

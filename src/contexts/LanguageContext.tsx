@@ -78,19 +78,26 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Ajouter un useEffect pour appliquer la langue sauvegardée au chargement
+  // ✅ CORRIGÉ: Éviter la boucle infinie Google Translate
   useEffect(() => {
     const savedLanguage = localStorage.getItem('amora-language');
-    if (savedLanguage && savedLanguage !== 'fr') {
+    if (savedLanguage && savedLanguage !== 'fr' && isGoogleTranslateReady) {
       console.log('🔄 Applying saved language:', savedLanguage);
-      // Attendre que la page soit chargée
-      setTimeout(() => {
-        if (window.changeLanguage) {
-          window.changeLanguage(savedLanguage);
+      // Une seule tentative avec timeout plus long
+      const timeoutId = setTimeout(() => {
+        if (window.changeLanguage && typeof window.changeLanguage === 'function') {
+          try {
+            window.changeLanguage(savedLanguage);
+          } catch (error) {
+            console.warn('⚠️ Erreur Google Translate, utilisation des traductions internes');
+            setSelectedLanguage(savedLanguage);
+          }
         }
-      }, 2000);
+      }, 3000);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, []);
+  }, [isGoogleTranslateReady]); // ✅ Dépendre de l'état Google Translate
 
   return (
     <LanguageContext.Provider value={{ 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -18,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback,
 }) => {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminCheck();
   const location = useLocation();
 
   // Composant de chargement
@@ -65,8 +67,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   };
 
-  // Attendre le chargement
-  if (authLoading) {
+  // Attendre le chargement de l'auth et de la vérification admin
+  if (authLoading || (requireAdmin && adminLoading)) {
     return <LoadingComponent />;
   }
 
@@ -75,20 +77,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // **🚨 VÉRIFICATION ADMIN SIMPLIFIÉE ET ROBUSTE**
-  if (requireAdmin) {
-    // Vérification directe par email (méthode la plus fiable)
-    const isAdminByEmail = user?.email === 'clodenerc@yahoo.fr';
-    
-    console.log('🔍 Vérification admin:');
-    console.log('- Email utilisateur:', user?.email);
-    console.log('- Est admin:', isAdminByEmail);
+  // ✅ SÉCURITÉ CORRIGÉE: Vérification admin sécurisée via useAdminCheck
+  if (requireAdmin && !isAdmin) {
+    console.log('❌ Accès admin refusé pour:', user?.email);
+    return <AccessDeniedComponent />;
+  }
 
-    if (!isAdminByEmail) {
-      console.log('❌ Accès admin refusé pour:', user?.email);
-      return <AccessDeniedComponent />;
-    }
-
+  if (requireAdmin && isAdmin) {
     console.log('✅ Accès admin autorisé pour:', user?.email);
   }
 

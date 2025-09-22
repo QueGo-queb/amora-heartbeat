@@ -67,8 +67,14 @@
       }
       
       // Fonction globale améliorée pour changer de langue
-      window.changeLanguage = function(langCode) {
-        console.log('🌐 Attempting to change language to:', langCode);
+      window.changeLanguage = function(langCode, attemptCount = 0) {
+        // ✅ SÉCURITÉ: Limiter les tentatives pour éviter les boucles infinies
+        if (attemptCount > 5) {
+          console.warn('🛑 Trop de tentatives Google Translate, arrêt');
+          return;
+        }
+        
+        console.log('🌐 Attempting to change language to:', langCode, 'attempt:', attemptCount);
         
         const googleLangCodes = {
           'fr': 'fr',
@@ -95,18 +101,22 @@
         if (window.google && window.google.translate && window.google.translate.TranslateElement) {
           console.log('✅ Using Google Translate API directly');
           try {
-            // Forcer la traduction via l'API
-            window.google.translate.translatePage(null, googleLang);
+            // ✅ CORRIGÉ: Utiliser la méthode correcte
+            const translateElement = new window.google.translate.TranslateElement({
+              pageLanguage: 'fr',
+              includedLanguages: 'fr,en,es,pt,ht',
+              layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+            });
             return;
           } catch (error) {
             console.error('❌ Google Translate API error:', error);
           }
         }
         
-        // Méthode 3: Attendre que Google Translate soit prêt
+        // Méthode 3: Attendre que Google Translate soit prêt (avec limite)
         console.log('⏳ Google Translate not ready, waiting...');
         setTimeout(() => {
-          window.changeLanguage(langCode);
+          window.changeLanguage(langCode, attemptCount + 1);
         }, 1000);
       };
     </script>

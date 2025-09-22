@@ -8,7 +8,7 @@ if ('serviceWorker' in navigator) {
     try {
       // Désinscrire tous les anciens service workers
       const registrations = await navigator.serviceWorker.getRegistrations();
-      for (let registration of registrations) {
+      for (const registration of registrations) {
         console.log('🗑️ Désinscription ancien SW:', registration.scope);
         await registration.unregister();
       }

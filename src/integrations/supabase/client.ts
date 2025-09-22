@@ -2,16 +2,21 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+// ✅ CORRECTION TEMPORAIRE: Valeurs directes pour le développement
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://szxbxvwknhrtxmfyficn.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6eGJ4dndrbmhydHhtZnlmaWNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjYxNzksImV4cCI6MjA3MjE0MjE3OX0.-h8eeR3STS4ZqdjoobIcvYAVv07_SIomGVKKWxUTHSA';
 
-// ✅ CORRECTION: Ne pas throw si les variables manquent
+// ✅ CORRECTION: Vérification avec les nouvelles valeurs par défaut
 if (!SUPABASE_URL || SUPABASE_URL === 'https://placeholder.supabase.co') {
   console.warn('⚠️ VITE_SUPABASE_URL manquante - mode démo activé');
+} else {
+  console.log('✅ Supabase URL configurée:', SUPABASE_URL);
 }
 
 if (!SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY === 'placeholder-key') {
   console.warn('⚠️ VITE_SUPABASE_ANON_KEY manquante - mode démo activé');
+} else {
+  console.log('✅ Supabase ANON KEY configurée');
 }
 
 // Import the supabase client like this:

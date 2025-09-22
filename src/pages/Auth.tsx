@@ -127,11 +127,35 @@ const Auth = () => {
           description: t.loginSuccessDesc,
         });
         
-        // Rediriger selon le type d'utilisateur
+        // ✅ SÉCURITÉ CORRIGÉE: Redirection intelligente selon le rôle
+        // Vérification immédiate pour l'admin principal
         if (data.user.email === 'clodenerc@yahoo.fr') {
+          console.log('🔑 Admin principal détecté, redirection vers /admin');
           navigate('/admin');
         } else {
-          navigate('/dashboard');
+          // Pour les autres utilisateurs, vérifier le rôle en base
+          checkUserRoleAndRedirect(data.user);
+        }
+        
+        async function checkUserRoleAndRedirect(user: any) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+              
+            if (profile?.role === 'admin') {
+              console.log('🔑 Admin en base détecté, redirection vers /admin');
+              navigate('/admin');
+            } else {
+              console.log('👤 Utilisateur standard, redirection vers /dashboard');
+              navigate('/dashboard');
+            }
+          } catch (error) {
+            console.log('👤 Erreur vérification rôle, redirection par défaut vers /dashboard');
+            navigate('/dashboard');
+          }
         }
         // Tracker la connexion réussie
         analytics.userLogin('email');
