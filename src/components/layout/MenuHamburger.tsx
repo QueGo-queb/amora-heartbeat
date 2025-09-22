@@ -200,14 +200,15 @@ const MenuHamburger = () => {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
-                  </div>          </div>        </div>
+              </div>
               <span>AMORA</span>
-                </div>          </div>        </div>
+            </div>
           </SheetTitle>
         </SheetHeader>
 
-        <div className=\"flex flex-col h-full\">
-          {/*  ZONE SCROLLABLE AVEC PADDING BOTTOM POUR USER INFO */}          <div className=\"flex-1 overflow-y-auto p-6 pb-24\">            {/* Menu items */}
+        <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto p-6 pb-24">
+          {/* Menu items */}
           <div className="space-y-2">
             {filteredItems.map((item) => (
               <Button
@@ -236,13 +237,13 @@ const MenuHamburger = () => {
                           Admin
                         </Badge>
                       )}
-                        </div>          </div>        </div>
-                      </div>          </div>        </div>
+                    </div>
+                  </div>
                   <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                    </div>          </div>        </div>
+                </div>
               </Button>
             ))}
-              </div>          </div>        </div>
+          </div>
 
           {/* ✅ BOUTON DE DÉCONNEXION MOBILE OPTIMISÉ */}
           <div className="mt-8 pt-6 border-t border-red-100">
@@ -254,15 +255,15 @@ const MenuHamburger = () => {
               <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
               <span className="font-medium">Se déconnecter</span>
             </Button>
-              </div>          </div>        </div>
-            </div>          </div>        </div>
+          </div>
+        </div>
 
         {/* User info */}
-        <div className=\"flex-shrink-0 p-4 border-t bg-gray-50\">
+        <div className="flex-shrink-0 p-4 border-t bg-gray-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center">
               <User className="w-5 h-5 text-white" />
-                </div>          </div>        </div>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {user?.user_metadata?.full_name || user?.email}
@@ -270,9 +271,9 @@ const MenuHamburger = () => {
               <p className="text-xs text-gray-500 truncate">
                 {user?.email}
               </p>
-                </div>          </div>        </div>
-              </div>          </div>        </div>
-            </div>          </div>        </div>
+            </div>
+          </div>
+        </div>
       </SheetContent>
     </Sheet>
   );
