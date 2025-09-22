@@ -54,6 +54,7 @@ interface MenuItem {
 const MenuHamburger = () => {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -158,16 +159,40 @@ const MenuHamburger = () => {
   });
 
   const handleLogout = async () => {
+    // ✅ UX: Confirmation avant déconnexion
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir vous déconnecter ?");
+    if (!confirmed) return;
+  
     try {
+      // ✅ UX: État de chargement
+      setLogoutLoading(true);
+      
       await supabase.auth.signOut();
-      navigate('/login');
+      
+      // ✅ UX: Fermer le menu
+      setOpen(false);
+      
+      // ✅ UX: Toast de succès
+      toast({
+        title: "✅ Déconnexion réussie",
+        description: "À bientôt sur AMORA !",
+        variant: "default",
+      });
+      
+      // ✅ UX: Délai avant redirection pour lire le message
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+      
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de se déconnecter",
+        title: "❌ Erreur",
+        description: "Impossible de se déconnecter. Veuillez réessayer.",
         variant: "destructive"
       });
+    } finally {
+      setLogoutLoading(false);
     }
   };
 
@@ -247,14 +272,24 @@ const MenuHamburger = () => {
 
           {/* ✅ BOUTON DE DÉCONNEXION MOBILE OPTIMISÉ */}
           <div className="mt-8 pt-6 border-t border-red-100">
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg border border-red-200 hover:border-red-300"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
-              <span className="font-medium">Se déconnecter</span>
-            </Button>
+          <Button
+           variant="ghost"
+           className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg border border-red-200 hover:border-red-300 disabled:opacity-50"
+           onClick={handleLogout}
+           disabled={logoutLoading}
+        >
+          {logoutLoading ? (
+            <>
+             <div className="w-5 h-5 mr-3 flex-shrink-0 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+             <span className="font-medium">Déconnexion...</span>
+           </>
+         ) : (
+           <>
+            <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+            <span className="font-medium">Se déconnecter</span>
+          </>
+        )}
+          </Button>
           </div>
         </div>
 
