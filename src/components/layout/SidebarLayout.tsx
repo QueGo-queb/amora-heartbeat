@@ -337,10 +337,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           <div className="pt-2 lg:pt-4 border-t border-gray-200">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-2 lg:gap-3 h-10 lg:h-12 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm lg:text-base"
+              className="w-full justify-start gap-2 lg:gap-3 h-12 lg:h-12 text-red-600 hover:bg-red-50 hover:text-red-700 text-base lg:text-base font-medium border border-red-200 hover:border-red-300 rounded-lg transition-all duration-200"
               onClick={handleLogout}
             >
-              <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
+              <LogOut className="w-5 h-5 lg:w-5 lg:h-5 flex-shrink-0" />
               <span>{t.logout}</span>
             </Button>
           </div>

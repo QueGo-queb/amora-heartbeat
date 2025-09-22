@@ -18,12 +18,22 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   const [isGoogleTranslateReady, setIsGoogleTranslateReady] = useState(false);
 
-  // ✅ VÉRIFIER SI GOOGLE TRANSLATE EST PRÊT
+  // ✅ VÉRIFIER SI GOOGLE TRANSLATE EST PRÊT - ANTI-BOUCLE INFINIE
   useEffect(() => {
+    let attemptCount = 0;
+    const maxAttempts = 10; // ✅ LIMITE STRICTE
+    
     const checkGoogleTranslate = () => {
+      attemptCount++;
+      
+      if (attemptCount > maxAttempts) {
+        console.warn('🛑 Google Translate check timeout après', maxAttempts, 'tentatives');
+        return;
+      }
+      
       if (window.google && window.google.translate) {
         setIsGoogleTranslateReady(true);
-        console.log('✅ Google Translate ready');
+        console.log('✅ Google Translate ready après', attemptCount, 'tentatives');
       } else {
         setTimeout(checkGoogleTranslate, 500);
       }
@@ -31,7 +41,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Vérifier immédiatement et après 2 secondes
     checkGoogleTranslate();
-    setTimeout(checkGoogleTranslate, 2000);
+    const timeoutId = setTimeout(checkGoogleTranslate, 2000);
+    
+    // ✅ CLEANUP IMPORTANT
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // ✅ FONCTION DE CHANGEMENT DE LANGUE AVEC GOOGLE TRANSLATE
@@ -66,15 +81,32 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
         
         if (!hasTranslated && language !== 'fr') {
-          console.log('⚠️ Translation not detected, forcing page reload...');
-          window.location.reload();
+          // ✅ SÉCURITÉ: Éviter les reloads en boucle
+          const reloadCount = parseInt(sessionStorage.getItem('amora-reload-count') || '0');
+          if (reloadCount < 2) { // ✅ Maximum 2 reloads
+            console.log('⚠️ Translation not detected, forcing page reload... (tentative', reloadCount + 1, '/2)');
+            sessionStorage.setItem('amora-reload-count', String(reloadCount + 1));
+            window.location.reload();
+          } else {
+            console.warn('🛑 Trop de reloads, arrêt de la traduction automatique');
+            sessionStorage.removeItem('amora-reload-count');
+          }
         } else {
           console.log('✅ Translation successful!');
+          sessionStorage.removeItem('amora-reload-count'); // ✅ Reset counter sur succès
         }
       }, 3000);
     } else {
-      console.log('⚠️ Google Translate not available, reloading page...');
-      window.location.reload();
+      // ✅ SÉCURITÉ: Éviter les reloads en boucle même en fallback
+      const reloadCount = parseInt(sessionStorage.getItem('amora-reload-count') || '0');
+      if (reloadCount < 1) { // ✅ Une seule tentative pour le fallback
+        console.log('⚠️ Google Translate not available, reloading page...');
+        sessionStorage.setItem('amora-reload-count', '1');
+        window.location.reload();
+      } else {
+        console.warn('🛑 Google Translate indisponible, utilisation des traductions internes');
+        sessionStorage.removeItem('amora-reload-count');
+      }
     }
   };
 

@@ -920,9 +920,9 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.steps.personal}</h2>
-              <p className="text-gray-600">Commençons par vos informations de base</p>
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{t.steps.personal}</h2>
+              <p className="text-sm sm:text-base text-gray-600">Commençons par vos informations de base</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -937,7 +937,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                   placeholder={t.fullNamePlaceholder}
                   value={formData.fullName}
                   onChange={(e) => handleFieldChange('fullName', e.target.value)}
-                  className={validationErrors.fullName ? 'border-red-500' : ''}
+                  className={`h-12 sm:h-10 text-base sm:text-sm ${validationErrors.fullName ? 'border-red-500' : ''}`}
+                  autoComplete="name"
                 />
                 {validationErrors.fullName && (
                   <p className="text-sm text-red-500">{t.validation[validationErrors.fullName as keyof typeof t.validation]}</p>
@@ -955,7 +956,9 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                   placeholder={t.emailPlaceholder}
                   value={formData.email}
                   onChange={(e) => handleFieldChange('email', e.target.value)}
-                  className={validationErrors.email ? 'border-red-500' : ''}
+                  className={`h-12 sm:h-10 text-base sm:text-sm ${validationErrors.email ? 'border-red-500' : ''}`}
+                  autoComplete="email"
+                  inputMode="email"
                 />
                 {validationErrors.email && (
                   <p className="text-sm text-red-500">{t.validation[validationErrors.email as keyof typeof t.validation]}</p>
@@ -974,7 +977,8 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                     placeholder={t.passwordPlaceholder}
                     value={formData.password}
                     onChange={(e) => handleFieldChange('password', e.target.value)}
-                    className={validationErrors.password ? 'border-red-500' : ''}
+                    className={`h-12 sm:h-10 text-base sm:text-sm ${validationErrors.password ? 'border-red-500' : ''}`}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -1029,7 +1033,9 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
                   placeholder={t.agePlaceholder}
                   value={formData.age}
                   onChange={(e) => handleFieldChange('age', e.target.value)}
-                  className={validationErrors.age ? 'border-red-500' : ''}
+                  className={`h-12 sm:h-10 text-base sm:text-sm ${validationErrors.age ? 'border-red-500' : ''}`}
+                  inputMode="numeric"
+                  autoComplete="age"
                 />
                 {validationErrors.age && (
                   <p className="text-sm text-red-500">{t.validation[validationErrors.age as keyof typeof t.validation]}</p>
@@ -1299,20 +1305,20 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
         </CardHeader>
 
         <CardContent>
-          {/* ✅ BARRE DE PROGRESSION OPTIMISÉE */}
-          <div className="mb-8">
+          {/* ✅ BARRE DE PROGRESSION MOBILE OPTIMISÉE */}
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-4">
               {[1, 2, 3, 4].map((step) => (
-                <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                <div key={step} className="flex items-center flex-1">
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold ${
                     step <= currentStep 
                       ? 'bg-pink-500 text-white' 
                       : 'bg-gray-200 text-gray-500'
                   }`}>
-                    {stepCompleted[step] ? <CheckCircle className="w-5 h-5" /> : step}
+                    {stepCompleted[step] ? <CheckCircle className="w-3 h-3 sm:w-5 sm:h-5" /> : step}
                   </div>
                   {step < 4 && (
-                    <div className={`w-16 h-1 mx-2 ${
+                    <div className={`flex-1 h-1 mx-1 sm:mx-2 ${
                       step < currentStep ? 'bg-pink-500' : 'bg-gray-200'
                     }`} />
                   )}
@@ -1326,36 +1332,39 @@ export function SignupForm({ language, onClose }: SignupFormProps) {
           <form onSubmit={handleSubmit}>
             {renderStep}
 
-            {/* ✅ NAVIGATION OPTIMISÉE */}
-            <div className="flex justify-between mt-8">
+            {/* ✅ NAVIGATION MOBILE OPTIMISÉE */}
+            <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6 sm:mt-8">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto order-2 sm:order-1"
               >
                 <ChevronLeft className="w-4 h-4" />
-                {t.previous}
+                <span className="hidden sm:inline">{t.previous}</span>
+                <span className="sm:hidden">Retour</span>
               </Button>
 
               {currentStep < 4 ? (
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600"
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-pink-500 hover:bg-pink-600 order-1 sm:order-2"
                 >
-                  {t.continue}
+                  <span className="hidden sm:inline">{t.continue}</span>
+                  <span className="sm:hidden">Suivant</span>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
                 <LoadingButton
                   type="submit"
                   loading={loading}
-                  className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600"
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-pink-500 hover:bg-pink-600 order-1 sm:order-2"
                 >
                   <Heart className="w-4 h-4" />
-                  {t.finish}
+                  <span className="hidden sm:inline">{t.finish}</span>
+                  <span className="sm:hidden">Créer compte</span>
                 </LoadingButton>
               )}
             </div>

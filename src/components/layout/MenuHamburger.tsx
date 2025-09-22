@@ -244,15 +244,15 @@ const MenuHamburger = () => {
             ))}
           </div>
 
-          {/* Logout button */}
-          <div className="mt-8 pt-6 border-t">
+          {/* ✅ BOUTON DE DÉCONNEXION MOBILE OPTIMISÉ */}
+          <div className="mt-8 pt-6 border-t border-red-100">
             <Button
               variant="ghost"
-              className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg border border-red-200 hover:border-red-300"
               onClick={handleLogout}
             >
-              <LogOut className="w-5 h-5 mr-3" />
-              Se déconnecter
+              <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+              <span className="font-medium">Se déconnecter</span>
             </Button>
           </div>
         </div>
