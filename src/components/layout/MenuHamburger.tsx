@@ -3,7 +3,7 @@
  * Contient tous les liens vers les différentes sections de l'app
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, 
@@ -67,6 +67,20 @@ const MenuHamburger = () => {
 
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const { t } = useTranslation();
+
+  // ✅ CORRECTION: Remplacer useState par useEffect pour récupérer l'utilisateur
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Erreur récupération utilisateur:', error);
+        setUser(null);
+      }
+    };
+    getUser();
+  }, []); // ✅ Se déclenche une seule fois au montage
 
   // Menu items
   const menuItems: MenuItem[] = useMemo(() => [
@@ -195,15 +209,6 @@ const MenuHamburger = () => {
       setLogoutLoading(false);
     }
   };
-
-  // Récupérer les données utilisateur au chargement
-  useState(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-  });
 
   const handleItemClick = (item: MenuItem) => {
     if (item.href) {

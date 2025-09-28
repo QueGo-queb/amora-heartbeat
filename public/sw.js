@@ -1,5 +1,5 @@
 // Version statique basée sur le build - CHANGE SEULEMENT QUAND LE CODE CHANGE
-const VERSION = 'amora-v1.0.2'; // ⚠️ INCRÉMENTER À CHAQUE DÉPLOIEMENT
+const VERSION = 'amora-v1.0.3'; // ⚠️ INCRÉMENTER À CHAQUE DÉPLOIEMENT
 const STATIC_CACHE = `amora-static-${VERSION}`;
 const DYNAMIC_CACHE = `amora-dynamic-${VERSION}`;
 const IMAGE_CACHE = `amora-images-${VERSION}`;
@@ -15,55 +15,56 @@ const STATIC_ASSETS = [
   // ✅ Retirer manifest.json qui cause des problèmes CORS
 ];
 
-// Installation du Service Worker - Mise à jour automatique
+// ✅ MISE À JOUR SILENCIEUSE - Installation automatique
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Installation de la version', VERSION);
+  console.log('🔧 Service Worker: Installation silencieuse de la version', VERSION);
+  
+  // ✅ FORCER L'ACTIVATION IMMÉDIATE - Pas d'attente
+  self.skipWaiting();
   
   event.waitUntil(
     Promise.all([
-      // Cache des fichiers essentiels
+      // Cache des fichiers essentiels en arrière-plan
       caches.open(STATIC_CACHE).then(cache => {
-        console.log('📦 Mise en cache des fichiers essentiels');
-        return cache.addAll(STATIC_ASSETS);
+        console.log('📦 Mise en cache silencieuse des fichiers essentiels');
+        return cache.addAll(STATIC_ASSETS).catch(err => {
+          console.warn('⚠️ Erreur cache, continue sans bloquer:', err);
+        });
       })
     ])
   );
-  
-  // Force l'activation immédiate - MISE À JOUR AUTOMATIQUE
-  console.log('⚡ Activation immédiate de la nouvelle version');
-  self.skipWaiting();
 });
 
-// Activation du Service Worker - Nettoyage et prise de contrôle
+// ✅ MISE À JOUR SILENCIEUSE - Activation automatique
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker: Activation de la version', VERSION);
+  console.log('🚀 Service Worker: Activation silencieuse de la version', VERSION);
   
   event.waitUntil(
     Promise.all([
-      // Nettoyage des anciens caches
+      // Nettoyage automatique des anciens caches
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cacheName => {
             if (!cacheName.includes(VERSION)) {
-              console.log('🗑️ Suppression ancien cache:', cacheName);
+              console.log('🗑️ Nettoyage silencieux ancien cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       }),
       
-      // Prise de contrôle immédiate de tous les clients
+      // ✅ PRISE DE CONTRÔLE IMMÉDIATE - Pas d'attente utilisateur
       self.clients.claim()
     ])
   );
   
-  // Notifier tous les clients de la mise à jour
+  // ✅ NOTIFICATION SILENCIEUSE - Pas de popup
   self.clients.matchAll().then(clients => {
     clients.forEach(client => {
       client.postMessage({ 
-        type: 'SW_UPDATED', 
+        type: 'SW_UPDATED_SILENT', 
         version: VERSION,
-        message: 'Nouvelle version installée automatiquement'
+        message: 'Mise à jour appliquée automatiquement'
       });
     });
   });
@@ -87,7 +88,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(request));
 });
 
-// Gestion des requêtes avec stratégie Network First pour les mises à jour
+// ✅ Gestion des requêtes avec stratégie Network First pour les mises à jour
 async function handleRequest(request) {
   const url = new URL(request.url);
   
@@ -108,7 +109,7 @@ async function handleRequest(request) {
       if (!url.href.includes('lovableproject.com')) {
         const cache = await caches.open(STATIC_CACHE);
         cache.put(request, networkResponse.clone());
-        console.log('💾 Cache mis à jour:', request.url);
+        console.log('💾 Cache mis à jour silencieusement:', request.url);
       }
       
       return networkResponse;
@@ -145,10 +146,10 @@ async function handleRequest(request) {
   }
 }
 
-// Messages vers l'application
+// ✅ Messages vers l'application - Mise à jour silencieuse
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('⚡ Demande de mise à jour immédiate reçue');
+    console.log('⚡ Mise à jour silencieuse demandée');
     self.skipWaiting();
   }
   

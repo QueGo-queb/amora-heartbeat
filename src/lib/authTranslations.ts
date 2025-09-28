@@ -38,7 +38,17 @@ export const authTranslations = {
     emailConfirmError: "Impossible de confirmer votre email. Veuillez réessayer.",
     generalError: "Une erreur est survenue lors de la confirmation.",
     invalidCredentials: "Email ou mot de passe incorrect.",
-    emailNotConfirmed: "Veuillez confirmer votre email avant de vous connecter."
+    emailNotConfirmed: "Veuillez confirmer votre email avant de vous connecter.",
+    forgotPassword: "Mot de passe oublié ?",
+    forgotPasswordTitle: "Mot de passe oublié",
+    forgotPasswordDescription: "Entrez votre adresse email pour recevoir un lien de réinitialisation",
+    forgotPasswordButton: "Envoyer le lien",
+    forgotPasswordSuccess: "Email de réinitialisation envoyé !",
+    forgotPasswordSuccessDesc: "Consultez votre boîte de réception pour réinitialiser votre mot de passe",
+    forgotPasswordError: "Erreur lors de l'envoi de l'email",
+    forgotPasswordErrorDesc: "Impossible d'envoyer l'email de réinitialisation",
+    cancel: "Annuler",
+    sendLink: "Envoyer le lien"
   },
   
   en: {
@@ -60,7 +70,17 @@ export const authTranslations = {
     emailConfirmError: "Unable to confirm your email. Please try again.",
     generalError: "An error occurred during confirmation.",
     invalidCredentials: "Invalid email or password.",
-    emailNotConfirmed: "Please confirm your email before logging in."
+    emailNotConfirmed: "Please confirm your email before logging in.",
+    forgotPassword: "Forgot password?",
+    forgotPasswordTitle: "Forgot password",
+    forgotPasswordDescription: "Enter your email address to receive a reset link",
+    forgotPasswordButton: "Send link",
+    forgotPasswordSuccess: "Reset email sent!",
+    forgotPasswordSuccessDesc: "Check your inbox to reset your password",
+    forgotPasswordError: "Error sending email",
+    forgotPasswordErrorDesc: "Unable to send reset email",
+    cancel: "Cancel",
+    sendLink: "Send link"
   },
   
   es: {
@@ -82,7 +102,17 @@ export const authTranslations = {
     emailConfirmError: "No se pudo confirmar tu email. Inténtalo de nuevo.",
     generalError: "Ocurrió un error durante la confirmación.",
     invalidCredentials: "Email o contraseña incorrectos.",
-    emailNotConfirmed: "Por favor confirma tu email antes de iniciar sesión."
+    emailNotConfirmed: "Por favor confirma tu email antes de iniciar sesión.",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    forgotPasswordTitle: "Contraseña olvidada",
+    forgotPasswordDescription: "Ingresa tu dirección de email para recibir un enlace de restablecimiento",
+    forgotPasswordButton: "Enviar enlace",
+    forgotPasswordSuccess: "¡Email de restablecimiento enviado!",
+    forgotPasswordSuccessDesc: "Revisa tu bandeja de entrada para restablecer tu contraseña",
+    forgotPasswordError: "Error al enviar email",
+    forgotPasswordErrorDesc: "No se pudo enviar el email de restablecimiento",
+    cancel: "Cancelar",
+    sendLink: "Enviar enlace"
   },
   
   pt: {
@@ -104,7 +134,17 @@ export const authTranslations = {
     emailConfirmError: "Não foi possível confirmar seu email. Tente novamente.",
     generalError: "Ocorreu um erro durante a confirmação.",
     invalidCredentials: "Email ou senha incorretos.",
-    emailNotConfirmed: "Por favor confirme seu email antes de fazer login."
+    emailNotConfirmed: "Por favor confirme seu email antes de fazer login.",
+    forgotPassword: "Esqueceu a senha?",
+    forgotPasswordTitle: "Senha esquecida",
+    forgotPasswordDescription: "Digite seu endereço de email para receber um link de redefinição",
+    forgotPasswordButton: "Enviar link",
+    forgotPasswordSuccess: "Email de redefinição enviado!",
+    forgotPasswordSuccessDesc: "Verifique sua caixa de entrada para redefinir sua senha",
+    forgotPasswordError: "Erro ao enviar email",
+    forgotPasswordErrorDesc: "Não foi possível enviar o email de redefinição",
+    cancel: "Cancelar",
+    sendLink: "Enviar link"
   },
   
   ptBR: {
@@ -126,7 +166,17 @@ export const authTranslations = {
     emailConfirmError: "Não foi possível confirmar seu email. Tente novamente.",
     generalError: "Ocorreu um erro durante a confirmação.",
     invalidCredentials: "Email ou senha incorretos.",
-    emailNotConfirmed: "Por favor confirme seu email antes de fazer login."
+    emailNotConfirmed: "Por favor confirme seu email antes de fazer login.",
+    forgotPassword: "Ou bliye modpas la?",
+    forgotPasswordTitle: "Modpas oublié",
+    forgotPasswordDescription: "Antre adrès imel ou pou resevwa yon lyen pou redefini",
+    forgotPasswordButton: "Voye lyen an",
+    forgotPasswordSuccess: "Imel redefini voye!",
+    forgotPasswordSuccessDesc: "Tcheke bwat imel ou pou redefini modpas ou",
+    forgotPasswordError: "Erè nan voye imel",
+    forgotPasswordErrorDesc: "Pa ka voye imel redefini a",
+    cancel: "Anile",
+    sendLink: "Voye lyen an"
   },
   
   ht: {
@@ -148,6 +198,16 @@ export const authTranslations = {
     emailConfirmError: "Nou pa ka konfime email ou. Tanpri eseye ankò.",
     generalError: "Yon erè rive pandan konfimasyon an.",
     invalidCredentials: "Email oswa mo pase yo pa kòrèk.",
-    emailNotConfirmed: "Tanpri konfime email ou anvan ou konekte."
+    emailNotConfirmed: "Tanpri konfime email ou anvan ou konekte.",
+    forgotPassword: "Ou bliye modpas la?",
+    forgotPasswordTitle: "Modpas oublié",
+    forgotPasswordDescription: "Antre adrès imel ou pou resevwa yon lyen pou redefini",
+    forgotPasswordButton: "Voye lyen an",
+    forgotPasswordSuccess: "Imel redefini voye!",
+    forgotPasswordSuccessDesc: "Tcheke bwat imel ou pou redefini modpas ou",
+    forgotPasswordError: "Erè nan voye imel",
+    forgotPasswordErrorDesc: "Pa ka voye imel redefini a",
+    cancel: "Anile",
+    sendLink: "Voye lyen an"
   }
 };

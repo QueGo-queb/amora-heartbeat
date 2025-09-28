@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth'; // ✅ AJOUT: Import manquant
 
 interface UserWithInterests {
   id: string;
@@ -16,6 +17,7 @@ export function useInterestsMatching() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth(); // ✅ CORRECTION: Récupérer user depuis useAuth
 
   // Calculer le score de compatibilité basé sur les intérêts communs
   const calculateMatchScore = (userInterests: string[], currentUserInterests: string[]): number => {
@@ -40,9 +42,12 @@ export function useInterestsMatching() {
       setLoading(true);
       setError(null);
 
-      // Récupérer l'utilisateur actuel et ses intérêts
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
+      // ✅ CORRECTION: Utiliser user depuis useAuth au lieu de supabase.auth.getUser()
+      if (!user) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
 
       // Récupérer le profil de l'utilisateur actuel
       const { data: currentUserProfile } = await supabase
@@ -53,6 +58,7 @@ export function useInterestsMatching() {
 
       if (!currentUserProfile?.interests || currentUserProfile.interests.length === 0) {
         setUsers([]);
+        setLoading(false);
         return;
       }
 
@@ -107,14 +113,14 @@ export function useInterestsMatching() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]); // ✅ CORRECTION: Ajouter user dans les dépendances
 
-  // Recharger quand les intérêts changent
+  // ✅ CORRECTION: useEffect stable avec user depuis useAuth
   useEffect(() => {
     if (user?.id) {
       loadUsersWithCommonInterests();
     }
-  }, [user?.id]); // ✅ Seulement user.id
+  }, [user?.id, loadUsersWithCommonInterests]);
 
   return {
     users,

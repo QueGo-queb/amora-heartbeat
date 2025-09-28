@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Facebook, Instagram, Twitter, Linkedin, Youtube, MapPin, Phone, Clock, Shield, Heart, Users, Globe, ArrowRight } from 'lucide-react';
 import { useFooter } from '@/hooks/useFooter';
 import { footerTranslations, translateDatabaseLink, translateCompanyDescription, generateMultilingualUrl, getFooterLink, detectLinkTypeAndGenerateUrl } from '@/lib/footerTranslations';
+import CookieBanner from '@/components/cookies/CookieBanner';
 
 // Ajouter une prop pour la langue
 interface FooterProps {
@@ -12,16 +13,55 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [currentYear] = useState(new Date().getFullYear());
-  const { content, links, socials, loading } = useFooter();
+  // ✅ MODIFICATION: Récupérer les pages légales depuis le hook
+  const { content, links, socials, legalPages, loading, refreshFooter } = useFooter();
   
-  // ✅ FORCE RE-RENDER when language changes
   const [currentLanguage, setCurrentLanguage] = useState(language);
   
   useEffect(() => {
     setCurrentLanguage(language);
   }, [language]);
+
+  // ✅ AMÉLIORATION: Écoute des événements de synchronisation robuste
+  useEffect(() => {
+    let refreshTimeout: NodeJS.Timeout;
+    
+    const handleFooterRefresh = (event: CustomEvent) => {
+      console.log('🔄 Événement de rafraîchissement footer reçu:', event.detail);
+      
+      // ✅ AMÉLIORATION: Debounce pour éviter les rechargements multiples
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+      
+      refreshTimeout = setTimeout(() => {
+        console.log('🔄 Exécution du rafraîchissement footer...');
+        refreshFooter();
+      }, 100);
+    };
+
+    const handleFooterDataUpdated = (event: CustomEvent) => {
+      console.log('🔄 Données footer mises à jour:', event.detail);
+      
+      // ✅ AMÉLIORATION: Forcer le rafraîchissement immédiat pour les mises à jour de pages légales
+      if (event.detail?.type === 'legal_page_updated') {
+        console.log('🔄 Mise à jour immédiate pour page légale:', event.detail.pageId);
+        refreshFooter();
+      }
+    };
+
+    window.addEventListener('footer-refresh', handleFooterRefresh as EventListener);
+    window.addEventListener('footer-data-updated', handleFooterDataUpdated as EventListener);
+    
+    return () => {
+      window.removeEventListener('footer-refresh', handleFooterRefresh as EventListener);
+      window.removeEventListener('footer-data-updated', handleFooterDataUpdated as EventListener);
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+    };
+  }, [refreshFooter]);
   
-  // Utiliser currentLanguage au lieu de language partout
   const t = footerTranslations[currentLanguage as keyof typeof footerTranslations] || footerTranslations.fr;
 
   // Gestion de l'inscription à la newsletter
@@ -34,10 +74,10 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
       // Simulation d'une requête API
       await new Promise(resolve => setTimeout(resolve, 2000));
       setEmail('');
-      alert(t.newsletterSuccess); // ✅ TRADUIT
+      alert(t.newsletterSuccess);
     } catch (error) {
       console.error('Newsletter subscription error:', error);
-      alert(t.newsletterError); // ✅ TRADUIT
+      alert(t.newsletterError);
     } finally {
       setSubscribing(false);
     }
@@ -55,7 +95,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
         </svg>
-      ); // ✅ Icône TikTok inline
+      );
       default: return Globe;
     }
   };
@@ -70,63 +110,118 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     }
   };
 
-  // ✅ CORRECTION: Organiser les liens et socials ACTIFS uniquement
+  // ✅ AMÉLIORATION: Organiser les liens avec toutes les catégories
   const linksByCategory = {
     quick_links: links.filter(link => link.category === 'quick_links' && link.is_active),
     support: links.filter(link => link.category === 'support' && link.is_active),
-    legal: links.filter(link => link.category === 'legal' && link.is_active)
+    legal: links.filter(link => link.category === 'legal' && link.is_active),
+    company: links.filter(link => link.category === 'company' && link.is_active)
+  };
+
+  // ✅ LOGS DE DÉBOGAGE POUR IDENTIFIER LE PROBLÈME
+  console.log('🔍 DEBUG FOOTER - Tous les liens:', links);
+  console.log('🔍 DEBUG FOOTER - Liens support actifs:', linksByCategory.support);
+  console.log('🔍 DEBUG FOOTER - Liens company actifs:', linksByCategory.company);
+  console.log('🔍 DEBUG FOOTER - Pages légales actives:', legalPages.filter(page => page.is_active));
+
+  // ✅ AMÉLIORATION: Fonction pour générer les liens légaux SANS DOUBLONS
+  const getLegalLinks = () => {
+    let legalLinks = [];
+
+    console.log('🔍 DEBUG getLegalLinks - linksByCategory.legal:', linksByCategory.legal);
+    console.log('🔍 DEBUG getLegalLinks - legalPages:', legalPages);
+
+    // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
+    if (linksByCategory.legal.length > 0) {
+      console.log('📄 Utilisation des liens légaux de la base de données:', linksByCategory.legal.length);
+      legalLinks = linksByCategory.legal.map(link => ({
+        name: link.name,
+        href: link.href
+      }));
+    }
+    // ✅ PRIORITÉ 2: Utiliser les pages légales dynamiques
+    else if (legalPages.length > 0) {
+      console.log('📄 Utilisation des pages légales dynamiques:', legalPages.length);
+      legalLinks = legalPages
+        .filter(page => page.is_active)
+        .map(page => ({
+          name: page.title,
+          href: `/${page.slug}`
+        }));
+    }
+
+    // ✅ AJOUT: Toujours ajouter "Paramètres des cookies" à la fin
+    legalLinks.push({
+      name: 'Paramètres des cookies',
+      href: '/cookie-settings'
+    });
+
+    console.log('🔍 DEBUG getLegalLinks - résultat final:', legalLinks);
+    return legalLinks;
+  };
+
+  // ✅ SUPPRESSION DES FALLBACKS STATIQUES - UNIQUEMENT DONNÉES DYNAMIQUES
+  const getSupportLinks = () => {
+    console.log('🔍 DEBUG getSupportLinks - linksByCategory.support:', linksByCategory.support);
+    console.log('🔍 DEBUG getSupportLinks - legalPages support:', legalPages.filter(page => page.category === 'support'));
+    
+    // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
+    if (linksByCategory.support.length > 0) {
+      console.log('📄 Utilisation des liens support de la base de données:', linksByCategory.support.length);
+      return linksByCategory.support.map(link => ({
+        name: link.name,
+        href: link.href
+      }));
+    }
+    
+    // ✅ PRIORITÉ 2: Utiliser les pages légales avec catégorie 'support'
+    const supportPages = legalPages.filter(page => page.category === 'support' && page.is_active);
+    if (supportPages.length > 0) {
+      console.log('📄 Utilisation des pages légales support:', supportPages.length);
+      return supportPages.map(page => ({
+        name: page.title,
+        href: `/${page.slug}`
+      }));
+    }
+
+    // ❌ SUPPRIMÉ: Plus de fallback statique
+    console.log('📄 Aucun lien support configuré en base de données');
+    return [];
+  };
+
+  // ✅ SUPPRESSION DES FALLBACKS STATIQUES - UNIQUEMENT DONNÉES DYNAMIQUES
+  const getCompanyLinks = () => {
+    console.log('🔍 DEBUG getCompanyLinks - linksByCategory.company:', linksByCategory.company);
+    console.log('🔍 DEBUG getCompanyLinks - legalPages company:', legalPages.filter(page => page.category === 'company'));
+    
+    // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
+    if (linksByCategory.company.length > 0) {
+      console.log('📄 Utilisation des liens company de la base de données:', linksByCategory.company.length);
+      return linksByCategory.company.map(link => ({
+        name: link.name,
+        href: link.href
+      }));
+    }
+    
+    // ✅ PRIORITÉ 2: Utiliser les pages légales avec catégorie 'company'
+    const companyPages = legalPages.filter(page => page.category === 'company' && page.is_active);
+    if (companyPages.length > 0) {
+      console.log('📄 Utilisation des pages légales company:', companyPages.length);
+      return companyPages.map(page => ({
+        name: page.title,
+        href: `/${page.slug}`
+      }));
+    }
+
+    // ❌ SUPPRIMÉ: Plus de fallback statique
+    console.log('📄 Aucun lien company configuré en base de données');
+    return [];
   };
 
   // ✅ CORRECTION: Filtrer seulement les réseaux sociaux ACTIFS
   const activeSocials = socials.filter(social => social.is_active);
 
-  console.log('🔍 === FOOTER DEBUG ===');
-  console.log('Total socials:', socials.length);
-  console.log('Active socials:', activeSocials.length);
-  console.log('Socials data:', socials);
-  console.log('Active socials data:', activeSocials);
-
-  console.log('🔍 === LINKS DEBUG ===');
-  console.log('All links:', links);
-  console.log('Links by category:', linksByCategory);
-  console.log('Legal links:', linksByCategory.legal);
-  console.log('Support links:', linksByCategory.support);
-
-  console.log('�� === NOMS DES LIENS ===');
-  linksByCategory.support.forEach(link => {
-    console.log('Support link name:', `"${link.name}"`);
-  });
-  linksByCategory.legal.forEach(link => {
-    console.log('Legal link name:', `"${link.name}"`);
-  });
-  console.log('Current language:', currentLanguage);
-
-  console.log(' === LANGUE ET URLs ===');
-  console.log('Current language:', currentLanguage);
-  console.log('Language type:', typeof currentLanguage);
-
-  // Test des URLs générées
-  if (linksByCategory.support.length > 0) {
-    console.log('�� URLs Support générées:');
-    linksByCategory.support.forEach(link => {
-      const generatedUrl = detectLinkTypeAndGenerateUrl(link.name, link.href, currentLanguage);
-      console.log(`  "${link.name}" (${link.href}) → ${generatedUrl}`);
-    });
-  }
-
-  if (linksByCategory.legal.length > 0) {
-    console.log('🔗 URLs Legal générées:');
-    linksByCategory.legal.forEach(link => {
-      const generatedUrl = detectLinkTypeAndGenerateUrl(link.name, link.href, currentLanguage);
-      console.log(`  "${link.name}" (${link.href}) → ${generatedUrl}`);
-    });
-  }
-
-  // Test des liens fallback
-  console.log('�� URLs Fallback générées:');
-  console.log('  FAQ fallback:', getFooterLink('faq', currentLanguage));
-  console.log('  Contact fallback:', getFooterLink('contact', currentLanguage));
-  console.log('  Terms fallback:', getFooterLink('terms', currentLanguage));
+  // ❌ SUPPRIMÉ: getLocalizedHref n'est plus nécessaire sans fallbacks statiques
 
   if (loading) {
     return (
@@ -134,72 +229,12 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
         <div className="container mx-auto px-6 py-16">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p>{t.loadingFooter}</p> {/* ✅ TRADUIT */}
+            <p>{t.loadingFooter}</p>
           </div>
         </div>
       </footer>
     );
   }
-
-  // Ajouter cette fonction helper dans le composant Footer
-  const getLocalizedHref = (linkType: string): string => {
-    const langCode = language === 'ptBR' ? 'pt' : language;
-    
-    const urls: Record<string, Record<string, string>> = {
-      fr: {
-        support: '/help-center',
-        faq: '/faq', 
-        helpCenter: '/help-center',
-        contact: '/contact',
-        terms: '/terms-of-service',
-        privacy: '/privacy-policy',
-        cookies: '/cookies-policy',
-        legal: '/legal-notices'
-      },
-      en: {
-        support: '/en/help-center',
-        faq: '/en/faq',
-        helpCenter: '/en/help-center', 
-        contact: '/en/contact',
-        terms: '/en/terms-of-service',
-        privacy: '/en/privacy-policy',
-        cookies: '/en/cookies-policy',
-        legal: '/en/legal-notices'
-      },
-      es: {
-        support: '/es/help-center',
-        faq: '/es/faq',
-        helpCenter: '/es/help-center',
-        contact: '/es/contact', 
-        terms: '/es/terms-of-service',
-        privacy: '/es/privacy-policy',
-        cookies: '/es/cookies-policy',
-        legal: '/es/legal-notices'
-      },
-      pt: {
-        support: '/pt/help-center',
-        faq: '/pt/faq',
-        helpCenter: '/pt/help-center',
-        contact: '/pt/contact',
-        terms: '/pt/terms-of-service',
-        privacy: '/pt/privacy-policy', 
-        cookies: '/pt/cookies-policy',
-        legal: '/pt/legal-notices'
-      },
-      ht: {
-        support: '/ht/help-center',
-        faq: '/ht/faq',
-        helpCenter: '/ht/help-center',
-        contact: '/ht/contact',
-        terms: '/ht/terms-of-service',
-        privacy: '/ht/privacy-policy',
-        cookies: '/ht/cookies-policy',
-        legal: '/ht/legal-notices'
-      }
-    };
-    
-    return urls[langCode]?.[linkType] || urls.fr[linkType] || '/';
-  };
 
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
@@ -213,9 +248,9 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
       <div className="relative z-10">
         {/* Section principale */}
         <div className="container mx-auto px-6 py-16">
-          {/* Modifier la grille principale pour avoir 5 colonnes au lieu de 4 : */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-            {/* À propos d'Amora */}
+          {/* ✅ AMÉLIORATION: Grille avec 6 colonnes pour inclure la section Company */}
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-12">
+            {/* 🔒 SECTION PROTÉGÉE - À propos d'Amora - NE JAMAIS MODIFIER */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-6">
                 {/* Logo cohérent avec le reste de l'application */}
@@ -256,7 +291,6 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
                   <div className="flex space-x-4">
                     {activeSocials.map((social) => {
                       const Icon = getSocialIcon(social.icon_name);
-                      console.log('🔗 Displaying social network:', social.name, social.is_active);
                       return (
                         <a 
                           key={social.id}
@@ -287,6 +321,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
                 </div>
               )}
             </div>
+            {/* 🔒 FIN SECTION PROTÉGÉE */}
 
             {/* Newsletter */}
             <div>
@@ -326,51 +361,70 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
               </div>
             </div>
 
-            {/* Support - TOUJOURS utiliser les liens traduits */}
+            {/* ✅ Section Company - UNIQUEMENT DONNÉES DYNAMIQUES */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">{t.support}</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">À propos</h3>
               <ul className="space-y-3">
-                {/* ✅ SOLUTION: Utiliser TOUJOURS les liens traduits au lieu de la DB */}
-                <li><a href={getLocalizedHref('support')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.supportLinks.support}
-                </a></li>
-                <li><a href={getLocalizedHref('faq')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.supportLinks.faq}
-                </a></li>
-                <li><a href={getLocalizedHref('help-center')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.supportLinks.helpCenter}
-                </a></li>
-                <li><a href={getLocalizedHref('contact')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.supportLinks.contact}
-                </a></li>
+                {getCompanyLinks().length > 0 ? (
+                  getCompanyLinks().map((link, index) => (
+                    <li key={index}>
+                      <a 
+                        href={link.href} 
+                        className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                      >
+                        <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {link.name}
+                      </a>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400 text-sm">Aucun lien configuré</li>
+                )}
               </ul>
             </div>
 
-            {/* Legal - TOUJOURS utiliser les liens traduits */}
+            {/* ✅ Support - UNIQUEMENT DONNÉES DYNAMIQUES */}
+            <div>
+              <h3 className="text-xl font-semibold mb-6 text-white">{t.support}</h3>
+              <ul className="space-y-3">
+                {getSupportLinks().length > 0 ? (
+                  getSupportLinks().map((link, index) => (
+                    <li key={index}>
+                      <a 
+                        href={link.href} 
+                        className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                      >
+                        <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {link.name}
+                      </a>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400 text-sm">Aucun lien configuré</li>
+                )}
+              </ul>
+            </div>
+
+            {/* ✅ Legal - UNIQUEMENT DONNÉES DYNAMIQUES */}
             <div>
               <h3 className="text-xl font-semibold mb-6 text-white">{t.legal}</h3>
               <ul className="space-y-3">
-                {/* ✅ SOLUTION: Utiliser TOUJOURS les liens traduits au lieu de la DB */}
-                <li><a href={getLocalizedHref('terms')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.legalLinks.termsOfService}
-                </a></li>
-                <li><a href={getLocalizedHref('privacy')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.legalLinks.privacyPolicy}
-                </a></li>
-                <li><a href={getLocalizedHref('cookies')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.legalLinks.cookiePolicy}
-                </a></li>
-                <li><a href={getLocalizedHref('legal')} className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group">
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {t.legalLinks.legalNotice}
-                </a></li>
+                {/* ✅ AMÉLIORATION: Utiliser les liens de la base de données */}
+                {getLegalLinks().length > 0 ? (
+                  getLegalLinks().map((link, index) => (
+                    <li key={index}>
+                      <a 
+                        href={link.href} 
+                        className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center gap-2 group"
+                      >
+                        <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {link.name}
+                      </a>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400 text-sm">Aucun lien légal configuré</li>
+                )}
               </ul>
             </div>
           </div>
@@ -392,6 +446,9 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
           </div>
         </div>
       </div>
+      
+      {/* Bandeau cookies */}
+      <CookieBanner />
     </footer>
   );
 };

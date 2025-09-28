@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Settings, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { useProfile } from '@/hooks/useProfile';
 import ProfileEditor from '@/components/profile/ProfileEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const Profile = () => {
   const { profile, loading, error, refreshProfile, updateProfile } = useProfile();
@@ -15,57 +17,38 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
-  // Fonction de rafraîchissement avec indicateur visuel
+  // ✅ CORRECTION: Gestion optimisée des mises à jour
+  const handleProfileUpdate = async (updatedProfile: any) => {
+    try {
+      console.log('🔧 Mise à jour du profil...');
+      
+      // ✅ Mise à jour via le hook optimisé
+      await updateProfile(updatedProfile);
+      
+      // ✅ Pas besoin de refreshProfile() - le hook gère déjà la mise à jour
+      setIsEditing(false);
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      // Le toast d'erreur est déjà géré dans updateProfile
+    }
+  };
+
+  // ✅ CORRECTION: Rafraîchissement optimisé
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       await refreshProfile();
       toast({
-        title: t.profileUpdated,
-        description: t.profileUpdatedDesc,
+        title: "✅ Profil actualisé",
+        description: "Les données ont été mises à jour",
       });
     } catch (error) {
       console.error('Erreur lors du rafraîchissement:', error);
-      toast({
-        title: t.profileError,
-        description: t.profileErrorDesc,
-        variant: "destructive",
-      });
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  // Gestion des mises à jour du profil
-  const handleProfileUpdate = async (updatedProfile: any) => {
-    try {
-      console.log('🔧 Mise à jour réussie !');
-      
-      // Mettre à jour le profil via le hook
-      if (updateProfile) {
-        await updateProfile(updatedProfile);
-      }
-      
-      // Afficher le toast de succès
-      toast({
-        title: "✅ Profil mis à jour",
-        description: "Vos modifications ont été sauvegardées.",
-      });
-      
-      setIsEditing(false);
-      
-      // Rafraîchir le profil pour afficher les nouvelles données
-      if (refreshProfile) {
-        await refreshProfile();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast({
-        title: "❌ Erreur",
-        description: "Impossible de sauvegarder les modifications",
-        variant: "destructive",
-      });
     }
   };
 

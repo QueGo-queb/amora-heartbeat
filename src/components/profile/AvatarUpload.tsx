@@ -363,24 +363,31 @@ export function AvatarUpload({
         return;
       }
 
-      // Si l'upload a réussi, mettre à jour le profil
+      // ✅ Mise à jour immédiate du profil
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user!.id);
+        .eq('user_id', user!.id); // ✅ CORRIGÉ: utiliser user_id
 
       if (updateError) throw updateError;
 
+      // ✅ Mise à jour immédiate de l'état local
       setPreviewUrl(publicUrl);
       onAvatarUpdate?.(publicUrl);
 
+      // ✅ Notification de succès
       toast({
-        title: "Succès",
-        description: "Photo de profil mise à jour avec succès!"
+        title: "✅ Photo mise à jour",
+        description: "Votre photo de profil a été mise à jour avec succès!"
       });
 
     } catch (error: any) {
       console.error('Erreur upload avatar:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de mettre à jour la photo",
+        variant: "destructive"
+      });
       throw error;
     }
   };

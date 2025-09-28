@@ -1,0 +1,57 @@
+import { useState, useEffect } from 'react';
+
+interface CookiePreferences {
+  essential: boolean;
+  analytics: boolean;
+  preferences: boolean;
+  advertising: boolean;
+}
+
+export const useCookiePreferences = () => {
+  const [preferences, setPreferences] = useState<CookiePreferences>({
+    essential: true,
+    analytics: false,
+    preferences: false,
+    advertising: false
+  });
+
+  const [hasMadeChoice, setHasMadeChoice] = useState(false);
+
+  useEffect(() => {
+    // Charger les préférences depuis localStorage
+    const savedPreferences = localStorage.getItem('amora-cookie-preferences');
+    const choiceMade = localStorage.getItem('amora-cookie-choice-made');
+    
+    if (savedPreferences) {
+      setPreferences(JSON.parse(savedPreferences));
+    }
+    
+    if (choiceMade === 'true') {
+      setHasMadeChoice(true);
+    }
+  }, []);
+
+  const updatePreferences = (newPreferences: CookiePreferences) => {
+    setPreferences(newPreferences);
+    localStorage.setItem('amora-cookie-preferences', JSON.stringify(newPreferences));
+    localStorage.setItem('amora-cookie-choice-made', 'true');
+    setHasMadeChoice(true);
+  };
+
+  const resetPreferences = () => {
+    const defaultPreferences: CookiePreferences = {
+      essential: true,
+      analytics: false,
+      preferences: false,
+      advertising: false
+    };
+    updatePreferences(defaultPreferences);
+  };
+
+  return {
+    preferences,
+    hasMadeChoice,
+    updatePreferences,
+    resetPreferences
+  };
+};

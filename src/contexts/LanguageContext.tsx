@@ -50,7 +50,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   // ✅ FONCTION DE CHANGEMENT DE LANGUE AVEC GOOGLE TRANSLATE
-  // Améliorer la fonction setSelectedLanguage avec retry
   const setSelectedLanguage = (language: string) => {
     console.log('🌐 Language change requested:', language);
     
@@ -90,6 +89,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           } else {
             console.warn('🛑 Trop de reloads, arrêt de la traduction automatique');
             sessionStorage.removeItem('amora-reload-count');
+            // ✅ FALLBACK: Utiliser les traductions internes
+            console.log('🔄 Utilisation des traductions internes comme fallback');
           }
         } else {
           console.log('✅ Translation successful!');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useFooterSync } from '@/hooks/useFooterSync';
 
 interface LegalPage {
   id: string;
@@ -57,6 +58,7 @@ const AdminLegalPages = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { syncLegalPagesWithFooter, checkConsistency, cleanupOrphanedLinks, loading: syncLoading } = useFooterSync();
 
   useEffect(() => {
     checkAdminAccess();
@@ -241,13 +243,9 @@ const AdminLegalPages = () => {
     try {
       console.log('🔄 Synchronisation avec le footer...');
       
-      // Forcer le rechargement du footer
-      window.dispatchEvent(new CustomEvent('footer-refresh'));
+      // ✅ NOUVELLE FONCTIONNALITÉ: Synchronisation complète
+      await syncLegalPagesWithFooter();
       
-      toast({
-        title: "✅ Synchronisation réussie",
-        description: "Les liens du footer ont été mis à jour",
-      });
     } catch (error) {
       console.error('Error syncing with footer:', error);
       toast({
@@ -256,6 +254,33 @@ const AdminLegalPages = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // ✅ NOUVELLE FONCTION: Vérifier la cohérence
+  const checkFooterConsistency = async () => {
+    try {
+      const inconsistencies = await checkConsistency();
+      
+      if (inconsistencies.length === 0) {
+        toast({
+          title: "✅ Cohérence parfaite",
+          description: "Admin et footer sont parfaitement synchronisés",
+        });
+      } else {
+        toast({
+          title: "⚠️ Incohérences détectées",
+          description: `${inconsistencies.length} problèmes de synchronisation trouvés`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error checking consistency:', error);
+    }
+  };
+
+  // ✅ NOUVELLE FONCTION: Nettoyer les liens orphelins
+  const cleanupFooter = async () => {
+    await cleanupOrphanedLinks();
   };
 
   return (
@@ -281,12 +306,36 @@ const AdminLegalPages = () => {
             </div>
             
             <div className="flex gap-3">
+              {/* ✅ NOUVEAUX BOUTONS DE SYNCHRONISATION */}
+              <Button 
+                onClick={checkFooterConsistency}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Vérifier cohérence
+              </Button>
+              
+              <Button 
+                onClick={cleanupFooter}
+                variant="outline"
+                className="border-orange-600 text-orange-600 hover:bg-orange-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Nettoyer footer
+              </Button>
+              
               <Button 
                 onClick={syncWithFooter}
+                disabled={syncLoading}
                 variant="outline"
                 className="border-[#52B788] text-[#52B788] hover:bg-[#52B788] hover:text-white"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                {syncLoading ? (
+                  <div className="w-4 h-4 mr-2 border-2 border-[#52B788] border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
                 Sync Footer
               </Button>
               

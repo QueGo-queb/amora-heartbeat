@@ -1,8 +1,8 @@
 /**
- * Page de gestion du footer - VERSION CORRIGÉE
+ * Page de gestion du footer - VERSION FUSIONNÉE AVEC PAGES LÉGALES
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -20,7 +20,10 @@ import {
   EyeOff,
   Loader2,
   Check,
-  X
+  X,
+  FileText,
+  Search,
+  Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,26 +32,71 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import HeaderAdmin from '@/components/admin/HeaderAdmin';
 import { useFooter } from '@/hooks/useFooter';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+// ✅ AJOUT: Interface pour les pages légales
+interface LegalPage {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  meta_description?: string;
+  category: string;
+  is_active: boolean;
+  order_index: number;
+  updated_at: string;
+}
 
 const AdminFooter = () => {
   const navigate = useNavigate();
-  const { content, links, socials, loading, updateContent, addLink, updateLink, deleteLink, addSocial, updateSocial, deleteSocial } = useFooter();
+  // ✅ MODIFICATION: Utiliser le hook unifié avec pages légales
+  const { 
+    content, 
+    links, 
+    socials, 
+    legalPages, 
+    loading, 
+    updateContent, 
+    addLink, 
+    updateLink, 
+    deleteLink, 
+    addSocial, 
+    updateSocial, 
+    deleteSocial,
+    createLegalPage,
+    updateLegalPage,
+    deleteLegalPage
+  } = useFooter();
+  
   const { toast } = useToast();
   
-  const [activeTab, setActiveTab] = useState<'content' | 'links' | 'socials'>('content');
+  // ✅ MODIFICATION: Ajout de l'onglet pages légales
+  const [activeTab, setActiveTab] = useState<'content' | 'links' | 'socials' | 'legal'>('content');
+  
+  // États existants...
   const [editingContent, setEditingContent] = useState(false);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [editingSocialId, setEditingSocialId] = useState<string | null>(null);
   const [showAddLink, setShowAddLink] = useState(false);
   const [showAddSocial, setShowAddSocial] = useState(false);
   
+  // ✅ AJOUT: États pour les pages légales
+  const [legalPagesState, setLegalPagesState] = useState<LegalPage[]>([]);
+  const [legalPagesLoading, setLegalPagesLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [showLegalEditor, setShowLegalEditor] = useState(false);
+  const [editingLegalPage, setEditingLegalPage] = useState<LegalPage | null>(null);
+  
   // États de chargement pour chaque action
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  // Formulaires
+  // Formulaires existants...
   const [contentForm, setContentForm] = useState({
     company_name: '',
     company_description: '',
@@ -74,6 +122,16 @@ const AdminFooter = () => {
     order_index: 0
   });
 
+  // ✅ AJOUT: Formulaire pour les pages légales
+  const [legalPageForm, setLegalPageForm] = useState({
+    slug: '',
+    title: '',
+    content: '',
+    meta_description: '',
+    category: 'legal',
+    order_index: 0
+  });
+
   // Formulaire d'édition de lien
   const [editLinkForm, setEditLinkForm] = useState({
     category: 'quick_links' as const,
@@ -91,6 +149,195 @@ const AdminFooter = () => {
     order_index: 0
   });
 
+  // ✅ AJOUT: Chargement des pages légales
+  const loadLegalPages = useCallback(async () => {
+    try {
+      setLegalPagesLoading(true);
+      const { data, error } = await supabase
+        .from('legal_pages')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setLegalPagesState(data || []);
+    } catch (error) {
+      console.error('Erreur chargement pages légales:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de charger les pages légales",
+        variant: "destructive",
+      });
+    } finally {
+      setLegalPagesLoading(false);
+    }
+  }, [toast]);
+
+  // ✅ AJOUT: Créer une page légale
+  const handleCreateLegalPage = async () => {
+    const loadingKey = 'create-legal-page';
+    setLoading(loadingKey, true);
+    
+    try {
+      await createLegalPage({
+        ...legalPageForm,
+        is_active: true
+      });
+      
+      setLegalPageForm({
+        slug: '',
+        title: '',
+        content: '',
+        meta_description: '',
+        category: 'legal',
+        order_index: 0
+      });
+      setShowLegalEditor(false);
+      
+      toast({
+        title: "✅ Succès",
+        description: "Page légale créée avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur création page légale:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de créer la page légale",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
+  };
+
+  // ✅ AJOUT: Modifier une page légale
+  const handleEditLegalPage = (page: LegalPage) => {
+    setEditingLegalPage(page);
+    setLegalPageForm({
+      slug: page.slug,
+      title: page.title,
+      content: page.content,
+      meta_description: page.meta_description || '',
+      category: page.category,
+      order_index: page.order_index
+    });
+    setShowLegalEditor(true);
+  };
+
+  // ✅ AJOUT: Sauvegarder la modification d'une page légale
+  const handleSaveLegalPage = async () => {
+    if (!editingLegalPage) return;
+
+    const loadingKey = 'save-legal-page';
+    setLoading(loadingKey, true);
+    
+    try {
+      await updateLegalPage(editingLegalPage.id, legalPageForm);
+      
+      setShowLegalEditor(false);
+      setEditingLegalPage(null);
+      
+      toast({
+        title: "✅ Succès",
+        description: "Page légale mise à jour avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur sauvegarde page légale:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de sauvegarder la page légale",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
+  };
+
+  // ✅ AJOUT: Activer/Désactiver une page légale
+  const handleToggleLegalPage = async (pageId: string, currentStatus: boolean) => {
+    const loadingKey = `toggle-legal-page-${pageId}`;
+    setLoading(loadingKey, true);
+    
+    try {
+      await updateLegalPage(pageId, { is_active: !currentStatus });
+      
+      // ✅ CORRECTION: Déclencher le rafraîchissement du footer en temps réel
+      console.log('🔄 Toggle page légale - Déclenchement du rafraîchissement footer');
+      
+      // ✅ AMÉLIORATION: Déclencher plusieurs événements pour s'assurer de la synchronisation
+      window.dispatchEvent(new CustomEvent('footer-refresh', {
+        detail: { 
+          type: 'legal_page_toggled', 
+          pageId: pageId,
+          newStatus: !currentStatus,
+          timestamp: Date.now()
+        }
+      }));
+      
+      // ✅ AJOUT: Déclencher aussi un événement de données mises à jour
+      window.dispatchEvent(new CustomEvent('footer-data-updated', {
+        detail: { 
+          type: 'legal_page_updated',
+          pageId: pageId,
+          newStatus: !currentStatus,
+          timestamp: Date.now()
+        }
+      }));
+      
+      // ✅ AJOUT: Forcer le rechargement des données après un court délai
+      setTimeout(() => {
+        console.log('🔄 Forçage du rechargement des données footer...');
+        window.dispatchEvent(new CustomEvent('footer-refresh', {
+          detail: { 
+            type: 'force_refresh', 
+            timestamp: Date.now()
+          }
+        }));
+      }, 500);
+      
+      toast({
+        title: "✅ Succès",
+        description: `Page légale ${!currentStatus ? 'activée' : 'désactivée'} avec succès`,
+      });
+    } catch (error) {
+      console.error('Erreur toggle page légale:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de modifier le statut de la page",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
+  };
+
+  // ✅ AJOUT: Supprimer une page légale
+  const handleDeleteLegalPage = async (pageId: string, pageTitle: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la page "${pageTitle}" ?`)) {
+      return;
+    }
+
+    const loadingKey = `delete-legal-page-${pageId}`;
+    setLoading(loadingKey, true);
+    
+    try {
+      await deleteLegalPage(pageId);
+      
+      toast({
+        title: "✅ Succès",
+        description: "Page légale supprimée avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur suppression page légale:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de supprimer la page légale",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
+  };
+
   // Initialiser les formulaires quand le contenu se charge
   useEffect(() => {
     if (content) {
@@ -105,6 +352,11 @@ const AdminFooter = () => {
       });
     }
   }, [content]);
+
+  // ✅ AJOUT: Charger les pages légales au montage
+  useEffect(() => {
+    loadLegalPages();
+  }, [loadLegalPages]);
 
   // Fonction utilitaire pour gérer les états de chargement
   const setLoading = (key: string, value: boolean) => {
@@ -396,8 +648,17 @@ const AdminFooter = () => {
   const tabs = [
     { id: 'content', label: 'Contenu', icon: Edit3 },
     { id: 'links', label: 'Liens', icon: Link },
-    { id: 'socials', label: 'Réseaux sociaux', icon: Globe }
+    { id: 'socials', label: 'Réseaux sociaux', icon: Globe },
+    { id: 'legal', label: 'Pages légales', icon: FileText }
   ];
+
+  // ✅ AJOUT: Filtrer les pages légales
+  const filteredLegalPages = legalPagesState.filter(page => {
+    const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         page.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === 'all' || page.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   if (loading) {
     return (
@@ -912,6 +1173,229 @@ const AdminFooter = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* ✅ NOUVEAU: Gestion des pages légales */}
+          {activeTab === 'legal' && (
+            <div className="space-y-6">
+              {/* En-tête avec recherche et filtres */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Pages légales ({legalPagesState.length})</span>
+                    <Button 
+                      onClick={() => {
+                        setEditingLegalPage(null);
+                        setLegalPageForm({
+                          slug: '',
+                          title: '',
+                          content: '',
+                          meta_description: '',
+                          category: 'legal',
+                          order_index: 0
+                        });
+                        setShowLegalEditor(true);
+                      }}
+                      disabled={loadingStates['create-legal-page']}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Créer une page
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 mb-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Rechercher une page..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <Select value={filterCategory} onValueChange={setFilterCategory}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les catégories</SelectItem>
+                        <SelectItem value="legal">Légal</SelectItem>
+                        <SelectItem value="privacy">Confidentialité</SelectItem>
+                        <SelectItem value="terms">Conditions</SelectItem>
+                        <SelectItem value="cookies">Cookies</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Liste des pages légales */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredLegalPages.map((page) => (
+                  <Card key={page.id} className={page.is_active ? 'bg-white' : 'bg-gray-50'}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium">{page.title}</div>
+                          {!page.is_active && (
+                            <Badge variant="secondary">Inactif</Badge>
+                          )}
+                        </div>
+                        <Switch
+                          checked={page.is_active}
+                          onCheckedChange={() => handleToggleLegalPage(page.id, page.is_active)}
+                          disabled={loadingStates[`toggle-legal-page-${page.id}`]}
+                        />
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>Slug:</strong> {page.slug}
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 mb-3">
+                        <strong>Catégorie:</strong> {page.category}
+                      </div>
+                      
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => window.open(`/${page.slug}`, '_blank')}
+                          title="Voir la page"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleEditLegalPage(page)}
+                          title="Modifier"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleDeleteLegalPage(page.id, page.title)}
+                          className="text-red-600 hover:text-red-700"
+                          disabled={loadingStates[`delete-legal-page-${page.id}`]}
+                          title="Supprimer"
+                        >
+                          {loadingStates[`delete-legal-page-${page.id}`] ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {filteredLegalPages.length === 0 && (
+                  <div className="col-span-full text-center text-gray-500 py-8">
+                    {searchTerm || filterCategory !== 'all' 
+                      ? 'Aucune page ne correspond aux critères' 
+                      : 'Aucune page légale configurée'
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ✅ AJOUT: Modal d'édition des pages légales */}
+          <Dialog open={showLegalEditor} onOpenChange={setShowLegalEditor}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingLegalPage ? 'Modifier la page légale' : 'Créer une nouvelle page légale'}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="legal_slug">Slug (URL)</Label>
+                    <Input
+                      id="legal_slug"
+                      value={legalPageForm.slug}
+                      onChange={(e) => setLegalPageForm(prev => ({ ...prev, slug: e.target.value }))}
+                      placeholder="terms-of-service"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="legal_title">Titre</Label>
+                    <Input
+                      id="legal_title"
+                      value={legalPageForm.title}
+                      onChange={(e) => setLegalPageForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Conditions d'utilisation"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="legal_category">Catégorie</Label>
+                  <Select 
+                    value={legalPageForm.category} 
+                    onValueChange={(value) => setLegalPageForm(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="legal">Légal</SelectItem>
+                      <SelectItem value="privacy">Confidentialité</SelectItem>
+                      <SelectItem value="terms">Conditions</SelectItem>
+                      <SelectItem value="cookies">Cookies</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="legal_meta">Description meta</Label>
+                  <Input
+                    id="legal_meta"
+                    value={legalPageForm.meta_description}
+                    onChange={(e) => setLegalPageForm(prev => ({ ...prev, meta_description: e.target.value }))}
+                    placeholder="Description pour les moteurs de recherche"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="legal_content">Contenu</Label>
+                  <Textarea
+                    id="legal_content"
+                    value={legalPageForm.content}
+                    onChange={(e) => setLegalPageForm(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Contenu de la page légale..."
+                    rows={10}
+                    className="resize-none"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={editingLegalPage ? handleSaveLegalPage : handleCreateLegalPage}
+                    disabled={loadingStates['create-legal-page'] || loadingStates['save-legal-page']}
+                  >
+                    {loadingStates['create-legal-page'] || loadingStates['save-legal-page'] ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {editingLegalPage ? 'Sauvegarder' : 'Créer la page'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowLegalEditor(false)}>
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     </div>

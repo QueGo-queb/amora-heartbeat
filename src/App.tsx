@@ -56,7 +56,6 @@ import { AIPage } from "./pages/AIPage";
 import { TravelPage } from "./pages/TravelPage";
 import Favorites from "./pages/Favorites";
 import VideoChat from "./pages/VideoChat";
-import UpdateNotification from '@/components/pwa/UpdateNotification';
 import ConversationDetail from "./pages/ConversationDetail";
 
 // ✅ AJOUT - Import des pages manquantes
@@ -72,6 +71,8 @@ import { useCall } from "@/hooks/useCall";
 import { HreflangTags } from '@/components/seo/HreflangTags';
 import { MultilingualMeta } from '@/components/seo/MultilingualMeta';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
+import CookieBanner from '@/components/cookies/CookieBanner';
+import CookieSettings from './pages/CookieSettings';
 
 // Initialiser Sentry au démarrage
 initSentry();
@@ -419,6 +420,9 @@ const AppWithHooks = () => {
         <Route path="/pt/:slug" element={<LegalPage />} />
         <Route path="/ht/:slug" element={<LegalPage />} />
 
+        {/* 🍪 AJOUT: Route pour les paramètres de cookies */}
+        <Route path="/cookie-settings" element={<CookieSettings />} />
+
         {/* Route par défaut (français) */}
         <Route path="/:slug" element={<LegalPage />} />
 
@@ -436,8 +440,10 @@ const AppWithHooks = () => {
 
       {/* Notifications PWA */}
       <InstallPrompt />
-      <UpdateNotification />
       <NetworkStatus />
+      
+      {/* 🍪 AJOUT: CookieBanner maintenant dans le contexte Router */}
+      <CookieBanner />
     </>
   );
 };
@@ -463,10 +469,10 @@ function App() {
             <AppRoutes />
 
             {/* Composants PWA globaux */}
-            {/* InstallPrompt and NetworkStatus are now inside AppContent */}
-            
             {/* Toast notifications */}
             <Toaster />
+            
+            {/* ❌ SUPPRIMÉ: CookieBanner déplacé dans AppWithHooks */}
           </LoaderProvider>
         </QueryProvider>
       </LanguageProvider>

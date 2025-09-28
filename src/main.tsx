@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// ✅ CORRECTION LOVABLE: Enregistrement conditionnel du Service Worker
+// ✅ MISE À JOUR SILENCIEUSE - Enregistrement optimisé
 if ('serviceWorker' in navigator && !window.location.hostname.includes('lovableproject.com')) {
   window.addEventListener('load', async () => {
     try {
@@ -16,7 +16,7 @@ if ('serviceWorker' in navigator && !window.location.hostname.includes('lovablep
       // Attendre un peu pour que la désinscription soit effective
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // ✅ CORRECTION LOVABLE: Enregistrement plus tolérant
+      // ✅ ENREGISTREMENT OPTIMISÉ - Mise à jour silencieuse
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: './',
         updateViaCache: 'none' // ⚠️ IMPORTANT : Force la vérification de mise à jour
@@ -32,25 +32,27 @@ if ('serviceWorker' in navigator && !window.location.hostname.includes('lovablep
       
       console.log('✅ Service Worker enregistré avec succès:', registration.scope);
       
-      // Vérifier immédiatement les mises à jour
+      // ✅ VÉRIFICATION IMMÉDIATE DES MISES À JOUR
       await registration.update();
       
-      // Écouter les mises à jour du Service Worker
+      // ✅ MISE À JOUR SILENCIEUSE - Pas de popup ni bannière
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
-          console.log('🔄 Nouvelle version du Service Worker détectée');
+          console.log('🔄 Nouvelle version détectée - Mise à jour silencieuse...');
           
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed') {
               if (navigator.serviceWorker.controller) {
-                console.log('⚡ Nouvelle version installée - Mise à jour automatique en cours...');
+                console.log('⚡ Mise à jour silencieuse en cours...');
                 
-                // MISE À JOUR AUTOMATIQUE - Pas de confirmation utilisateur
+                // ✅ MISE À JOUR AUTOMATIQUE - Pas de confirmation utilisateur
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                 
-                // Rechargement automatique immédiat
-                window.location.reload();
+                // ✅ RECHARGEMENT SILENCIEUX - Pas de popup
+                setTimeout(() => {
+                  window.location.reload();
+                }, 100); // Délai minimal pour éviter les conflits
               } else {
                 console.log('🎉 Première installation du Service Worker');
               }
@@ -59,18 +61,24 @@ if ('serviceWorker' in navigator && !window.location.hostname.includes('lovablep
         }
       });
       
-      // Écouter les messages du Service Worker
+      // ✅ ÉCOUTE DES MESSAGES SILENCIEUX
       navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_UPDATED') {
-          console.log('🎉 Mise à jour automatique terminée:', event.data.message);
+        if (event.data && event.data.type === 'SW_UPDATED_SILENT') {
+          console.log('🎉 Mise à jour silencieuse terminée:', event.data.message);
           console.log('📱 Version:', event.data.version);
+          // ✅ PAS DE POPUP - Mise à jour transparente
         }
       });
       
-      // Vérifier les mises à jour toutes les 10 secondes
-      setInterval(() => {
+      // ✅ VÉRIFICATION AUTOMATIQUE DES MISES À JOUR - Toutes les 60 secondes
+      const updateInterval = setInterval(() => {
         registration.update();
-      }, 10000);
+      }, 60000); // ✅ 60 secondes comme demandé
+
+      // ✅ NETTOYAGE DE L'INTERVAL
+      window.addEventListener('beforeunload', () => {
+        clearInterval(updateInterval);
+      });
       
     } catch (error) {
       console.error('❌ Erreur enregistrement Service Worker:', error);
@@ -80,7 +88,7 @@ if ('serviceWorker' in navigator && !window.location.hostname.includes('lovablep
   console.log('🌐 Environnement Lovable détecté - Service Worker désactivé');
 }
 
-// ✅ CORRECTION LOVABLE: Gestion d'erreur pour le rendu
+// ✅ GESTION D'ERREUR POUR LE RENDU
 try {
   const rootElement = document.getElementById("root");
   if (!rootElement) {

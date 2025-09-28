@@ -600,7 +600,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Modifier le contenu du footer, les liens et les informations de contact.
+                Modifier le contenu du footer, les liens, les réseaux sociaux et les pages légales.
               </p>
               <div className="mt-3 text-xs text-blue-600 font-medium">
                 Cliquez pour accéder →
@@ -841,41 +841,8 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Pages légales */}
-          <Card className="culture-card group hover:shadow-lg transition-all duration-300 cursor-pointer">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#52B788]/10 rounded-lg group-hover:bg-[#52B788]/20 transition-colors">
-                    <FileText className="w-5 h-5 text-[#52B788]" />
-                  </div>
-                  <span className="text-[#212529]">Pages légales</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-[#CED4DA] mb-4">
-                Gérez toutes vos pages légales, FAQ et contenus d'aide
-              </p>
-              <div className="space-y-2">
-                <Button 
-                  onClick={() => navigate('/admin/legal-pages')}
-                  variant="outline" 
-                  className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Gérer les pages
-                </Button>
-                <Button 
-                  onClick={() => window.open('/terms-of-service', '_blank')}
-                  variant="outline" 
-                  className="w-full justify-start border-[#CED4DA] text-[#212529] hover:bg-[#52B788] hover:text-white hover:border-[#52B788]"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Prévisualiser
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Le bouton "Pages légales" a été supprimé car cette fonctionnalité 
+              est maintenant intégrée dans "Gestion Footer" */}
 
           {/* Monitoring Sécurité Bancaire */}
           <Card 

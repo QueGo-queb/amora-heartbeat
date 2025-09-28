@@ -61,7 +61,7 @@ export const CallModal: React.FC<CallModalProps> = ({ open, onOpenChange }) => {
 
   // Compteur de durée d'appel
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     
     if (currentCall?.status === 'active' && currentCall.started_at) {
       interval = setInterval(() => {
@@ -70,9 +70,12 @@ export const CallModal: React.FC<CallModalProps> = ({ open, onOpenChange }) => {
         setCallDuration(Math.floor((now - start) / 1000));
       }, 1000);
     }
-    
+
+    // ✅ AJOUT: Cleanup function
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, [currentCall?.status, currentCall?.started_at]);
 

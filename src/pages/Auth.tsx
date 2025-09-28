@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Mail, Lock, ArrowLeft } from "lucide-react";
+import { Heart, Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("login");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string | null>(null);
   const { showLoader, hideLoader } = useLoader();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -168,6 +172,44 @@ const Auth = () => {
     }
   };
 
+  // �� NOUVELLE FONCTION: Gestion du mot de passe oublié
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotPasswordLoading(true);
+    setForgotPasswordMessage(null);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/auth?tab=reset-password`,
+      });
+
+      if (error) {
+        setForgotPasswordMessage("Erreur lors de l'envoi de l'email. Veuillez réessayer.");
+        toast({
+          title: "Erreur",
+          description: "Impossible d'envoyer l'email de réinitialisation",
+          variant: "destructive",
+        });
+      } else {
+        setForgotPasswordMessage("Email de réinitialisation envoyé ! Vérifiez votre boîte de réception.");
+        toast({
+          title: "Email envoyé",
+          description: "Consultez votre boîte de réception pour réinitialiser votre mot de passe",
+        });
+        setForgotPasswordEmail("");
+      }
+    } catch (error) {
+      setForgotPasswordMessage("Une erreur inattendue est survenue.");
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue est survenue",
+        variant: "destructive",
+      });
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setLoginData(prev => ({ ...prev, [field]: value }));
     // Effacer l'erreur quand l'utilisateur modifie les champs
@@ -234,50 +276,128 @@ const Auth = () => {
               </TabsList>
               
               <TabsContent value="login" className="space-y-4 mt-6">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
-                      <Mail className="w-4 h-4 text-[#E63946]" />
-                      {t.email}
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={loginData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
-                      className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
-                      <Lock className="w-4 h-4 text-[#E63946]" />
-                      {t.password}
-                    </Label>
-                    <PasswordInput
-                      value={loginData.password}
-                      onChange={(value) => handleInputChange("password", value)}
-                      placeholder={t.passwordPlaceholder}
-                      required
-                      className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
-                    />
-                  </div>
+                {!showForgotPassword ? (
+                  <>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center gap-2 text-[#212529]">
+                          <Mail className="w-4 h-4 text-[#E63946]" />
+                          {t.email}
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={loginData.email}
+                          onChange={(e) => handleInputChange("email", e.target.value)}
+                          required
+                          className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="flex items-center gap-2 text-[#212529]">
+                          <Lock className="w-4 h-4 text-[#E63946]" />
+                          {t.password}
+                        </Label>
+                        <PasswordInput
+                          value={loginData.password}
+                          onChange={(value) => handleInputChange("password", value)}
+                          placeholder={t.passwordPlaceholder}
+                          required
+                          className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                        />
+                      </div>
 
-                  {loginError && (
-                    <div className="text-sm text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 p-3 rounded-md">
-                      {loginError}
+                      {loginError && (
+                        <div className="text-sm text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20 p-3 rounded-md">
+                          {loginError}
+                        </div>
+                      )}
+                      
+                      <LoadingButton
+                        type="submit"
+                        loading={loading}
+                        className="w-full bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+                      >
+                        {t.loginButton}
+                      </LoadingButton>
+                    </form>
+
+                    {/* 🔑 AJOUT: Bouton Mot de passe oublié */}
+                    <div className="text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-[#E63946] hover:text-[#E63946]/80 hover:bg-[#E63946]/10 flex items-center gap-2 mx-auto"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        Mot de passe oublié ?
+                      </Button>
                     </div>
-                  )}
-                  
-                  <LoadingButton
-                    type="submit"
-                    loading={loading}
-                    className="w-full bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
-                  >
-                    {t.loginButton}
-                  </LoadingButton>
-                </form>
+                  </>
+                ) : (
+                  /* 🔑 AJOUT: Formulaire de mot de passe oublié */
+                  <div className="space-y-4">
+                    <div className="text-center mb-4">
+                      <KeyRound className="w-8 h-8 text-[#E63946] mx-auto mb-2" />
+                      <h3 className="text-lg font-semibold text-[#212529]">Mot de passe oublié</h3>
+                      <p className="text-sm text-[#CED4DA]">
+                        Entrez votre adresse email pour recevoir un lien de réinitialisation
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="forgot-email" className="flex items-center gap-2 text-[#212529]">
+                          <Mail className="w-4 h-4 text-[#E63946]" />
+                          Adresse email
+                        </Label>
+                        <Input
+                          id="forgot-email"
+                          type="email"
+                          value={forgotPasswordEmail}
+                          onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                          placeholder="votre@email.com"
+                          required
+                          className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
+                        />
+                      </div>
+
+                      {forgotPasswordMessage && (
+                        <div className={`text-sm p-3 rounded-md ${
+                          forgotPasswordMessage.includes('envoyé') 
+                            ? 'text-green-700 bg-green-50 border border-green-200' 
+                            : 'text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20'
+                        }`}>
+                          {forgotPasswordMessage}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setShowForgotPassword(false);
+                            setForgotPasswordMessage(null);
+                            setForgotPasswordEmail("");
+                          }}
+                          className="flex-1 border-[#CED4DA] text-[#212529] hover:bg-[#CED4DA]/20"
+                        >
+                          Annuler
+                        </Button>
+                        <LoadingButton
+                          type="submit"
+                          loading={forgotPasswordLoading}
+                          className="flex-1 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
+                        >
+                          Envoyer le lien
+                        </LoadingButton>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="signup" className="mt-6">

@@ -34,10 +34,39 @@ const LegalPage = () => {
       setLoading(true);
       setError(null);
 
-      // 🔧 SOLUTION TEMPORAIRE : Pages statiques en attendant la migration
+      // ✅ CORRECTION: PRIORITÉ À LA BASE DE DONNÉES (ADMIN)
+      console.log('🔍 Recherche de la page dans la base de données:', pageSlug);
+      
+      const { data, error: supabaseError } = await supabase
+        .from('legal_pages')
+        .select('*')
+        .eq('slug', pageSlug)
+        .eq('is_active', true)
+        .single();
+
+      if (data && !supabaseError) {
+        console.log('✅ Page trouvée dans la base de données:', data.title);
+        setPage(data);
+        
+        // Mettre à jour le titre de la page
+        document.title = `${data.title} - Amora`;
+        
+        // Mettre à jour les meta tags
+        if (data.meta_description) {
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+            metaDesc.setAttribute('content', data.meta_description);
+          }
+        }
+        return;
+      }
+
+      // ✅ FALLBACK: Pages statiques SEULEMENT si pas trouvé en base
+      console.log('⚠️ Page non trouvée en base, utilisation du fallback statique');
+      
       const staticPages: { [key: string]: LegalPageData } = {
         'terms-of-service': {
-          id: '1',
+          id: 'fallback-1',
           slug: 'terms-of-service',
           title: 'Conditions d\'utilisation',
           content: `# Conditions d'utilisation d'Amora
@@ -65,7 +94,7 @@ Nous nous réservons le droit de modifier ces conditions à tout moment.
           updated_at: new Date().toISOString()
         },
         'privacy-policy': {
-          id: '2',
+          id: 'fallback-2',
           slug: 'privacy-policy',
           title: 'Politique de confidentialité',
           content: `# Politique de confidentialité
@@ -94,7 +123,7 @@ Vous avez le droit d'accéder, modifier ou supprimer vos données.
           updated_at: new Date().toISOString()
         },
         'cookies-policy': {
-          id: '3',
+          id: 'fallback-3',
           slug: 'cookies-policy',
           title: 'Politique des cookies',
           content: `# Politique des cookies
@@ -116,7 +145,7 @@ Vous pouvez gérer vos préférences de cookies dans les paramètres de votre na
           updated_at: new Date().toISOString()
         },
         'legal-notices': {
-          id: '4',
+          id: 'fallback-4',
           slug: 'legal-notices',
           title: 'Mentions légales',
           content: `# Mentions légales
@@ -143,7 +172,7 @@ Pour toute question juridique : legal@amora.com
           updated_at: new Date().toISOString()
         },
         'about': {
-          id: '5',
+          id: 'fallback-5',
           slug: 'about',
           title: 'À propos',
           content: `# À propos d'Amora
@@ -169,7 +198,7 @@ Une équipe passionnée dédiée à créer la meilleure expérience de rencontre
           updated_at: new Date().toISOString()
         },
         'contact': {
-          id: '6',
+          id: 'fallback-6',
           slug: 'contact',
           title: 'Contact',
           content: `# Nous contacter
@@ -199,7 +228,7 @@ Amora
           updated_at: new Date().toISOString()
         },
         'faq': {
-          id: '7',
+          id: 'fallback-7',
           slug: 'faq',
           title: 'Questions fréquentes',
           content: `# Questions fréquentes (FAQ)
@@ -247,7 +276,7 @@ Oui, consultez notre Politique de confidentialité pour plus d'informations.
           updated_at: new Date().toISOString()
         },
         'help-center': {
-          id: '8',
+          id: 'fallback-8',
           slug: 'help-center',
           title: 'Centre d\'aide',
           content: `# Centre d'aide Amora
@@ -313,7 +342,7 @@ Notre équipe support est disponible 24h/7j pour vous aider.
           updated_at: new Date().toISOString()
         },
         'support': {
-          id: '9',
+          id: 'fallback-9',
           slug: 'support',
           title: 'Support',
           content: `# Support Amora
@@ -345,9 +374,10 @@ Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
         }
       };
 
-      // Chercher d'abord dans les pages statiques
+      // Chercher dans les pages statiques SEULEMENT si pas trouvé en base
       const staticPage = staticPages[pageSlug];
       if (staticPage) {
+        console.log('📄 Utilisation du fallback statique pour:', pageSlug);
         setPage(staticPage);
         
         // Mettre à jour le titre de la page
@@ -361,30 +391,7 @@ Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
           }
         }
       } else {
-        // Si pas trouvé dans les pages statiques, essayer la base de données
-        const { data, error: supabaseError } = await supabase
-          .from('legal_pages')
-          .select('*')
-          .eq('slug', pageSlug)
-          .eq('is_active', true)
-          .single();
-
-        if (supabaseError) {
-          throw new Error('Page non trouvée');
-        }
-
-        setPage(data);
-        
-        // Mettre à jour le titre de la page
-        document.title = `${data.title} - Amora`;
-        
-        // Mettre à jour les meta tags
-        if (data.meta_description) {
-          const metaDesc = document.querySelector('meta[name="description"]');
-          if (metaDesc) {
-            metaDesc.setAttribute('content', data.meta_description);
-          }
-        }
+        throw new Error('Page non trouvée');
       }
     } catch (err: any) {
       console.error('Error loading legal page:', err);

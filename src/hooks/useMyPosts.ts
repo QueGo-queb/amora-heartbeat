@@ -273,8 +273,11 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
       refresh();
     }, 30000);
 
-    return () => clearInterval(interval);
-  }, [autoRefresh, refresh]); // ✅ Ajouter refresh aux dépendances
+    // ✅ AJOUT: Cleanup function
+    return () => {
+      clearInterval(interval);
+    };
+  }, [autoRefresh, refresh]); // ✅ Ajouter refresh dans les dépendances
 
   return {
     posts,
