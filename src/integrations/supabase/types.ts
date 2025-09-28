@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       admins: {
@@ -66,24 +66,24 @@ export type Database = {
       groups: {
         Row: {
           created_at: string
-          created_by: string
           description: string
           id: string
           name: string
+          owner_id: string
         }
         Insert: {
           created_at?: string
-          created_by?: string
           description?: string
           id?: string
           name?: string
+          owner_id?: string
         }
         Update: {
           created_at?: string
-          created_by?: string
           description?: string
           id?: string
           name?: string
+          owner_id?: string
         }
         Relationships: []
       }
@@ -117,75 +117,25 @@ export type Database = {
           created_at: string
           id: string
           user_id: string
-          media_urls?: string[]
-          visibility?: string
-          post_type?: string
-          likes_count?: number
-          comments_count?: number
-          media_types?: string[]
-          publication_language?: string
-          gender_targeting?: string
-          target_countries?: string[]
-          languages?: string[]
-          age_range_min?: number
-          age_range_max?: number
-          phone_number?: string
-          is_premium_post?: boolean
-          is_active?: boolean
-          updated_at?: string
-          views_count?: number
         }
         Insert: {
           content?: string
           created_at?: string
           id?: string
           user_id?: string
-          media_urls?: string[]
-          visibility?: string
-          post_type?: string
-          likes_count?: number
-          comments_count?: number
-          media_types?: string[]
-          publication_language?: string
-          gender_targeting?: string
-          target_countries?: string[]
-          languages?: string[]
-          age_range_min?: number
-          age_range_max?: number
-          phone_number?: string
-          is_premium_post?: boolean
-          is_active?: boolean
-          updated_at?: string
-          views_count?: number
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
           user_id?: string
-          media_urls?: string[]
-          visibility?: string
-          post_type?: string
-          likes_count?: number
-          comments_count?: number
-          media_types?: string[]
-          publication_language?: string
-          gender_targeting?: string
-          target_countries?: string[]
-          languages?: string[]
-          age_range_min?: number
-          age_range_max?: number
-          phone_number?: string
-          is_premium_post?: boolean
-          is_active?: boolean
-          updated_at?: string
-          views_count?: number
         }
         Relationships: []
       }
       profiles: {
         Row: {
           age: number
+          avatar_url: string
           bio: string
           city: string
           country: string
@@ -198,19 +148,12 @@ export type Database = {
           region: string
           role: string
           subscription_plan: string
+          updated_at: string
           user_id: string
-          email: string
-          plan: string
-          is_active: boolean
-          premium_since: string | null
-          interests: string[] | null
-          avatar_url: string | null
-          seeking_gender: string | null
-          location: string | null
-          updated_at: string | null
         }
         Insert: {
           age?: number
+          avatar_url?: string
           bio?: string
           city?: string
           country?: string
@@ -223,19 +166,12 @@ export type Database = {
           region?: string
           role?: string
           subscription_plan?: string
+          updated_at?: string
           user_id?: string
-          email?: string
-          plan?: string
-          is_active?: boolean
-          premium_since?: string | null
-          interests?: string[] | null
-          avatar_url?: string | null
-          seeking_gender?: string | null
-          location?: string | null
-          updated_at?: string | null
         }
         Update: {
           age?: number
+          avatar_url?: string
           bio?: string
           city?: string
           country?: string
@@ -248,16 +184,8 @@ export type Database = {
           region?: string
           role?: string
           subscription_plan?: string
+          updated_at?: string
           user_id?: string
-          email?: string
-          plan?: string
-          is_active?: boolean
-          premium_since?: string | null
-          interests?: string[] | null
-          avatar_url?: string | null
-          seeking_gender?: string | null
-          location?: string | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -266,248 +194,191 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          role: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string
-          id?: string
-          role?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          role?: string
-        }
-        Relationships: []
-      }
-      // ✅ TABLES AJOUTÉES CORRECTEMENT
-      locals_available_for_travelers: {
-        Row: {
-          id: string
-          user_id: string
-          full_name: string
-          age: number | null
-          destination_city: string | null
-          destination_country: string | null
-          travel_type: string | null
-          created_at: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          full_name: string
-          age?: number | null
-          destination_city?: string | null
-          destination_country?: string | null
-          travel_type?: string | null
           created_at?: string
+          email?: string
+          id?: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          full_name?: string
-          age?: number | null
-          destination_city?: string | null
-          destination_country?: string | null
-          travel_type?: string | null
           created_at?: string
+          email?: string
+          id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      // Tables manquantes - ajoutons-les
+      locals_available_for_travelers: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          user_id?: string
         }
         Relationships: []
       }
       video_profiles: {
         Row: {
+          created_at: string
           id: string
           user_id: string
-          video_profile_url: string | null
-          storage_path: string | null
-          thumbnail_url: string | null
-          created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          video_profile_url?: string | null
-          storage_path?: string | null
-          thumbnail_url?: string | null
           created_at?: string
-          updated_at?: string
-        }
-        Update: {
           id?: string
           user_id?: string
-          video_profile_url?: string | null
-          storage_path?: string | null
-          thumbnail_url?: string | null
+        }
+        Update: {
           created_at?: string
-          updated_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
       live_chat_messages: {
         Row: {
+          content: string
+          created_at: string
           id: string
           user_id: string
-          message: string
-          created_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          message: string
+          content?: string
           created_at?: string
-        }
-        Update: {
           id?: string
           user_id?: string
-          message?: string
+        }
+        Update: {
+          content?: string
           created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
       favorites: {
         Row: {
+          created_at: string
           id: string
           user_id: string
-          favorite_user_id: string
-          created_at: string
+          favorited_user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          favorite_user_id: string
           created_at?: string
-        }
-        Update: {
           id?: string
           user_id?: string
-          favorite_user_id?: string
+          favorited_user_id?: string
+        }
+        Update: {
           created_at?: string
+          id?: string
+          user_id?: string
+          favorited_user_id?: string
         }
         Relationships: []
       }
       matches: {
         Row: {
+          created_at: string
           id: string
           user_id: string
           matched_user_id: string
-          created_at: string
+          status: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          matched_user_id: string
           created_at?: string
-        }
-        Update: {
           id?: string
           user_id?: string
           matched_user_id?: string
+          status?: string
+        }
+        Update: {
           created_at?: string
+          id?: string
+          user_id?: string
+          matched_user_id?: string
+          status?: string
         }
         Relationships: []
       }
       user_settings: {
         Row: {
+          created_at: string
           id: string
           user_id: string
-          notifications_enabled: boolean
-          email_notifications: boolean
-          push_notifications: boolean
-          created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          notifications_enabled?: boolean
-          email_notifications?: boolean
-          push_notifications?: boolean
           created_at?: string
-          updated_at?: string
-        }
-        Update: {
           id?: string
           user_id?: string
-          notifications_enabled?: boolean
-          email_notifications?: boolean
-          push_notifications?: boolean
+        }
+        Update: {
           created_at?: string
-          updated_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
       legal_pages: {
         Row: {
-          id: string
-          slug: string
-          title: string
           content: string
-          meta_description: string | null
-          is_active: boolean
           created_at: string
-          updated_at: string
+          id: string
+          title: string
         }
         Insert: {
-          id?: string
-          slug: string
-          title: string
-          content: string
-          meta_description?: string | null
-          is_active?: boolean
+          content?: string
           created_at?: string
-          updated_at?: string
+          id?: string
+          title?: string
         }
         Update: {
-          id?: string
-          slug?: string
-          title?: string
           content?: string
-          meta_description?: string | null
-          is_active?: boolean
           created_at?: string
-          updated_at?: string
+          id?: string
+          title?: string
         }
         Relationships: []
       }
       reports: {
         Row: {
-          id: string
-          reporter_id: string
-          reported_user_id: string | null
-          reported_post_id: string | null
-          report_type: string
-          reason: string
-          status: string
           created_at: string
-          updated_at: string
+          id: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status: string
         }
         Insert: {
-          id?: string
-          reporter_id: string
-          reported_user_id?: string | null
-          reported_post_id?: string | null
-          report_type: string
-          reason: string
-          status?: string
           created_at?: string
-          updated_at?: string
+          id?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
         }
         Update: {
-          id?: string
-          reporter_id?: string
-          reported_user_id?: string | null
-          reported_post_id?: string | null
-          report_type?: string
-          reason?: string
-          status?: string
           created_at?: string
-          updated_at?: string
+          id?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -516,30 +387,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      user_has_permission: {
-        Args: {
-          user_id: string
-          permission_name: string
-        }
-        Returns: boolean
-      }
-      get_feed_posts_optimized: {
-        Args: {
-          user_id: string
-          limit_count?: number
-          offset_count?: number
-          page_size?: number
-          cursor_date?: string
-          user_filters?: any
-        }
-        Returns: any[]
-      }
+      [_ in never]: never
     }
     Enums: {
-      gender_type: ["homme", "femme"],
-      plan_type: ["free", "premium"],
-      subscription_status: ["active", "inactive", "canceled"],
-    },
+      [_ in never]: never
+    }
     CompositeTypes: {
       [_ in never]: never
     }

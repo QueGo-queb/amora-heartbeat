@@ -13,6 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useExistingContacts } from '@/hooks/useExistingContacts';
 
+// Ajouter le type Contact
+interface Contact {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
+}
+
 const ChatLive = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');

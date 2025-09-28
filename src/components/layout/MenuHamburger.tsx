@@ -237,80 +237,84 @@ const MenuHamburger = () => {
         </SheetHeader>
 
         <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-6 pb-24">
-          {/* Menu items */}
-          <div className="space-y-2">
-            {filteredItems.map((item) => (
-              <Button
-                key={item.id}
-                variant="ghost"
-                className="w-full justify-start h-auto p-4 text-left"
-                onClick={() => handleItemClick(item)}
-              >
-                <div className="flex items-center gap-3 w-full">
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{item.label}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
-                      {item.premium && (
-                        <Badge variant="default" className="ml-auto bg-yellow-500">
-                          Premium
-                        </Badge>
-                      )}
-                      {item.admin && (
-                        <Badge variant="destructive" className="ml-auto">
-                          Admin
-                        </Badge>
-                      )}
+          {/* Zone scrollable - Menu items seulement */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-2">
+              {filteredItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  className="w-full justify-start h-auto p-4 text-left"
+                  onClick={() => handleItemClick(item)}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
+                        {item.premium && (
+                          <Badge variant="default" className="ml-auto bg-yellow-500">
+                            Premium
+                          </Badge>
+                        )}
+                        {item.admin && (
+                          <Badge variant="destructive" className="ml-auto">
+                            Admin
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
                   </div>
-                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                </div>
-              </Button>
-            ))}
-          </div>
-
-          {/* ✅ BOUTON DE DÉCONNEXION MOBILE OPTIMISÉ */}
-          <div className="mt-8 pt-6 border-t border-red-100">
-          <Button
-           variant="ghost"
-           className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg border border-red-200 hover:border-red-300 disabled:opacity-50"
-           onClick={handleLogout}
-           disabled={logoutLoading}
-        >
-          {logoutLoading ? (
-            <>
-             <div className="w-5 h-5 mr-3 flex-shrink-0 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-             <span className="font-medium">Déconnexion...</span>
-           </>
-         ) : (
-           <>
-            <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span className="font-medium">Se déconnecter</span>
-          </>
-        )}
-          </Button>
-          </div>
-        </div>
-
-        {/* User info */}
-        <div className="flex-shrink-0 p-4 border-t bg-gray-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+                </Button>
+              ))}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {user?.user_metadata?.full_name || user?.email}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email}
-              </p>
+          </div>
+
+          {/* Section fixe en bas - User info + Bouton déconnexion */}
+          <div className="flex-shrink-0 border-t bg-gray-50">
+            {/* User info */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {user?.user_metadata?.full_name || user?.email}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bouton de déconnexion - MAINTENANT ACCESSIBLE */}
+            <div className="p-4">
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-auto p-4 text-left text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-lg border border-red-200 hover:border-red-300 disabled:opacity-50"
+                onClick={handleLogout}
+                disabled={logoutLoading}
+              >
+                {logoutLoading ? (
+                  <>
+                    <div className="w-5 h-5 mr-3 flex-shrink-0 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                    <span className="font-medium">Déconnexion...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <span className="font-medium">Se déconnecter</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

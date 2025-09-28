@@ -58,6 +58,7 @@ import { StripeManager } from '@/components/admin/StripeManager';
 import { EnhancedInterestsSelector } from '@/components/profile/EnhancedInterestsSelector';
 import { MoneyTransferButton } from '@/components/admin/MoneyTransferButton';
 import { BankAccountSecurityMonitor } from '@/components/admin/BankAccountSecurityMonitor';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface AdminStats {
   totalUsers: number;
