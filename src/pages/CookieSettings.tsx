@@ -83,6 +83,16 @@ const CookieSettings = () => {
       advertising: true
     };
     setPreferences(allAccepted);
+    
+    // Persist the choice immediately
+    localStorage.setItem('amora-cookie-preferences', JSON.stringify(allAccepted));
+    localStorage.setItem('amora-cookie-choice-made', 'true');
+    applyCookiePreferences(allAccepted);
+    
+    toast({
+      title: "✅ Préférences enregistrées",
+      description: "Tous les cookies ont été acceptés et sauvegardés.",
+    });
   };
 
   const handleRejectAll = () => {
@@ -93,6 +103,16 @@ const CookieSettings = () => {
       advertising: false
     };
     setPreferences(allRejected);
+    
+    // Persist the choice immediately
+    localStorage.setItem('amora-cookie-preferences', JSON.stringify(allRejected));
+    localStorage.setItem('amora-cookie-choice-made', 'true');
+    applyCookiePreferences(allRejected);
+    
+    toast({
+      title: "✅ Préférences enregistrées",
+      description: "Seuls les cookies essentiels ont été acceptés et sauvegardés.",
+    });
   };
 
   const applyCookiePreferences = (preferences: CookiePreferences) => {

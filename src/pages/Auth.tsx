@@ -29,6 +29,7 @@ const Auth = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string | null>(null);
+  const [forgotPasswordStatus, setForgotPasswordStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const { showLoader, hideLoader } = useLoader();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -177,6 +178,7 @@ const Auth = () => {
     e.preventDefault();
     setForgotPasswordLoading(true);
     setForgotPasswordMessage(null);
+    setForgotPasswordStatus('loading');
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
@@ -184,25 +186,28 @@ const Auth = () => {
       });
 
       if (error) {
-        setForgotPasswordMessage("Erreur lors de l'envoi de l'email. Veuillez réessayer.");
+        setForgotPasswordStatus('error');
+        setForgotPasswordMessage(t.forgotPasswordErrorDesc);
         toast({
-          title: "Erreur",
-          description: "Impossible d'envoyer l'email de réinitialisation",
+          title: t.forgotPasswordError,
+          description: t.forgotPasswordErrorDesc,
           variant: "destructive",
         });
       } else {
-        setForgotPasswordMessage("Email de réinitialisation envoyé ! Vérifiez votre boîte de réception.");
+        setForgotPasswordStatus('success');
+        setForgotPasswordMessage(t.forgotPasswordSuccessDesc);
         toast({
-          title: "Email envoyé",
-          description: "Consultez votre boîte de réception pour réinitialiser votre mot de passe",
+          title: t.forgotPasswordSuccess,
+          description: t.forgotPasswordSuccessDesc,
         });
-        setForgotPasswordEmail("");
+        setForgotPasswordEmail('');
       }
     } catch (error) {
-      setForgotPasswordMessage("Une erreur inattendue est survenue.");
+      setForgotPasswordStatus('error');
+      setForgotPasswordMessage(t.generalError);
       toast({
-        title: "Erreur",
-        description: "Une erreur inattendue est survenue",
+        title: t.error,
+        description: t.generalError,
         variant: "destructive",
       });
     } finally {
@@ -332,7 +337,7 @@ const Auth = () => {
                         className="text-[#E63946] hover:text-[#E63946]/80 hover:bg-[#E63946]/10 flex items-center gap-2 mx-auto"
                       >
                         <KeyRound className="w-4 h-4" />
-                        Mot de passe oublié ?
+                        {t.forgotPassword}
                       </Button>
                     </div>
                   </>
@@ -341,9 +346,9 @@ const Auth = () => {
                   <div className="space-y-4">
                     <div className="text-center mb-4">
                       <KeyRound className="w-8 h-8 text-[#E63946] mx-auto mb-2" />
-                      <h3 className="text-lg font-semibold text-[#212529]">Mot de passe oublié</h3>
+                      <h3 className="text-lg font-semibold text-[#212529]">{t.forgotPasswordTitle}</h3>
                       <p className="text-sm text-[#CED4DA]">
-                        Entrez votre adresse email pour recevoir un lien de réinitialisation
+                        {t.forgotPasswordDescription}
                       </p>
                     </div>
 
@@ -351,14 +356,14 @@ const Auth = () => {
                       <div className="space-y-2">
                         <Label htmlFor="forgot-email" className="flex items-center gap-2 text-[#212529]">
                           <Mail className="w-4 h-4 text-[#E63946]" />
-                          Adresse email
+                          {t.email}
                         </Label>
                         <Input
                           id="forgot-email"
                           type="email"
                           value={forgotPasswordEmail}
                           onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                          placeholder="votre@email.com"
+                          placeholder={t.email}
                           required
                           className="border-[#CED4DA] focus:border-[#E63946] focus:ring-[#E63946]"
                         />
@@ -366,7 +371,7 @@ const Auth = () => {
 
                       {forgotPasswordMessage && (
                         <div className={`text-sm p-3 rounded-md ${
-                          forgotPasswordMessage.includes('envoyé') 
+                          forgotPasswordStatus === 'success' 
                             ? 'text-green-700 bg-green-50 border border-green-200' 
                             : 'text-[#E63946] bg-[#E63946]/10 border border-[#E63946]/20'
                         }`}>
@@ -381,18 +386,19 @@ const Auth = () => {
                           onClick={() => {
                             setShowForgotPassword(false);
                             setForgotPasswordMessage(null);
-                            setForgotPasswordEmail("");
+                            setForgotPasswordEmail('');
+                            setForgotPasswordStatus('idle');
                           }}
                           className="flex-1 border-[#CED4DA] text-[#212529] hover:bg-[#CED4DA]/20"
                         >
-                          Annuler
+                          {t.cancel}
                         </Button>
                         <LoadingButton
                           type="submit"
                           loading={forgotPasswordLoading}
                           className="flex-1 bg-[#E63946] hover:bg-[#E63946]/90 text-white border-0"
                         >
-                          Envoyer le lien
+                          {t.sendLink}
                         </LoadingButton>
                       </div>
                     </form>

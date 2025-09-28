@@ -38,6 +38,19 @@ export const useFooterSync = () => {
       if (!pages || pages.length === 0) {
         console.log('⚠️ Aucune page légale active trouvée');
         setLegalPages([]);
+        
+        // Purger tous les liens footer existants quand aucune page légale n'est active
+        const { error: deleteAllError } = await supabase
+          .from('footer_links')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Supprimer tous les liens
+
+        if (deleteAllError) {
+          console.warn('⚠️ Erreur suppression liens footer:', deleteAllError);
+        } else {
+          console.log('✅ Tous les liens footer ont été purgés');
+        }
+        
         return;
       }
 

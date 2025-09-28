@@ -119,6 +119,11 @@ export function useInterestsMatching() {
   useEffect(() => {
     if (user?.id) {
       loadUsersWithCommonInterests();
+    } else {
+      // Reset state when user is null (logout)
+      setUsers([]);
+      setLoading(false);
+      setError(null);
     }
   }, [user?.id, loadUsersWithCommonInterests]);
 

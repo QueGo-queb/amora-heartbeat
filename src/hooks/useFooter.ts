@@ -103,7 +103,7 @@ export const useFooter = () => {
 
         // ✅ AMÉLIORATION: Mise à jour optimiste des états avec préservation
         if (contentResult.data) {
-          setContent(prev => ({ ...prev, ...contentResult.data }));
+          setContent(prev => ({ ...(prev ?? {}), ...contentResult.data }));
           console.log('✅ Content mis à jour:', contentResult.data);
         }
 
@@ -162,7 +162,7 @@ export const useFooter = () => {
       if (error) throw error;
 
       // ✅ Mise à jour immédiate de l'état local
-      setContent(prev => ({ ...prev, ...newContent }));
+      setContent(prev => ({ ...(prev ?? {}), ...newContent }));
       
       // ✅ AMÉLIORATION: Déclencher un événement personnalisé enrichi
       window.dispatchEvent(new CustomEvent('footer-refresh', { 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { footerTranslations } from '@/lib/footerTranslations';
 
 interface LegalPageData {
   id: string;
@@ -22,6 +23,10 @@ const LegalPage = () => {
   const [page, setPage] = useState<LegalPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Déterminer la langue à utiliser
+  const currentLanguage = lang || 'fr';
+  const t = footerTranslations[currentLanguage as keyof typeof footerTranslations] || footerTranslations.fr;
 
   useEffect(() => {
     if (slug) {
@@ -46,7 +51,10 @@ const LegalPage = () => {
 
       if (data && !supabaseError) {
         console.log('✅ Page trouvée dans la base de données:', data.title);
-        setPage(data);
+        setPage({
+          ...data,
+          category: (data as any).category || 'legal'
+        });
         
         // Mettre à jour le titre de la page
         document.title = `${data.title} - Amora`;
@@ -68,7 +76,7 @@ const LegalPage = () => {
         'terms-of-service': {
           id: 'fallback-1',
           slug: 'terms-of-service',
-          title: 'Conditions d\'utilisation',
+          title: t.legalLinks.termsOfService,
           content: `# Conditions d'utilisation d'Amora
 
 ## 1. Acceptation des conditions
@@ -96,7 +104,7 @@ Nous nous réservons le droit de modifier ces conditions à tout moment.
         'privacy-policy': {
           id: 'fallback-2',
           slug: 'privacy-policy',
-          title: 'Politique de confidentialité',
+          title: t.legalLinks.privacyPolicy,
           content: `# Politique de confidentialité
 
 ## 1. Collecte d'informations
@@ -125,7 +133,7 @@ Vous avez le droit d'accéder, modifier ou supprimer vos données.
         'cookies-policy': {
           id: 'fallback-3',
           slug: 'cookies-policy',
-          title: 'Politique des cookies',
+          title: t.legalLinks.cookiePolicy,
           content: `# Politique des cookies
 
 ## Qu'est-ce qu'un cookie ?
@@ -147,7 +155,7 @@ Vous pouvez gérer vos préférences de cookies dans les paramètres de votre na
         'legal-notices': {
           id: 'fallback-4',
           slug: 'legal-notices',
-          title: 'Mentions légales',
+          title: t.legalLinks.legalNotice,
           content: `# Mentions légales
 
 ## Éditeur du site
@@ -174,7 +182,7 @@ Pour toute question juridique : legal@amora.com
         'about': {
           id: 'fallback-5',
           slug: 'about',
-          title: 'À propos',
+          title: t.supportLinks.about,
           content: `# À propos d'Amora
 
 ## Notre mission
@@ -200,7 +208,7 @@ Une équipe passionnée dédiée à créer la meilleure expérience de rencontre
         'contact': {
           id: 'fallback-6',
           slug: 'contact',
-          title: 'Contact',
+          title: t.supportLinks.contact,
           content: `# Nous contacter
 
 ## Support utilisateur
@@ -230,7 +238,7 @@ Amora
         'faq': {
           id: 'fallback-7',
           slug: 'faq',
-          title: 'Questions fréquentes',
+          title: t.supportLinks.faq,
           content: `# Questions fréquentes (FAQ)
 
 ## Compte et inscription
@@ -278,7 +286,7 @@ Oui, consultez notre Politique de confidentialité pour plus d'informations.
         'help-center': {
           id: 'fallback-8',
           slug: 'help-center',
-          title: 'Centre d\'aide',
+          title: t.supportLinks.helpCenter,
           content: `# Centre d'aide Amora
 
 ## Guides rapides
@@ -344,7 +352,7 @@ Notre équipe support est disponible 24h/7j pour vous aider.
         'support': {
           id: 'fallback-9',
           slug: 'support',
-          title: 'Support',
+          title: t.supportLinks.support,
           content: `# Support Amora
 
 ## Comment nous contacter
@@ -405,19 +413,19 @@ Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
     switch (category) {
       case 'legal':
         return { 
-          label: 'Légal', 
+          label: t.legal, 
           color: 'bg-[#E63946] text-white',
           icon: <FileText className="w-3 h-3" />
         };
       case 'support':
         return { 
-          label: 'Support', 
+          label: t.support, 
           color: 'bg-[#52B788] text-white',
           icon: <AlertCircle className="w-3 h-3" />
         };
       case 'company':
         return { 
-          label: 'Entreprise', 
+          label: t.supportLinks.about, 
           color: 'bg-[#CED4DA] text-[#212529]',
           icon: <FileText className="w-3 h-3" />
         };
@@ -469,7 +477,7 @@ Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
             <CardContent className="py-12 text-center">
               <AlertCircle className="w-16 h-16 text-[#E63946] mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-[#212529] mb-2">
-                Page non trouvée
+                {t.legalLinks.legal} - Page non trouvée
               </h1>
               <p className="text-[#CED4DA] mb-6">
                 {error || 'La page que vous recherchez n\'existe pas.'}
@@ -549,7 +557,7 @@ Consultez notre [section FAQ](/faq) pour les questions fréquentes.`,
             variant="outline"
             className="border-[#52B788] text-[#52B788] hover:bg-[#52B788] hover:text-white"
           >
-            Nous contacter
+            {t.supportLinks.contact}
           </Button>
         </div>
       </div>

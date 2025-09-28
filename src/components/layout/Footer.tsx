@@ -114,14 +114,12 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
   const linksByCategory = {
     quick_links: links.filter(link => link.category === 'quick_links' && link.is_active),
     support: links.filter(link => link.category === 'support' && link.is_active),
-    legal: links.filter(link => link.category === 'legal' && link.is_active),
-    company: links.filter(link => link.category === 'company' && link.is_active)
+    legal: links.filter(link => link.category === 'legal' && link.is_active)
   };
 
   // ✅ LOGS DE DÉBOGAGE POUR IDENTIFIER LE PROBLÈME
   console.log('🔍 DEBUG FOOTER - Tous les liens:', links);
   console.log('🔍 DEBUG FOOTER - Liens support actifs:', linksByCategory.support);
-  console.log('🔍 DEBUG FOOTER - Liens company actifs:', linksByCategory.company);
   console.log('🔍 DEBUG FOOTER - Pages légales actives:', legalPages.filter(page => page.is_active));
 
   // ✅ AMÉLIORATION: Fonction pour générer les liens légaux SANS DOUBLONS
@@ -135,7 +133,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     if (linksByCategory.legal.length > 0) {
       console.log('📄 Utilisation des liens légaux de la base de données:', linksByCategory.legal.length);
       legalLinks = linksByCategory.legal.map(link => ({
-        name: link.name,
+        name: translateDatabaseLink(link.name, currentLanguage),
         href: link.href
       }));
     }
@@ -145,14 +143,14 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
       legalLinks = legalPages
         .filter(page => page.is_active)
         .map(page => ({
-          name: page.title,
+          name: translateDatabaseLink(page.title, currentLanguage),
           href: `/${page.slug}`
         }));
     }
 
     // ✅ AJOUT: Toujours ajouter "Paramètres des cookies" à la fin
     legalLinks.push({
-      name: 'Paramètres des cookies',
+      name: t.legalLinks.cookieSettings,
       href: '/cookie-settings'
     });
 
@@ -169,7 +167,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     if (linksByCategory.support.length > 0) {
       console.log('📄 Utilisation des liens support de la base de données:', linksByCategory.support.length);
       return linksByCategory.support.map(link => ({
-        name: link.name,
+        name: translateDatabaseLink(link.name, currentLanguage),
         href: link.href
       }));
     }
@@ -179,7 +177,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     if (supportPages.length > 0) {
       console.log('📄 Utilisation des pages légales support:', supportPages.length);
       return supportPages.map(page => ({
-        name: page.title,
+        name: translateDatabaseLink(page.title, currentLanguage),
         href: `/${page.slug}`
       }));
     }
@@ -191,24 +189,14 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
 
   // ✅ SUPPRESSION DES FALLBACKS STATIQUES - UNIQUEMENT DONNÉES DYNAMIQUES
   const getCompanyLinks = () => {
-    console.log('🔍 DEBUG getCompanyLinks - linksByCategory.company:', linksByCategory.company);
     console.log('🔍 DEBUG getCompanyLinks - legalPages company:', legalPages.filter(page => page.category === 'company'));
     
-    // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
-    if (linksByCategory.company.length > 0) {
-      console.log('📄 Utilisation des liens company de la base de données:', linksByCategory.company.length);
-      return linksByCategory.company.map(link => ({
-        name: link.name,
-        href: link.href
-      }));
-    }
-    
-    // ✅ PRIORITÉ 2: Utiliser les pages légales avec catégorie 'company'
+    // ✅ PRIORITÉ: Utiliser les pages légales avec catégorie 'company'
     const companyPages = legalPages.filter(page => page.category === 'company' && page.is_active);
     if (companyPages.length > 0) {
       console.log('📄 Utilisation des pages légales company:', companyPages.length);
       return companyPages.map(page => ({
-        name: page.title,
+        name: translateDatabaseLink(page.title, currentLanguage),
         href: `/${page.slug}`
       }));
     }
@@ -363,7 +351,7 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
 
             {/* ✅ Section Company - UNIQUEMENT DONNÉES DYNAMIQUES */}
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-white">À propos</h3>
+              <h3 className="text-xl font-semibold mb-6 text-white">{t.supportLinks.about}</h3>
               <ul className="space-y-3">
                 {getCompanyLinks().length > 0 ? (
                   getCompanyLinks().map((link, index) => (

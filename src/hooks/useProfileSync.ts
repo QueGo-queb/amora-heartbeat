@@ -15,6 +15,7 @@ export function useProfileSync() {
     if (!user?.id) return;
 
     try {
+      setError(null); // Clear previous error before new fetch
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')

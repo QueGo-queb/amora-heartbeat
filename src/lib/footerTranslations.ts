@@ -1,5 +1,5 @@
 /**
- * Traductions complètes pour le footer - CORRECTION DESCRIPTION PRINCIPALE
+ * Traductions complètes pour le footer - VERSION COMPLÈTE MULTILINGUE
  */
 
 export const footerTranslations = {
@@ -27,21 +27,23 @@ export const footerTranslations = {
     companyDescriptionFallback: "AMORA révolutionne les rencontres en ligne en plaçant la culture au cœur de l'expérience. Nous croyons que l'amour authentique naît de la compréhension mutuelle et du partage de valeurs communes. Notre vision : créer un monde où chaque personne de nos communautés peut trouver l'âme sœur qui comprend son héritage culturel.",
     companyDescriptionFull: "AMORA révolutionne les rencontres en ligne en plaçant la culture au cœur de l'expérience. Nous croyons que l'amour authentique naît de la compréhension mutuelle et du partage de valeurs communes. Notre vision : créer un monde où chaque personne de nos communautés peut trouver l'âme sœur qui comprend son héritage culturel.",
     
-    // Liens Support par défaut (si pas en base)
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Support",
       faq: "FAQ", 
       helpCenter: "Centre d'aide",
-      contact: "Contact"
+      contact: "Contact",
+      about: "À propos"
     },
     
-    // Liens Legal par défaut (si pas en base)
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Légal",
       termsOfService: "Conditions d'utilisation",
       privacyPolicy: "Politique de confidentialité", 
       cookiePolicy: "Politique des cookies",
-      legalNotice: "Mentions légales"
+      legalNotice: "Mentions légales",
+      cookieSettings: "Paramètres des cookies"
     }
   },
   
@@ -69,19 +71,23 @@ export const footerTranslations = {
     companyDescriptionFallback: "AMORA revolutionizes online dating by placing culture at the heart of the experience. We believe that authentic love comes from mutual understanding and sharing common values. Our vision: to create a world where every person in our communities can find the soulmate who understands their cultural heritage.",
     companyDescriptionFull: "AMORA revolutionizes online dating by placing culture at the heart of the experience. We believe that authentic love comes from mutual understanding and sharing common values. Our vision: to create a world where every person in our communities can find the soulmate who understands their cultural heritage.",
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Support",
       faq: "FAQ",
       helpCenter: "Help Center", 
-      contact: "Contact"
+      contact: "Contact",
+      about: "About"
     },
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Legal",
       termsOfService: "Terms of Service",
       privacyPolicy: "Privacy Policy",
       cookiePolicy: "Cookie Policy", 
-      legalNotice: "Legal Notice"
+      legalNotice: "Legal Notice",
+      cookieSettings: "Cookie Settings"
     }
   },
   
@@ -109,19 +115,23 @@ export const footerTranslations = {
     companyDescriptionFallback: "AMORA revolisyone randevou sou entènèt lè li mete kilti nan kè eksperyans la. Nou kwè ke lanmou otantik soti nan konpreyansyon mityèl ak pataje valè komen. Vizyon nou: kreye yon mond kote chak moun nan kominote nou yo ka jwenn lanmou ki konprann eritaj kiltirèl yo.",
     companyDescriptionFull: "AMORA revolisyone randevou sou entènèt lè li mete kilti nan kè eksperyans la. Nou kwè ke lanmou otantik soti nan konpreyansyon mityèl ak pataje valè komen. Vizyon nou: kreye yon mond kote chak moun nan kominote nou yo ka jwenn lanmou ki konprann eritaj kiltirèl yo.",
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Sipò",
       faq: "Kesyon yo poze souvan",
       helpCenter: "Sant èd",
-      contact: "Kontak"
+      contact: "Kontak",
+      about: "Sou nou"
     },
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Legal",
       termsOfService: "Kondisyon sèvis yo",
       privacyPolicy: "Politik konfidansyalite",
       cookiePolicy: "Politik bonbon yo",
-      legalNotice: "Avi legal"
+      legalNotice: "Avi legal",
+      cookieSettings: "Paramèt bonbon yo"
     }
   },
   
@@ -145,22 +155,27 @@ export const footerTranslations = {
     disabled: "deshabilitado",
     disabledPlural: "deshabilitados",
     
-    companyDescriptionFallback: "La plataforma de citas que trasciende las fronteras.",
+    // ✅ CORRECTION: Description principale complète en espagnol
+    companyDescriptionFallback: "AMORA revoluciona las citas en línea colocando la cultura en el corazón de la experiencia. Creemos que el amor auténtico nace del entendimiento mutuo y el compartir valores comunes. Nuestra visión: crear un mundo donde cada persona de nuestras comunidades pueda encontrar el alma gemela que comprenda su herencia cultural.",
     companyDescriptionFull: "AMORA revoluciona las citas en línea colocando la cultura en el corazón de la experiencia. Creemos que el amor auténtico nace del entendimiento mutuo y el compartir valores comunes. Nuestra visión: crear un mundo donde cada persona de nuestras comunidades pueda encontrar el alma gemela que comprenda su herencia cultural.",
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Soporte", 
       faq: "FAQ",
       helpCenter: "Centro de Ayuda",
-      contact: "Contacto"
+      contact: "Contacto",
+      about: "Acerca de"
     },
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Legal",
       termsOfService: "Términos de Servicio",
       privacyPolicy: "Política de Privacidad",
       cookiePolicy: "Política de Cookies",
-      legalNotice: "Aviso Legal"
+      legalNotice: "Aviso Legal",
+      cookieSettings: "Configuración de Cookies"
     }
   },
   
@@ -184,22 +199,27 @@ export const footerTranslations = {
     disabled: "desabilitado",
     disabledPlural: "desabilitados",
     
-    companyDescriptionFallback: "A plataforma de encontros que transcende fronteiras.",
+    // ✅ CORRECTION: Description principale complète en portugais
+    companyDescriptionFallback: "AMORA revoluciona os encontros online colocando a cultura no centro da experiência. Acreditamos que o amor autêntico nasce do entendimento mútuo e do compartilhamento de valores comuns. Nossa visão: criar um mundo onde cada pessoa de nossas comunidades possa encontrar a alma gêmea que compreenda sua herança cultural.",
     companyDescriptionFull: "AMORA revoluciona os encontros online colocando a cultura no centro da experiência. Acreditamos que o amor autêntico nasce do entendimento mútuo e do compartilhamento de valores comuns. Nossa visão: criar um mundo onde cada pessoa de nossas comunidades possa encontrar a alma gêmea que compreenda sua herança cultural.",
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Suporte",
       faq: "FAQ", 
       helpCenter: "Centro de Ajuda",
-      contact: "Contato"
+      contact: "Contato",
+      about: "Sobre"
     },
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Legal",
       termsOfService: "Termos de Serviço",
       privacyPolicy: "Política de Privacidade",
       cookiePolicy: "Política de Cookies",
-      legalNotice: "Aviso Legal"
+      legalNotice: "Aviso Legal",
+      cookieSettings: "Configurações de Cookies"
     }
   },
   
@@ -224,52 +244,92 @@ export const footerTranslations = {
     disabled: "desabilitado",
     disabledPlural: "desabilitados",
     
-    companyDescriptionFallback: "A plataforma de encontros que transcende fronteiras.",
+    // ✅ CORRECTION: Description principale complète en portugais brésilien
+    companyDescriptionFallback: "AMORA revoluciona os encontros online colocando a cultura no centro da experiência. Acreditamos que o amor autêntico nasce do entendimento mútuo e do compartilhamento de valores comuns. Nossa visão: criar um mundo onde cada pessoa de nossas comunidades possa encontrar a alma gêmea que compreenda sua herança cultural.",
     companyDescriptionFull: "AMORA revoluciona os encontros online colocando a cultura no centro da experiência. Acreditamos que o amor autêntico nasce do entendimento mútuo e do compartilhamento de valores comuns. Nossa visão: criar um mundo onde cada pessoa de nossas comunidades possa encontrar a alma gêmea que compreenda sua herança cultural.",
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Support
     supportLinks: {
       support: "Suporte",
       faq: "FAQ",
       helpCenter: "Centro de Ajuda", 
-      contact: "Contato"
+      contact: "Contato",
+      about: "Sobre"
     },
     
+    // ✅ TRADUCTIONS COMPLÈTES: Liens Legal
     legalLinks: {
       legal: "Legal",
       termsOfService: "Termos de Serviço",
       privacyPolicy: "Política de Privacidade",
       cookiePolicy: "Política de Cookies",
-      legalNotice: "Aviso Legal"
+      legalNotice: "Aviso Legal",
+      cookieSettings: "Configurações de Cookies"
     }
   }
 };
 
-// ✅ CORRECTION: Fonction pour traduire la description de l'entreprise
+// ✅ FONCTIONS DE TRADUCTION AMÉLIORÉES
 export const translateCompanyDescription = (description: string | null | undefined, language: string = 'fr'): string => {
   if (!description) {
-    // ✅ CORRECTION: Utiliser la description complète au lieu du fallback court
     const translations = footerTranslations[language as keyof typeof footerTranslations] || footerTranslations.fr;
     return translations.companyDescriptionFull;
   }
-  
-  // Si une description est fournie, l'utiliser
   return description;
 };
 
-// ✅ FONCTIONS EXISTANTES PRÉSERVÉES
 export const translateDatabaseLink = (linkName: string, language: string = 'fr'): string => {
   const translations = footerTranslations[language as keyof typeof footerTranslations] || footerTranslations.fr;
   
-  // Mapper les noms de liens vers les traductions
+  // Mapper les noms de liens vers les traductions (multilingue)
   const linkMap: Record<string, string> = {
+    // Support - Anglais
     'Support': translations.supportLinks.support,
     'FAQ': translations.supportLinks.faq,
     'Help Center': translations.supportLinks.helpCenter,
     'Contact': translations.supportLinks.contact,
+    'About': translations.supportLinks.about,
+    
+    // Support - Français
+    'À propos': translations.supportLinks.about,
+    'Centre d\'aide': translations.supportLinks.helpCenter,
+    
+    // Legal - Anglais
     'Terms of Service': translations.legalLinks.termsOfService,
     'Privacy Policy': translations.legalLinks.privacyPolicy,
     'Cookie Policy': translations.legalLinks.cookiePolicy,
-    'Legal Notice': translations.legalLinks.legalNotice
+    'Legal Notice': translations.legalLinks.legalNotice,
+    'Cookie Settings': translations.legalLinks.cookieSettings,
+    'Legal': translations.legalLinks.legal,
+    
+    // Legal - Français
+    'Conditions d\'utilisation': translations.legalLinks.termsOfService,
+    'Politique de confidentialité': translations.legalLinks.privacyPolicy,
+    'Politique des cookies': translations.legalLinks.cookiePolicy,
+    'Mentions légales': translations.legalLinks.legalNotice,
+    'Paramètres des cookies': translations.legalLinks.cookieSettings,
+    'Légal': translations.legalLinks.legal,
+    
+    // Legal - Espagnol
+    'Términos de Servicio': translations.legalLinks.termsOfService,
+    'Política de Privacidad': translations.legalLinks.privacyPolicy,
+    'Política de Cookies': translations.legalLinks.cookiePolicy,
+    'Aviso Legal': translations.legalLinks.legalNotice,
+    'Configuración de Cookies': translations.legalLinks.cookieSettings,
+    
+    // Legal - Portugais
+    'Termos de Serviço': translations.legalLinks.termsOfService,
+    'Política de Privacidade': translations.legalLinks.privacyPolicy,
+    'Política de Cookies PT': translations.legalLinks.cookiePolicy,
+    'Aviso Legal PT': translations.legalLinks.legalNotice,
+    'Configurações de Cookies': translations.legalLinks.cookieSettings,
+    
+    // Legal - Créole Haïtien
+    'Kondisyon sèvis yo': translations.legalLinks.termsOfService,
+    'Politik konfidansyalite': translations.legalLinks.privacyPolicy,
+    'Politik bonbon yo': translations.legalLinks.cookiePolicy,
+    'Avi legal': translations.legalLinks.legalNotice,
+    'Paramèt bonbon yo': translations.legalLinks.cookieSettings
   };
   
   return linkMap[linkName] || linkName;
@@ -279,7 +339,6 @@ export const generateMultilingualUrl = (baseUrl: string, language: string): stri
   if (language === 'fr' || language === 'en') {
     return language === 'en' ? `/en${baseUrl}` : baseUrl;
   }
-  
   return `/${language}${baseUrl}`;
 };
 
@@ -292,20 +351,60 @@ export const getFooterLink = (linkType: string, language: string = 'fr'): string
       faq: '/faq',
       helpCenter: '/help-center',
       contact: '/contact',
+      about: '/about',
       terms: '/terms-of-service',
       privacy: '/privacy-policy',
       cookies: '/cookies-policy',
-      legal: '/legal-notices'
+      legal: '/legal-notices',
+      cookieSettings: '/cookie-settings'
     },
     en: {
       support: '/en/help-center',
       faq: '/en/faq',
       helpCenter: '/en/help-center',
       contact: '/en/contact',
+      about: '/en/about',
       terms: '/en/terms-of-service',
       privacy: '/en/privacy-policy',
       cookies: '/en/cookies-policy',
-      legal: '/en/legal-notices'
+      legal: '/en/legal-notices',
+      cookieSettings: '/en/cookie-settings'
+    },
+    es: {
+      support: '/es/help-center',
+      faq: '/es/faq',
+      helpCenter: '/es/help-center',
+      contact: '/es/contact',
+      about: '/es/about',
+      terms: '/es/terms-of-service',
+      privacy: '/es/privacy-policy',
+      cookies: '/es/cookies-policy',
+      legal: '/es/legal-notices',
+      cookieSettings: '/es/cookie-settings'
+    },
+    pt: {
+      support: '/pt/help-center',
+      faq: '/pt/faq',
+      helpCenter: '/pt/help-center',
+      contact: '/pt/contact',
+      about: '/pt/about',
+      terms: '/pt/terms-of-service',
+      privacy: '/pt/privacy-policy',
+      cookies: '/pt/cookies-policy',
+      legal: '/pt/legal-notices',
+      cookieSettings: '/pt/cookie-settings'
+    },
+    ht: {
+      support: '/ht/help-center',
+      faq: '/ht/faq',
+      helpCenter: '/ht/help-center',
+      contact: '/ht/contact',
+      about: '/ht/about',
+      terms: '/ht/terms-of-service',
+      privacy: '/ht/privacy-policy',
+      cookies: '/ht/cookies-policy',
+      legal: '/ht/legal-notices',
+      cookieSettings: '/ht/cookie-settings'
     }
   };
   

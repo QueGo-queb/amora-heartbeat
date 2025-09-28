@@ -346,7 +346,7 @@ export function AvatarUpload({
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ avatar_url: dataUrl })
-            .eq('id', user!.id);
+            .eq('user_id', user!.id);
 
           if (updateError) {
             console.error('Erreur mise à jour profil:', updateError);
@@ -409,7 +409,7 @@ export function AvatarUpload({
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
