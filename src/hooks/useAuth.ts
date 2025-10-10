@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { trackEvent, trackError } from '@/lib/sentry';
 import { logger } from '@/lib/logger';
+import type { AuthUser } from '@/types/auth';
+import type { User } from '@supabase/supabase-js';
 
 export const useAuth = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();

@@ -144,6 +144,21 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
         .eq('user_id', userRef.current.id)
         .single();
 
+      // ✅ CORRIGÉ: Récupérer les likes de l'utilisateur actuel pour ses propres posts
+      let userLikes: Set<string> = new Set();
+      if (postsData.length > 0) {
+        const postIds = postsData.map(p => p.id);
+        const { data: likesData } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', userRef.current.id)
+          .in('post_id', postIds);
+        
+        if (likesData) {
+          userLikes = new Set(likesData.map(l => l.post_id));
+        }
+      }
+
       // ✅ TRANSFORMER LES DONNÉES AVEC LE NOUVEAU SYSTÈME DE MÉDIAS
       const transformedPosts: FeedPost[] = postsData.map(post => {
         const media = getPostMedia(post);
@@ -197,7 +212,7 @@ export function useMyPosts(options: UseMyPostsOptions = {}) {
           
           // État du post
           is_premium: profileData?.plan === 'premium',
-          is_liked: false, // TODO: Récupérer depuis l'API
+          is_liked: userLikes.has(post.id), // ✅ CORRIGÉ: Vérifié depuis les likes de l'utilisateur
           score: calculatePostScore({
             id: post.id,
             content: post.content,

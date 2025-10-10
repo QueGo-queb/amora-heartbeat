@@ -120,21 +120,27 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     legal: links.filter(link => link.category === 'legal' && link.is_active)
   };
 
-  // ✅ LOGS DE DÉBOGAGE POUR IDENTIFIER LE PROBLÈME
-  console.log('🔍 DEBUG FOOTER - Tous les liens:', links);
-  console.log('🔍 DEBUG FOOTER - Liens support actifs:', linksByCategory.support);
-  console.log('🔍 DEBUG FOOTER - Pages légales actives:', legalPages.filter(page => page.is_active));
+  // ✅ LOGS DE DÉBOGAGE (uniquement en développement)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 DEBUG FOOTER - Tous les liens:', links);
+    console.log('🔍 DEBUG FOOTER - Liens support actifs:', linksByCategory.support);
+    console.log('🔍 DEBUG FOOTER - Pages légales actives:', legalPages.filter(page => page.is_active));
+  }
 
   // ✅ AMÉLIORATION: Fonction pour générer les liens légaux SANS DOUBLONS
   const getLegalLinks = () => {
     let legalLinks = [];
 
-    console.log('🔍 DEBUG getLegalLinks - linksByCategory.legal:', linksByCategory.legal);
-    console.log('🔍 DEBUG getLegalLinks - legalPages:', legalPages);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 DEBUG getLegalLinks - linksByCategory.legal:', linksByCategory.legal);
+      console.log('🔍 DEBUG getLegalLinks - legalPages:', legalPages);
+    }
 
     // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
     if (linksByCategory.legal.length > 0) {
-      console.log('📄 Utilisation des liens légaux de la base de données:', linksByCategory.legal.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 Utilisation des liens légaux de la base de données:', linksByCategory.legal.length);
+      }
       legalLinks = linksByCategory.legal.map(link => ({
         name: translateDatabaseLink(link.name, currentLanguage),
         href: link.href
@@ -142,7 +148,9 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     }
     // ✅ PRIORITÉ 2: Utiliser les pages légales dynamiques
     else if (legalPages.length > 0) {
-      console.log('📄 Utilisation des pages légales dynamiques:', legalPages.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 Utilisation des pages légales dynamiques:', legalPages.length);
+      }
       legalLinks = legalPages
         .filter(page => page.is_active)
         .map(page => ({
@@ -151,24 +159,36 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
         }));
     }
 
-    // ✅ AJOUT: Toujours ajouter "Paramètres des cookies" à la fin
-    legalLinks.push({
-      name: t.legalLinks.cookieSettings,
-      href: '/cookie-settings'
-    });
+    // ✅ AJOUT: Ajouter "Paramètres des cookies" seulement s'il n'existe pas déjà
+    const cookieSettingsExists = legalLinks.some(link => 
+      link.href === '/cookie-settings' || link.name === t.legalLinks.cookieSettings
+    );
+    
+    if (!cookieSettingsExists) {
+      legalLinks.push({
+        name: t.legalLinks.cookieSettings,
+        href: generateMultilingualUrl('/cookie-settings', currentLanguage)
+      });
+    }
 
-    console.log('🔍 DEBUG getLegalLinks - résultat final:', legalLinks);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 DEBUG getLegalLinks - résultat final:', legalLinks);
+    }
     return legalLinks;
   };
 
   // ✅ SUPPRESSION DES FALLBACKS STATIQUES - UNIQUEMENT DONNÉES DYNAMIQUES
   const getSupportLinks = () => {
-    console.log('🔍 DEBUG getSupportLinks - linksByCategory.support:', linksByCategory.support);
-    console.log('🔍 DEBUG getSupportLinks - legalPages support:', legalPages.filter(page => page.category === 'support'));
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 DEBUG getSupportLinks - linksByCategory.support:', linksByCategory.support);
+      console.log('🔍 DEBUG getSupportLinks - legalPages support:', legalPages.filter(page => page.category === 'support'));
+    }
     
     // ✅ PRIORITÉ 1: Utiliser les liens de la base de données s'ils existent
     if (linksByCategory.support.length > 0) {
-      console.log('📄 Utilisation des liens support de la base de données:', linksByCategory.support.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 Utilisation des liens support de la base de données:', linksByCategory.support.length);
+      }
       return linksByCategory.support.map(link => ({
         name: translateDatabaseLink(link.name, currentLanguage),
         href: link.href
@@ -178,7 +198,9 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     // ✅ PRIORITÉ 2: Utiliser les pages légales avec catégorie 'support'
     const supportPages = legalPages.filter(page => page.category === 'support' && page.is_active);
     if (supportPages.length > 0) {
-      console.log('📄 Utilisation des pages légales support:', supportPages.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 Utilisation des pages légales support:', supportPages.length);
+      }
       return supportPages.map(page => ({
         name: translateDatabaseLink(page.title, currentLanguage),
         href: `/${page.slug}`
@@ -186,18 +208,24 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     }
 
     // ❌ SUPPRIMÉ: Plus de fallback statique
-    console.log('📄 Aucun lien support configuré en base de données');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📄 Aucun lien support configuré en base de données');
+    }
     return [];
   };
 
   // ✅ SUPPRESSION DES FALLBACKS STATIQUES - UNIQUEMENT DONNÉES DYNAMIQUES
   const getCompanyLinks = () => {
-    console.log('🔍 DEBUG getCompanyLinks - legalPages company:', legalPages.filter(page => page.category === 'company'));
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 DEBUG getCompanyLinks - legalPages company:', legalPages.filter(page => page.category === 'company'));
+    }
     
     // ✅ PRIORITÉ: Utiliser les pages légales avec catégorie 'company'
     const companyPages = legalPages.filter(page => page.category === 'company' && page.is_active);
     if (companyPages.length > 0) {
-      console.log('📄 Utilisation des pages légales company:', companyPages.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 Utilisation des pages légales company:', companyPages.length);
+      }
       return companyPages.map(page => ({
         name: translateDatabaseLink(page.title, currentLanguage),
         href: `/${page.slug}`
@@ -205,7 +233,9 @@ const Footer = ({ language = 'fr' }: FooterProps) => {
     }
 
     // ❌ SUPPRIMÉ: Plus de fallback statique
-    console.log('📄 Aucun lien company configuré en base de données');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📄 Aucun lien company configuré en base de données');
+    }
     return [];
   };
 

@@ -186,7 +186,11 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
                     variant="outline"
                     onClick={() => {
                       checkPremiumFeature('messages', () => {
-                        console.log('Message envoyé à', post.profiles.full_name);
+                        // ✅ CORRIGÉ: Navigation vers la page de messagerie
+                        const conversationPath = `/messages/${post.user_id}`;
+                        if (typeof window !== 'undefined') {
+                          window.location.href = conversationPath;
+                        }
                       }, post.profiles.full_name);
                     }}
                     className="flex items-center gap-1"
@@ -199,7 +203,13 @@ export function PostCard({ post, onLike, currentUserId }: PostCardProps) {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => console.log('Message envoyé à', post.profiles.full_name)}
+                  onClick={() => {
+                    // ✅ CORRIGÉ: Navigation vers la page de messagerie
+                    const conversationPath = `/messages/${post.user_id}`;
+                    if (typeof window !== 'undefined') {
+                      window.location.href = conversationPath;
+                    }
+                  }}
                   className="flex items-center gap-1"
                 >
                   <MessageCircle className="w-4 h-4" />

@@ -116,12 +116,35 @@ export const useCall = (): UseCallReturn => {
         case 'everyone':
           return true;
         case 'matches':
-          // Pour l'instant, autoriser si les deux utilisateurs existent
-          // TODO: Implémenter la logique de matching
-          return true;
+          // ✅ CORRIGÉ: Vérifier si les utilisateurs sont des matches mutuels
+          try {
+            // Vérifier si l'utilisateur actuel a un match avec la cible
+            const { data: match } = await supabase
+              .from('matches')
+              .select('id')
+              .or(`and(user1_id.eq.${user?.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${user?.id})`)
+              .eq('status', 'matched')
+              .maybeSingle();
+            
+            return !!match;
+          } catch (error) {
+            console.error('Erreur vérification matching:', error);
+            return false;
+          }
         case 'premium':
-          // TODO: Vérifier si l'appelant est premium
-          return true;
+          // ✅ CORRIGÉ: Vérifier si l'appelant est premium
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('plan')
+              .eq('user_id', user?.id)
+              .maybeSingle();
+            
+            return profile?.plan === 'premium';
+          } catch (error) {
+            console.error('Erreur vérification premium:', error);
+            return false;
+          }
         default:
           return true; // Autoriser par défaut
       }

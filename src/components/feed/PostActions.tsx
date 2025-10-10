@@ -1,10 +1,10 @@
 /**
- * ✅ Composant PostActions - Gestion des icônes ❤️ 💬 🔗
- * Logique complète pour likes, messages et partages avec compteurs en temps réel
+ * ✅ Composant PostActions - Gestion des icônes ❤️ 💬
+ * Logique complète pour likes et messages avec compteurs en temps réel
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Heart, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { usePremium } from '@/hooks/usePremium';
@@ -16,14 +16,11 @@ import type { FeedPost } from '../../../types/feed';
 interface PostActionsProps {
   post: FeedPost;
   onLikeUpdate?: (postId: string, newLikeCount: number, isLiked: boolean) => void;
-  onShareUpdate?: (postId: string, newShareCount: number) => void;
 }
 
-export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsProps) {
+export function PostActions({ post, onLikeUpdate }: PostActionsProps) {
   const [isLiked, setIsLiked] = useState(false);
-  const [isShared, setIsShared] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes_count || 0);
-  const [shareCount, setShareCount] = useState(post.shares_count || 0);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -32,40 +29,33 @@ export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsPr
   const { checkPremiumFeature } = usePremiumRestriction();
   const { toast } = useToast();
 
-  // ✅ Vérifier l'état initial des likes et partages
+  // ✅ Vérifier l'état initial du like
   useEffect(() => {
     const checkInitialState = async () => {
       if (!user) return;
 
       try {
-        // Vérifier les likes et partages en parallèle
-        const [likeResult, shareResult] = await Promise.all([
-          supabase
-            .from('likes')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('post_id', post.id)
-            .single(),
-          supabase
-            .from('post_shares')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('post_id', post.id)
-            .single()
-        ]);
+        // Vérifier si l'utilisateur a déjà liké ce post
+        const { data: likeResult } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('post_id', post.id)
+          .maybeSingle();
 
-        setIsLiked(!!likeResult.data);
-        setIsShared(!!shareResult.data);
+        setIsLiked(!!likeResult);
       } catch (error) {
-        // Pas de like/partage existant, c'est normal
-        console.log('État initial vérifié pour le post:', post.id);
+        // Erreur silencieuse - pas de like existant
+        if (process.env.NODE_ENV === 'development') {
+          console.log('État initial vérifié pour le post:', post.id);
+        }
       }
     };
 
     checkInitialState();
   }, [user, post.id]);
 
-  // ✅ Mise à jour en temps réel des compteurs
+  // ✅ Mise à jour en temps réel des compteurs (Likes et Commentaires)
   useEffect(() => {
     if (!post.id) return;
 
@@ -88,29 +78,6 @@ export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsPr
             .eq('post_id', post.id);
 
           setLikeCount(count || 0);
-        }
-      )
-      .subscribe();
-
-    // Canal pour les partages
-    const sharesChannel = supabase
-      .channel(`post-shares-${post.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'post_shares',
-          filter: `post_id=eq.${post.id}`
-        },
-        async () => {
-          // Recalculer le nombre de partages
-          const { count } = await supabase
-            .from('post_shares')
-            .select('*', { count: 'exact', head: true })
-            .eq('post_id', post.id);
-
-          setShareCount(count || 0);
         }
       )
       .subscribe();
@@ -141,7 +108,6 @@ export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsPr
     // Nettoyage des canaux
     return () => {
       supabase.removeChannel(likesChannel);
-      supabase.removeChannel(sharesChannel);
       supabase.removeChannel(commentsChannel);
     };
   }, [post.id]);
@@ -199,7 +165,9 @@ export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsPr
         });
       }
     } catch (error) {
-      console.error('Erreur lors du like:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Erreur lors du like:', error);
+      }
       toast({
         title: "Erreur",
         description: "Impossible de modifier le like.",
@@ -223,122 +191,57 @@ export function PostActions({ post, onLikeUpdate, onShareUpdate }: PostActionsPr
 
     // Vérifier le statut Premium
     checkPremiumFeature('messages', () => {
-      // Action pour utilisateur Premium
-      console.log(' Ouverture de la messagerie avec', post.profiles.full_name);
+      // ✅ CORRIGÉ: Navigation vers la page de messagerie
+      const conversationPath = `/messages/${post.user_id}`;
       
-      // TODO: Implémenter l'ouverture de la messagerie
-      // navigate(`/chat/${post.user_id}`);
+      // Utiliser window.location pour la navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = conversationPath;
+      }
       
       toast({
-        title: "Messagerie ouverte",
+        title: "Ouverture de la messagerie",
         description: `Conversation avec ${post.profiles.full_name}`,
       });
     }, post.profiles.full_name);
-  }, [user, checkPremiumFeature, post.profiles.full_name, toast]);
-
-  // ✅ GESTION DES PARTAGES
-  const handleShare = useCallback(async () => {
-    if (!user) {
-      toast({
-        title: "Connexion requise",
-        description: "Vous devez être connecté pour partager un post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isLoading) return;
-
-    setIsLoading(true);
-
-    try {
-      // Copier le lien du post dans le presse-papier
-      const postUrl = `${window.location.origin}/post/${post.id}`;
-      
-      await navigator.clipboard.writeText(postUrl);
-
-      // Enregistrer le partage dans la base de données
-      if (!isShared) {
-        const { error } = await supabase
-          .from('post_shares')
-          .insert({
-            user_id: user.id,
-            post_id: post.id,
-            share_type: 'link'
-          });
-
-        if (error) throw error;
-
-        setIsShared(true);
-        onShareUpdate?.(post.id, shareCount + 1);
-      }
-
-      toast({
-        title: "Post partagé !",
-        description: "Le lien a été copié dans votre presse-papier.",
-      });
-    } catch (error) {
-      console.error('Erreur lors du partage:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de partager le post.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, post.id, isLoading, isShared, shareCount, onShareUpdate, toast]);
+  }, [user, checkPremiumFeature, post.user_id, post.profiles.full_name, toast]);
 
   return (
-    <div className="flex items-center gap-4 pt-3 border-t">
-      {/* ❤️ BOUTON LIKE */}
+    <div className="flex items-center gap-6 pt-3 border-t">
+      {/* ❤️ BOUTON LIKE - FONCTIONNEL */}
       <Button
         variant="ghost"
         size="sm"
         onClick={handleLike}
         disabled={isLoading}
-        className={`flex items-center gap-2 transition-colors ${
+        className={`flex items-center gap-2 transition-all duration-200 ${
           isLiked 
             ? 'text-red-500 hover:text-red-600' 
             : 'text-muted-foreground hover:text-red-500'
         }`}
+        aria-label={isLiked ? "Retirer le like" : "Aimer ce post"}
       >
-        <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+        <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
         <span className="text-sm font-medium">{likeCount}</span>
       </Button>
 
-      {/* 💬 BOUTON MESSAGE (PREMIUM REQUIS) */}
+      {/* 💬 BOUTON MESSAGE - FONCTIONNEL (PREMIUM REQUIS) */}
       <Button
         variant="ghost"
         size="sm"
         onClick={handleMessage}
-        className={`flex items-center gap-2 transition-colors ${
+        className={`flex items-center gap-2 transition-all duration-200 ${
           isPremium 
             ? 'text-blue-500 hover:text-blue-600' 
             : 'text-muted-foreground hover:text-blue-500'
         }`}
+        aria-label="Envoyer un message"
       >
-        <MessageCircle className="w-4 h-4" />
+        <MessageCircle className="w-5 h-5" />
         <span className="text-sm font-medium">{commentCount}</span>
         {!isPremium && (
-          <span className="text-xs text-yellow-600 ml-1">💎</span>
+          <span className="text-xs text-yellow-600 ml-1" title="Fonctionnalité Premium">💎</span>
         )}
-      </Button>
-
-      {/* 🔗 BOUTON PARTAGE */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleShare}
-        disabled={isLoading}
-        className={`flex items-center gap-2 transition-colors ${
-          isShared 
-            ? 'text-green-500 hover:text-green-600' 
-            : 'text-muted-foreground hover:text-green-500'
-        }`}
-      >
-        <Share2 className={`w-4 h-4 ${isShared ? 'fill-current' : ''}`} />
-        <span className="text-sm font-medium">{shareCount}</span>
       </Button>
     </div>
   );

@@ -39,10 +39,15 @@ export function FriendsSuggestions() {
   };
 
   const handleSendMessage = (userId: string) => {
-    // TODO: Implémenter l'envoi de message
+    // ✅ CORRIGÉ: Navigation vers la page de messagerie
+    const conversationPath = `/messages/${userId}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = conversationPath;
+    }
+    
     toast({
-      title: "Fonctionnalité",
-      description: "Envoi de message à implémenter",
+      title: "Ouverture de la messagerie",
+      description: "Redirection vers la conversation",
     });
   };
 

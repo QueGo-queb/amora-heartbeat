@@ -119,7 +119,10 @@ export function useExistingContacts() {
             last_message: lastMessage,
             unread_count: unreadCount,
             last_activity: lastMessage?.created_at || profile.last_login || '',
-            is_online: false // TODO: Implémenter le statut en ligne
+            // ✅ CORRIGÉ: Statut en ligne basé sur la dernière activité (< 5 minutes)
+            is_online: profile.last_login 
+              ? (Date.now() - new Date(profile.last_login).getTime()) < 5 * 60 * 1000
+              : false
           };
         })
         .filter(Boolean) as Contact[];
