@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "build:check": "tsc -b && vite build",
     "build:dev": "vite build --mode development",
     "build:pwa": "npm run generate-icons && vite build",
     "generate-icons": "node scripts/generate-icons.js",
