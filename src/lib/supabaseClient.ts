@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ CORRIGÉ: Valeurs directes pour éviter les problèmes de cache
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://szxbxvwknhrtxmfyficn.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6eGJ4dndrbmhydHhtZnlmaWNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjYxNzksImV4cCI6MjA3MjE0MjE3OX0.-h8eeR3STS4ZqdjoobIcvYAVv07_SIomGVKKWxUTHSA';
+// ✅ SÉCURITÉ: Charger uniquement depuis les variables d'environnement
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// ✅ CORRIGÉ: Vérification avec les nouvelles valeurs
+// ✅ VALIDATION: Vérifier que les variables sont configurées
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Variables d\'environnement Supabase manquantes. Assurez-vous que VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY sont définies dans votre fichier .env'
+  );
+}
+
 if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
   console.warn('⚠️ VITE_SUPABASE_URL manquante - mode démo activé');
 } else {

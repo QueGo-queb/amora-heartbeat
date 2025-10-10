@@ -3,7 +3,7 @@
  * Ce fichier vérifie que toutes les clés de traduction sont présentes
  */
 
-import { footerTranslations } from '@/lib/footerTranslations';
+import { footerTranslations, translateDatabaseLink } from '@/lib/footerTranslations';
 
 // Fonction pour tester les traductions
 export const testFooterTranslations = () => {
@@ -100,8 +100,6 @@ export const testFooterTranslations = () => {
 
 // Fonction pour tester la fonction translateDatabaseLink
 export const testTranslateDatabaseLink = () => {
-  const { translateDatabaseLink } = require('@/lib/footerTranslations');
-  
   console.log('\n🧪 === TEST DE translateDatabaseLink ===');
   
   const testCases = [

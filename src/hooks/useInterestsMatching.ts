@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth'; // ✅ AJOUT: Import manquant
@@ -18,6 +18,7 @@ export function useInterestsMatching() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth(); // ✅ CORRECTION: Récupérer user depuis useAuth
+  const requestIdRef = useRef(0); // ✅ AJOUT: Ref pour la cancellation des requêtes
 
   // Calculer le score de compatibilité basé sur les intérêts communs
   const calculateMatchScore = (userInterests: string[], currentUserInterests: string[]): number => {
@@ -38,6 +39,9 @@ export function useInterestsMatching() {
 
   // Récupérer les utilisateurs avec intérêts communs
   const loadUsersWithCommonInterests = useCallback(async () => {
+    // ✅ AJOUT: Incrémenter l'ID de requête pour cette nouvelle requête
+    const currentRequestId = ++requestIdRef.current;
+    
     try {
       setLoading(true);
       setError(null);
@@ -55,6 +59,11 @@ export function useInterestsMatching() {
         .select('interests')
         .eq('id', user.id)
         .single();
+
+      // ✅ AJOUT: Vérifier si la requête a été annulée
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
 
       if (!currentUserProfile?.interests || currentUserProfile.interests.length === 0) {
         setUsers([]);
@@ -77,6 +86,11 @@ export function useInterestsMatching() {
         .not('interests', 'is', null);
 
       if (fetchError) throw fetchError;
+
+      // ✅ AJOUT: Vérifier si la requête a été annulée avant de continuer
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
 
       // Calculer les scores de compatibilité
       const usersWithScores = allUsers
@@ -101,8 +115,18 @@ export function useInterestsMatching() {
         .sort((a, b) => b!.matchScore - a!.matchScore)
         .slice(0, 10); // Top 10
 
+      // ✅ AJOUT: Vérifier si la requête a été annulée avant de mettre à jour l'état
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
+
       setUsers(usersWithScores as UserWithInterests[]);
     } catch (err) {
+      // ✅ AJOUT: Vérifier si la requête a été annulée avant de gérer l'erreur
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
+      
       console.error('Error loading users with common interests:', err);
       setError('Erreur lors du chargement des suggestions');
       toast({
@@ -111,6 +135,10 @@ export function useInterestsMatching() {
         variant: "destructive",
       });
     } finally {
+      // ✅ AJOUT: Vérifier si la requête a été annulée avant de mettre à jour le loading
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
       setLoading(false);
     }
   }, [toast, user]); // ✅ CORRECTION: Ajouter user dans les dépendances
@@ -120,7 +148,8 @@ export function useInterestsMatching() {
     if (user?.id) {
       loadUsersWithCommonInterests();
     } else {
-      // Reset state when user is null (logout)
+      // ✅ AJOUT: Invalider les requêtes en cours avant de reset l'état (logout)
+      requestIdRef.current++;
       setUsers([]);
       setLoading(false);
       setError(null);
